@@ -45,7 +45,7 @@ What the board says, strongest first:
 3. **Type as part of the image** (03, 06, 07, 09, 12, 13, 15, 16)
    - Huge cropped wordmarks behind or through the figure; letterforms used as windows onto the art (15); vertical type running down an edge (03, 12); hand-lettered or brush titles (02, 09, 13); all set against tiny justified captions.
    - → Her hand-lettered "C3 Showcase" stays the hero. The info layer (date, location, projects) should read like poster small print.
-   - → Direction for ui-ux-pro-max's type pairing: a high-contrast or slab serif for big words, and a small grotesk or mono for captions, both subordinate to her lettering.
+   - → Direction for the two text fonts: a high-contrast or slab serif for big words, and a small grotesk or mono for captions, both subordinate to her lettering.
 4. **Flat blocks and frames over the figure** (03, 06, 14, 15, 16)
    - A flat red rectangle covering half a face, vertical bands framing a figure, frosted panels.
    - → Reveals should look like printed panels that slide or mask, not soft glows.

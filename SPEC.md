@@ -132,7 +132,7 @@ Text color rules:
 - Under it sit two families:
   - a high-contrast or slab serif for the few big words (WHEN, WHERE, RSVP)
   - a small grotesk or mono for the small print
-- PLAN step 1 picks the pair with ui-ux-pro-max. Fonts are self-hosted from npm (`@fontsource/*`), with at most two families and four files.
+- PLAN step 1.2 picks the pair, following CLAUDE.md's font rules. Fonts are self-hosted from npm (`@fontsource/*`), with at most two families and four files.
 - Body text is at least 16 px; captions at least 13 px.
 
 **Marks (UI furniture), from moodboard 1b.6.**

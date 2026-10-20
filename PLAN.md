@@ -91,15 +91,15 @@ The step is long. If it doesn't fit in one session, split it into two sequential
   - `art`: the manifest-driven art build
   - `art:placeholders`: cuts placeholders from the drafts
 
-### 1.2 Design system
+### 1.2 Type, spacing and layout
 
-- Run ui-ux-pro-max and write the result to `design-system/c3-showcase/MASTER.md`. Cover:
-  - the type pair (direction in SPEC §4)
-  - the spacing scale
-  - the layout of the info, projects and credits sections
-  - interaction patterns
-  - its pre-delivery checklist
-- Replace its color section with our tokens. Ignore its style-category pick.
+SPEC.md is the design system; there is no separate design-system file. Follow CLAUDE.md's "Design decisions", and use the frontend-design skill for what the spec leaves open.
+
+- **Fonts.** Pick the two text families from the direction in SPEC §4, following CLAUDE.md's font rules.
+  - Before deciding, compare two or three candidate pairs in a throwaway screenshot next to her lettering, cropped from `reference/drafts/`. The throwaway page is not part of the build.
+  - Put the pick, two runners-up and a line of reasoning for each in the PR description, so the owner and the artist can compare.
+- **Scales.** A type scale and a spacing scale, phone first, written as tokens in 1.3.
+- **Layout.** The info, projects and credits sections from SPEC §2, built from the marks in SPEC §4.
 
 ### 1.3 Tokens: `src/styles/tokens.css`
 
