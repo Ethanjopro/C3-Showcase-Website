@@ -77,10 +77,10 @@ test('steps at 10 fps: one step holds, the next differs', async ({ page }) => {
   expect(t0.equals(t100), 't0 and t100 are different frames').toBe(false);
 });
 
-// SPEC §6: nothing flashes. Over a full loop of the static (and the first
-// screen's word slip, which falls on step 1), frame to frame: mean luminance
-// moves by under 10 %, and under 10 % of the screen's area changes by 0.1 or
-// more (WCAG 2.3.1's flash threshold).
+// SPEC §6: nothing flashes. Over a full loop of the static and its seam
+// (t=1200 is frame 0 again), frame to frame: mean luminance moves by under
+// 10 %, and under 10 % of the screen's area changes by 0.1 or more (WCAG
+// 2.3.1's flash threshold).
 test('flash safety: consecutive frames stay under the flash threshold', async ({ page }) => {
   for (const colorway of ['teal-coral', 'mauve-periwinkle']) {
     await page.addInitScript((c) => localStorage.setItem('c3:colorway', c), colorway);
@@ -171,10 +171,20 @@ test('switching to reduced motion mid-visit restarts it cleanly', async ({ page 
   await expect(page.locator(`${mount} style`)).toHaveCount(1);
 });
 
-test('lite: the project screens still step, the poster screens hold one frame', async ({ page }) => {
-  await toProjects(page, '/?only=crt-screens&quality=lite');
-  await expect(page.locator(mount)).toHaveAttribute('data-state', 'moving');
-  await expect(page.locator(`${glass} .crt__static--moving`)).toHaveCount(projects.screens);
-  await expect(page.locator(`${poster} .crt__static--moving`)).toHaveCount(0);
-  await expect(page.locator(`${glass} .crt__word--slip`)).toHaveCount(0);
+for (const quality of ['full', 'lite']) {
+  test(`${quality}: the project screens step, the poster screens hold one frame (two steppers per screen, SPEC §6)`, async ({ page }) => {
+    await toProjects(page, `/?only=crt-screens&quality=${quality}`);
+    await expect(page.locator(mount)).toHaveAttribute('data-state', 'moving');
+    await expect(page.locator(`${glass} .crt__static--moving`)).toHaveCount(projects.screens);
+    await expect(page.locator(`${poster} .crt__static`)).toHaveCount(await page.locator(poster).count());
+    await expect(page.locator(`${poster} .crt__static--moving`)).toHaveCount(0);
+  });
+}
+
+test('the words never move', async ({ page }) => {
+  await toProjects(page, '/?only=crt-screens');
+  const moving = await page.evaluate(() =>
+    document.getAnimations().filter((a) => (a.effect as KeyframeEffect).target?.closest('.crt__word')).length,
+  );
+  expect(moving).toBe(0);
 });

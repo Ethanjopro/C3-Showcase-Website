@@ -28,6 +28,8 @@ const RAGGED = 0.25;
 /** Seeds: the tile, and the walk of offsets. */
 const TILE_SEED = 311;
 const WALK_SEED = 433;
+/** Least distance in CSS px, in at least one axis, between nearby frames of the walk: a few grains. */
+const MIN_STEP = 8;
 
 /**
  * The tile, as an alpha mask (black, alpha = speck strength), built like
@@ -61,37 +63,33 @@ export function staticTile(dpr: number): HTMLCanvasElement {
 }
 
 /**
- * STEPS offsets inside one tile, whole CSS px. Each is at least a few grains
- * from the one before, so consecutive frames never share their snow.
+ * STEPS offsets inside one tile, whole CSS px. Each is far (a few grains, in
+ * at least one axis) from the two frames before and after it, around the
+ * loop's seam too, so no frame shares its snow with a near neighbour.
  */
 export function offsets(): [number, number][] {
   const rand = rng(WALK_SEED);
+  const far = (a: [number, number], b: [number, number]) => {
+    const d = (u: number, v: number) => Math.min(Math.abs(u - v), TILE - Math.abs(u - v));
+    return d(a[0], b[0]) >= MIN_STEP || d(a[1], b[1]) >= MIN_STEP;
+  };
   const out: [number, number][] = [];
-  const far = (a: number, b: number) => Math.min(Math.abs(a - b), TILE - Math.abs(a - b)) >= 8;
   while (out.length < STEPS) {
     const p: [number, number] = [Math.floor(rand() * TILE), Math.floor(rand() * TILE)];
-    const prev = out[out.length - 1];
-    if (!prev || far(p[0], prev[0]) || far(p[1], prev[1])) out.push(p);
+    const k = out.length;
+    // Neighbours within two steps; the last two frames also wrap round to the first two.
+    const near = [k - 1, k - 2, k + 1 - STEPS, k + 2 - STEPS].filter((j) => j >= 0 && j < k).map((j) => out[j]!);
+    if (near.every((q) => far(p, q))) out.push(p);
   }
   return out;
 }
 
-/** A step-end keyframe list: frame k holds from k/n of the cycle (just before, so a frozen clock on a step edge shows the new frame). */
-function stepped(name: string, frames: string[]): string {
-  const n = frames.length;
-  const stops = frames.map((f, k) => {
+/** The static's walk as step-end keyframes: frame k holds from k/n of the cycle (just before, so a frozen clock on a step edge shows the new frame). */
+export function keyframes(walk: [number, number][]): string {
+  const n = walk.length;
+  const stops = walk.map(([x, y], k) => {
     const at = k === 0 ? '0%' : `${((k / n) * 100 - 0.01).toFixed(3)}%`;
-    return `${k === n - 1 ? `${at},100%` : at}{${f}}`;
+    return `${k === n - 1 ? `${at},100%` : at}{transform:translate(${x}px,${y}px)}`;
   });
-  return `@keyframes ${name}{${stops.join('')}}`;
-}
-
-/**
- * The keyframes: the static's walk, and the word's slip (the picture loses
- * hold for one step and jumps sideways a pixel, once every `slipSteps`).
- */
-export function keyframes(walk: [number, number][], slipSteps: number): string {
-  const move = walk.map(([x, y]) => `transform:translate(${x}px,${y}px)`);
-  const slip = Array.from({ length: slipSteps }, (_, k) => (k === 1 ? 'transform:translateX(1.5px)' : 'transform:none'));
-  return stepped('c3-crt-static', move) + stepped('c3-crt-slip', slip);
+  return `@keyframes c3-crt-static{${stops.join('')}}`;
 }

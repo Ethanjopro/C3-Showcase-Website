@@ -1,13 +1,14 @@
-/* crt-screens: drawn inside every [data-crt] target. index.ts sets, per screen:
+/* crt-screens: drawn inside every [data-crt] target. index.ts writes one
+   .crt rule (in the mount's <style>, with the keyframes) holding:
      --crt-tile          the static tile's edge
      --crt-mask          the tile, as a mask url
      --crt-step          one step (1000 / --fps-crt)
-     --crt-steps         steps in the static's walk; --crt-slip-steps in the slip's
-     --crt-phase         the step of the walk this screen starts on
-     --crt-slip-phase    the step of the slip cycle it starts on
+     --crt-steps         steps in the static's walk
      --crt-frozen        ?freeze=<ms>, or 0
-   and the masks on .crt--poster and its fringes (they depend on the slot's rect).
-   Every color is a token, so colorway swaps recolor it with no redraw. */
+   and per screen --crt-phase (the step of the walk it starts on), the masks on
+   .crt--poster and its fringes (they depend on the slot's rect), and --fit on
+   the words if the longest overflows. Every color is a token, so colorway
+   swaps recolor it with no redraw. */
 
 .crt {
   position: absolute;
@@ -52,7 +53,9 @@
 }
 
 /* The teaser line on the project screens, in the big-word face. Sized to the
-   screen (container units), shrinking for longer words. */
+   screen (container units) for the longest word, so every screen matches;
+   --fit shrinks them all if that still overflows. Never animated: the
+   readable layer only moves in its entry wipe (CLAUDE.md). */
 .crt__word {
   position: absolute;
   inset: 0;
@@ -60,18 +63,12 @@
   place-items: center;
   padding-inline: 8%;
   font-family: var(--font-display);
-  font-size: min(30cqi, calc(185cqi / var(--len)));
+  font-size: calc(min(30cqi, calc(185cqi / var(--len))) * var(--fit, 1));
   font-weight: 700;
   line-height: 1;
   color: var(--on-ink);
   text-align: center;
   white-space: nowrap;
-}
-
-/* Now and then the picture loses hold for one step (full quality only). */
-.crt__word--slip {
-  animation: c3-crt-slip calc(var(--crt-slip-steps) * var(--crt-step)) step-end infinite;
-  animation-delay: calc(-1 * (var(--crt-slip-phase) * var(--crt-step) + var(--crt-frozen)));
 }
 
 /* The two-ink split on a poster screen: a 1 px accent fringe on one side of
@@ -92,7 +89,6 @@
 }
 
 /* Offscreen, or a frozen clock: hold the frame. */
-.crt[data-paused] .crt__static,
-.crt[data-paused] .crt__word {
+.crt[data-paused] .crt__static {
   animation-play-state: paused;
 }

@@ -17,7 +17,7 @@ Everything waiting on Ethan or the artist, in one place.
 | 4 | **RSVP link** | Launch | "RSVP opens soon", and no RSVP chip |
 | 5 | **Follow link:** which platform, and the URL | Launch | Hidden |
 | 6 | **Effects to switch off:** try `?off=<effect>` on your phone and pick anything that feels like too much | Launch (PLAN step 13) | Everything on |
-| 17 | **Ticking on the poster:** SPEC §6 allows at most two effects ticking on one screen. With crt-screens, the arrival screen steps three: line-boil, paper-grain and the eye screen's static. All three run on the compositor (no JS per step). Is that OK, or should the eye's static hold still? | Launch (PLAN step 13) | Three under `full`. Slow devices (`lite`) already hold the eye still. |
+| 17 | **Ticking on the poster:** SPEC §6 allows at most two effects ticking on one screen, and the arrival screen already steps line-boil and paper-grain. So crt-screens keeps the eye screen's static still (it keeps its scanlines and two-ink split), and only the project screens' static steps. All three run on the compositor, with no JS per step. Should the eye's static step too? | Launch (PLAN step 13) | Eye still. Stepping it is one constant (`POSTER_STEPS` in `src/effects/crt-screens/index.ts`). |
 
 ## Open: ask her (on hold: Ethan will ask when he's ready)
 
@@ -53,6 +53,7 @@ From the crt-screens PR (PLAN step 12):
 - **`tokens.css`:** add `--fps-crt: 10` next to the other rates. crt-screens reads it with `number('fps-crt', 10)`, so it's 10 either way until then.
 - **SPEC §3 row 11 and PLAN step 12:** change "RGB split" to "two-ink split". A red/green/blue split would bring off-palette colors into every colorway, so the eye screen splits in `--accent` and `--on-ink` instead.
 - **`vitest.config.ts`:** also collect `src/effects/*/*.test.ts`, so effects can own unit tests. Until then, PLAN step 12's luminance check runs in `crt-screens.spec.ts`, on real rendered frames.
+- **`src/core/raster.ts`:** a `blobUrl(canvas)` helper and a `steppedKeyframes(name, frames)` helper. paper-grain, line-boil and crt-screens each wrap `toBlob` themselves, and paper-grain and crt-screens each write step-end keyframes with their own edge rule (24.99 % vs −0.01 %).
 - **`scripts/shots.mjs`:** a subset run (`npm run shots -- projects`) captures the skip link, focused, at the top of `projects@390`. A full run doesn't.
 
 From PR #7 (arrival polish):
