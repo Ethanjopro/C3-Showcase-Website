@@ -1,6 +1,6 @@
 # C3 Showcase site: spec
 
-Written 2026-10-20. Sources: `CLAUDE.md`, `reference/INSPIRATION.md` (including 1b, her moodboard), the three drafts in `reference/drafts/`, and an interview with the site owner. `PLAN.md` turns this spec into build steps.
+Written 2026-10-20. Sources: `CLAUDE.md`, `reference/INSPIRATION.md` (including 1b, her moodboard), the drafts in `reference/drafts/` (the newest, `figure-lineart-*`, added 2026-10-20 with the composition still open; see `OWNER.md` #9), and an interview with the site owner. `PLAN.md` turns this spec into build steps.
 
 Order of authority: her drafts first, then this spec, then any skill, library or template default.
 

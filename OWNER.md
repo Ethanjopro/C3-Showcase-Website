@@ -23,7 +23,7 @@ Everything waiting on Ethan or the artist, in one place.
 | # | Question | Needed by | Until then |
 |---|---|---|---|
 | 8 | What name or handle goes in her credit line? | Any time | "Poster art: 0.0.0" |
-| 9 | Is the composition settled: where the halo, its screens, the ribcage panel and the cables sit, and how many screens and cables there are? | Before `cables` (batch 4) | Built from the current drafts |
+| 9 | **Composition (not settled yet).** Her newest drafts (`figure-lineart-with-halo` / `-no-halo`, 2026-10-20) keep the praying figure, head wings and a ring of 6 screens, but show no cables, no ribcage X-ray panel and no eye screen, and add a small second halo at the chest and a decorated bodice. Ask her: are the cables, ribcage panel and eye screen still coming as separate layers, or are they gone? Is the chest halo part of the design? Will the title and small print be drawn into the frame? | Before `cables`, and before her final art | `cables` on hold; x-ray and eye screen use the older sketch's positions |
 | 10 | Final art layers, one file per slot, per the SPEC §5 handoff list | 2026-10-30 | Placeholders cut from her drafts |
 | 11 | The project screens are now phone-shaped (most projects are phone apps). Should they look like upright CRTs, as now, or more like old phones or handhelds? | Before `crt-screens` merges | Upright CRTs in her frame style |
 | 12 | The halo and cables are ink on the site, but red in her sketch (coral would vanish on the coral fill). Which does she want? It's one manifest field. | Any time | Ink |
@@ -35,6 +35,9 @@ Everything waiting on Ethan or the artist, in one place.
 ## Shared changes queue
 
 Changes effect sessions proposed but couldn't make, because they touch shared files. Land them in one sequential **Plan** session after the open batches merge (prompt in `setup/PROMPTS.md`).
+
+Optional, once her composition settles (OWNER #9):
+- **Re-cut placeholders from her newest drafts.** Point `scripts/art/placeholders.mjs` at `figure-lineart-with-halo.webp` for `lineart` and `wings`, and take `halo` as the difference between the with-halo and no-halo versions. Re-measure the halo `screens` rects. Her cleaner line makes the preview look much closer to final.
 
 From PR #6 (xray, c3-window, halo-menu):
 - **PLAN writer table:** add `#poster` (section) | c3-window | pin; let `html[data-fx-halo-menu~='ring']` restyle `.menu`, `.menu__list` and `.menu__screen`; halo-menu sets `data-halo-front` on the menu links.
