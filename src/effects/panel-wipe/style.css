@@ -22,3 +22,10 @@
 .panel-wipe__block--ink {
   background: var(--ink);
 }
+
+/* On paper every header just shows, scrolled to or not. */
+@media print {
+  .panel-wipe {
+    display: none;
+  }
+}
