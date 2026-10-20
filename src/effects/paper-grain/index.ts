@@ -16,9 +16,9 @@
 // or below 4 % behind text, so contrast holds).
 //
 //   full    four tiles, cycled at 8 fps
-//   lite    one still field: a full-screen layer redrawn 8 times a second
+//   lite    one still tile: a full-screen layer redrawn 8 times a second
 //           is the extra a slow device drops
-//   static  one still field
+//   static  one still tile
 
 import type { EffectOptions } from '../../core/effect';
 import { noiseTile } from '../../core/raster';
@@ -32,8 +32,12 @@ const SEEDS = [7, 23, 59, 101] as const;
 const TILE = 192;
 /** Darkest a speck gets: alpha 0.04 of black (PLAN step 3's 4 % cap). */
 const GRAIN_MAX = 0.04;
-/** Share of pixels that print a speck. Riso grain is sparse tooth, not a haze. */
+/** Share of grain cells that print. Riso grain is sparse tooth, not a haze. */
 const COVERAGE = 0.32;
+/** Grain size in CSS px: the cell a speck clumps into. */
+const GRAIN_PX = 1.5;
+/** Share of a grain's pixels knocked out, so its edge is ragged. */
+const RAGGED = 0.2;
 const DEFAULT_FPS = 8;
 
 let wrap: HTMLElement | null = null;
@@ -46,24 +50,33 @@ function tokenFps(): number {
 }
 
 /**
- * One tile: noiseTile's black specks only (white would lighten, not multiply),
- * each at full GRAIN_MAX so the grain reads as specks. Drawn at device
- * resolution, capped at DPR 2, so a speck is one CSS px.
+ * One tile of riso tooth, built from two noiseTiles:
+ *   - a coarse one, upscaled with no smoothing, decides where grains sit, so
+ *     specks clump into GRAIN_PX-sized grains instead of a 1 px digital haze;
+ *   - a fine one, at device resolution (DPR capped at 2), ragged-edges the
+ *     grains and varies their ink between half and full GRAIN_MAX.
+ * Only black is kept: white would lighten the paper, not multiply it.
  */
-function tile(seed: number, px: number): HTMLCanvasElement {
-  const canvas = noiseTile(px, seed);
-  const ctx = canvas.getContext('2d');
+function tile(seed: number, px: number, dpr: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = px;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return canvas;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(noiseTile(Math.max(1, Math.round(px / (GRAIN_PX * dpr))), seed), 0, 0, px, px);
   const img = ctx.getImageData(0, 0, px, px);
   const d = img.data;
-  const on = Math.round(GRAIN_MAX * 255);
+  const fineCanvas = noiseTile(px, seed + 7919);
+  const fine = fineCanvas.getContext('2d')!.getImageData(0, 0, px, px).data;
+  const on = GRAIN_MAX * 255;
   // noiseTile: black where v <= 0.5, alpha = |v - 0.5| * 2. The strongest
   // COVERAGE share of all pixels sits at alpha >= 1 - 2 * COVERAGE.
   const threshold = Math.round((1 - 2 * COVERAGE) * 255);
   for (let i = 0; i < d.length; i += 4) {
-    const speck = d[i] === 0 && d[i + 3]! >= threshold;
+    const jitter = fine[i + 3]! / 255;
+    const grain = d[i] === 0 && d[i + 3]! >= threshold && jitter >= RAGGED;
     d[i] = d[i + 1] = d[i + 2] = 0;
-    d[i + 3] = speck ? on : 0;
+    d[i + 3] = grain ? Math.round(on * (0.5 + 0.5 * jitter)) : 0;
   }
   ctx.putImageData(img, 0, 0);
   return canvas;
@@ -75,18 +88,20 @@ const idle = () =>
   );
 
 /**
- * Four tiles packed 2x2 into one super-tile, so a single layer carries them
- * all. One tile per idle slice: all four at once is a ~250 ms task on a slow phone.
+ * Moving: the four tiles packed 2x2 into one super-tile, so a single layer
+ * carries them all. Still: the first tile alone. One tile per idle slice: all
+ * four at once is a ~250 ms task on a slow phone.
  */
-async function superTile(px: number, alive: () => boolean): Promise<string | null> {
+async function superTile(px: number, dpr: number, moving: boolean, alive: () => boolean): Promise<string | null> {
+  const seeds = moving ? SEEDS : SEEDS.slice(0, 1);
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = px * 2;
+  canvas.width = canvas.height = moving ? px * 2 : px;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('paper-grain: no 2D context');
-  for (const [i, seed] of SEEDS.entries()) {
+  for (const [i, seed] of seeds.entries()) {
     await idle();
     if (!alive()) return null;
-    ctx.drawImage(tile(seed, px), (i % 2) * px, Math.floor(i / 2) * px);
+    ctx.drawImage(tile(seed, px, dpr), (i % 2) * px, Math.floor(i / 2) * px);
   }
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(URL.createObjectURL(b)) : reject(new Error('paper-grain: toBlob failed'))), 'image/png'),
@@ -110,8 +125,9 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   destroy();
   const gen = generation;
   const moving = opts.quality === 'full';
-  const px = Math.round(TILE * Math.min(2, window.devicePixelRatio || 1));
-  const url = await superTile(px, () => gen === generation);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const px = Math.round(TILE * dpr);
+  const url = await superTile(px, dpr, moving, () => gen === generation);
   if (!url) return;
   if (gen !== generation) {
     URL.revokeObjectURL(url);
@@ -126,7 +142,7 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   // One tile wider and taller than the viewport, so every shift still covers it.
   field.style.right = field.style.bottom = `${-TILE}px`;
   field.style.backgroundImage = `url(${url})`;
-  field.style.backgroundSize = `${TILE * 2}px ${TILE * 2}px`;
+  field.style.backgroundSize = moving ? `${TILE * 2}px ${TILE * 2}px` : `${TILE}px ${TILE}px`;
   if (moving) {
     const style = document.createElement('style');
     style.textContent = keyframes();

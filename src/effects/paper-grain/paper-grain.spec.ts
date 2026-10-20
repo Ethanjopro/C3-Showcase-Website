@@ -80,11 +80,13 @@ test('steps at 8 fps: one step holds, the next differs', async ({ page }) => {
   expect(t0.equals(t125), 't0 and t125 are different tiles').toBe(false);
 });
 
-test('info text keeps 4.5:1 over the grain', async ({ page }) => {
+test('text keeps 4.5:1 over the grain: the poster small print and info', async ({ page }) => {
   for (const colorway of ['teal-coral', 'mauve-periwinkle']) {
     await page.addInitScript((c) => localStorage.setItem('c3:colorway', c), colorway);
     await open(page, '/?only=paper-grain&freeze=0');
-    for (const selector of ['#info .info-about', '#info .fact__label', '#info .fact__value']) {
+    // The poster's small print sits on bare paper, the thinnest margin (~4.7:1).
+    const selectors = ['.print--date', '.print--location', '.print--class', '.colorbar--poster .colorbar__legend'];
+    for (const selector of [...selectors, '#info .info-about', '#info .fact__label', '#info .fact__value']) {
       const ratio = contrast(await textColor(page, selector), await darkestBehind(page, selector));
       expect(ratio, `${colorway} ${selector}: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
     }
