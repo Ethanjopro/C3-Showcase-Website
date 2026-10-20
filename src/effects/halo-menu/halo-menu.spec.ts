@@ -157,9 +157,10 @@ test('without WebGL the menu is the grid', async ({}, testInfo) => {
   page.on('request', (r) => RING_CHUNK.test(r.url()) && requested.push(r.url()));
   await open(page);
   await page.waitForTimeout(800);
-  await expect(page.locator(mount)).toHaveAttribute('data-state', 'grid');
   await page.locator('[data-menu-open=""]').click();
   await expect(page.locator('dialog#menu')).toBeVisible();
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'grid');
+  await expect(page.locator('html')).toHaveAttribute('data-fx-halo-menu', 'grid');
   await expect(page.locator(`${mount} canvas`)).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Projects/ })).toBeVisible();
   expect(requested).toEqual([]);

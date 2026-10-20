@@ -44,8 +44,9 @@ On arrival, a giant cropped "C3" in her lettering, with the poster showing only 
    - the stage's scale eases back to 1.
 
    At p = 1 the mask, clip and transform are removed: the full poster. Scrolling back reverses it.
-5. **Arrival speed.** `main.ts` reveals the prehidden stage once `init` settles. The mask is applied synchronously from the DOM, and GSAP loads afterwards, so the poster never waits on it.
-6. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters.
+5. **Re-measuring.** The geometry is measured again on resize and once the web fonts are ready, because the small print it keeps clear of can reflow when they swap in.
+6. **Arrival speed.** `main.ts` reveals the prehidden stage once `init` settles. The mask is applied synchronously from the DOM, and GSAP loads afterwards, so the poster never waits on it.
+7. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters.
 
 | Quality | What runs |
 |---|---|

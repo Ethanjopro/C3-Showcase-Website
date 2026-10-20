@@ -32,7 +32,25 @@ let offs: (() => void)[] = [];
 let ring: Ring | null = null;
 let loading: Promise<typeof import('./ring')> | null = null;
 
-const load = () => (loading ??= import('./ring'));
+/** The ring chunk, once. A failed load (a network blip) is forgotten, so the next open retries. */
+const load = () =>
+  (loading ??= import('./ring').catch((err) => {
+    loading = null;
+    throw err;
+  }));
+
+let gl: boolean | undefined;
+/** Probed once, when the menu is first wanted, not on every visit. */
+const hasWebGL = () => (gl ??= webgl());
+
+/** The canvas labels use the page's fonts at these weights: load them before drawing. */
+function fonts(): Promise<unknown> {
+  const css = getComputedStyle(document.documentElement);
+  const display = css.getPropertyValue('--font-display').trim();
+  const body = css.getPropertyValue('--font-text').trim();
+  if (!document.fonts || !display || !body) return Promise.resolve();
+  return Promise.all([document.fonts.load(`700 1em ${display}`), document.fonts.load(`600 1em ${body}`)]).catch(() => {});
+}
 
 /** Is WebGL there at all? Asked of a throwaway canvas, so Three.js never logs a failure. */
 function webgl(): boolean {
@@ -77,7 +95,7 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
   const html = document.documentElement;
   offs.push(arrows(dialog));
 
-  if (opts.quality !== 'full' || !webgl()) {
+  if (opts.quality !== 'full') {
     html.setAttribute(ATTR, 'grid');
     root.dataset.state = 'grid';
     return;
@@ -86,7 +104,9 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
   root.dataset.state = 'idle';
 
   // Fetch Three.js on intent: a pointer over, or focus on, a menu trigger.
-  const prefetch = () => void load().catch(() => {});
+  const prefetch = () => {
+    if (hasWebGL()) void load().catch(() => {});
+  };
   for (const el of document.querySelectorAll<HTMLElement>('[data-menu-open]')) {
     for (const type of ['pointerenter', 'pointerdown', 'focus'] as const) {
       el.addEventListener(type, prefetch, { passive: true, once: true });
@@ -104,12 +124,17 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
 
   offs.push(
     on('menu:open', ({ source }) => {
+      if (!hasWebGL()) {
+        html.setAttribute(ATTR, 'grid');
+        root.dataset.state = 'grid';
+        return;
+      }
       // The ring's layout (stage above, strip below) goes up at once, so the
       // links don't jump under a finger when the chunk arrives.
       html.setAttribute(ATTR, 'ring');
       root.dataset.state = 'loading';
-      load()
-        .then(({ createRing }) => {
+      Promise.all([load(), fonts()])
+        .then(([{ createRing }]) => {
           if (gen !== generation || !dialog.open || ring) return;
           const list = links(dialog);
           const active = Math.max(0, list.indexOf(document.activeElement as HTMLAnchorElement));

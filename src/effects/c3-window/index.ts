@@ -371,6 +371,9 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
     }, 150);
   };
   window.addEventListener('resize', onResize, { passive: true });
+  // The small print may reflow when the web fonts swap in after init; the
+  // stage's room to scale was measured against it, so measure again.
+  void document.fonts?.ready.then(() => onResize?.());
 }
 
 export function destroy(): void {

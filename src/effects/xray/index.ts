@@ -184,7 +184,13 @@ function draw(t: number) {
   ctx.clearRect(0, 0, W, H);
   if (!film) return;
 
-  // 1. The mask: healing strokes, the lens, the toggle's scan.
+  // 1. The mask: healing strokes, the lens, the toggle's scan. The film only
+  // exists in the rect, so mask and composite are clipped to it: source-in
+  // then touches the rect's pixels, not the whole poster-sized canvas.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rect.x * W, rect.y * H, rect.w * W, rect.h * H);
+  ctx.clip();
   ctx.fillStyle = ctx.strokeStyle = ink;
   ctx.lineCap = 'round';
   ctx.lineWidth = BRUSH * W;
@@ -217,6 +223,7 @@ function draw(t: number) {
   ctx.globalCompositeOperation = 'source-in';
   ctx.drawImage(film, rect.x * W, rect.y * H, rect.w * W, rect.h * H);
   ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
 
   // 3. The lens ring: her registration mark, a circle with a cross through it,
   // in the accent like the circle she drew round her chosen colorway (ink
@@ -296,7 +303,8 @@ function nearChest(p: LocalPoint): boolean {
 }
 
 function onDown(_p: typeof pointer, e: PointerEvent) {
-  if (e.pointerType !== 'touch' || stroke || !poster) return;
+  // Touch and pen scribble (an Apple Pencil has no hover, so no lens); a mouse has the lens.
+  if (e.pointerType === 'mouse' || stroke || !poster) return;
   const p = local(poster, false, { x: 0, y: 0, inside: false });
   // A scribble may start anywhere on the poster; only its marks near the chest paint.
   if (!p.inside) return;
@@ -343,10 +351,15 @@ function onLeave() {
 }
 
 function setRevealed(on: boolean) {
+  // Pressed mid-scan, the scan turns round where it is instead of restarting
+  // from the far end.
+  const now = ticker.now();
+  const was = scanning(now) ? scanShown(now) : revealed ? 1 : 0;
   revealed = on;
   toggle?.setAttribute('aria-pressed', String(on));
   if (mount) mount.dataset.state = on ? 'revealed' : 'ready';
-  scanStart = ticker.now();
+  const step = Math.round((on ? was : 1 - was) * SCAN_STEPS); // steps already behind us
+  scanStart = now - (step * 1000) / SCAN_FPS;
   setAttr();
   start();
   if (quality === 'static') {

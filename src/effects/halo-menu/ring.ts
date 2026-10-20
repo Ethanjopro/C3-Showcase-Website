@@ -236,8 +236,6 @@ interface Screen {
   from: { pos: Vector3; scale: number; yaw: number } | null;
 }
 
-const clampIndex0 = (opts: RingOptions) => Math.max(0, Math.min(opts.links.length - 1, opts.active));
-
 /** What build() has made so far, so a failure part-way can undo it. */
 interface Made {
   canvas?: HTMLCanvasElement;
@@ -312,7 +310,6 @@ function build(mount: HTMLElement, opts: RingOptions, made: Made): Ring {
     const angle = (i / opts.links.length) * TAU;
     const home = new Vector3(Math.sin(angle) * RADIUS, 0, Math.cos(angle) * RADIUS);
     mesh.position.copy(home);
-    mesh.rotation.y = yaw(angle, -((clampIndex0(opts) / opts.links.length) * TAU));
     mesh.userData.index = i;
     ring.add(mesh);
     return { id, link, mesh, front, fronts, base: (geo.attributes.position as BufferAttribute).array.slice() as Float32Array, angle, home, from: null };
@@ -441,6 +438,9 @@ function build(mount: HTMLElement, opts: RingOptions, made: Made): Ring {
     camBase.set(0, CAMERA_Y * (dist / 10), dist);
     if (!dolly) camera.position.copy(camBase);
     camera.lookAt(look);
+    // lookAt sets the rotation but not the world matrix, and the halo
+    // entrance below casts rays from this camera before any render.
+    camera.updateMatrixWorld();
     camera.updateProjectionMatrix();
     if (entrance !== null) startFromHalo();
     dirty = true;
