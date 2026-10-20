@@ -1,1 +1,7 @@
-[]
+[
+  { "name": "projects-t0", "query": "?only=crt-screens&freeze=0", "steps": [{ "scrollTo": "#projects" }, { "wait": 600 }] },
+  { "name": "projects-t100", "query": "?only=crt-screens&freeze=100", "steps": [{ "scrollTo": "#projects" }, { "wait": 600 }], "viewports": [390] },
+  { "name": "projects-mauve", "query": "?only=crt-screens&freeze=0", "steps": [{ "click": "label[for=\"cw-poster-mauve-periwinkle\"]" }, { "scrollTo": "#projects" }, { "wait": 600 }], "viewports": [390] },
+  { "name": "projects-reduced", "query": "?only=crt-screens", "steps": [{ "scrollTo": "#projects" }, { "wait": 600 }], "viewports": [390], "reducedMotion": true },
+  { "name": "eye", "query": "?only=crt-screens&freeze=0", "steps": [{ "wait": 300 }] }
+]
