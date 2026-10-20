@@ -4,6 +4,7 @@
 //   request(name)         switch, through the registered transition if any
 //   setTransition(fn)     the palette effect's wipe; without one, swaps are instant
 //   color('ink')          resolved CSS color, for canvas and WebGL
+//   number('fps-boil', 10) a numeric token (rates, durations)
 //   onChange(cb)
 //
 // The inline boot script in index.html applies the stored colorway before
@@ -80,6 +81,16 @@ export function request(name: Colorway): Promise<void> {
 /** The palette effect registers its wipe here; pass null to go back to instant swaps. */
 export function setTransition(fn: Transition | null) {
   transition = fn;
+}
+
+/**
+ * A numeric token from tokens.css, e.g. number('fps-boil', 10). Returns
+ * `fallback` when the token is missing or not a positive number.
+ */
+export function number(token: string, fallback: number): number {
+  if (!root) return fallback;
+  const v = Number.parseFloat(getComputedStyle(root).getPropertyValue(`--${token}`));
+  return Number.isFinite(v) && v > 0 ? v : fallback;
 }
 
 /** A token's resolved value on <html>, e.g. color('ink'). */

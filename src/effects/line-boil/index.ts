@@ -23,7 +23,9 @@
 
 import type { EffectOptions } from '../../core/effect';
 import { frame, image, slot, type SlotName } from '../../core/art';
-import { ticker } from '../../core/ticker';
+import { frozenAt, idle } from '../../core/clock';
+import { observeOnscreen } from '../../core/onscreen';
+import { number } from '../../core/palette';
 import { AMPLITUDE, FRAMES, redraw, SEEDS, WAVELENGTH } from './displace';
 import './style.css';
 
@@ -40,19 +42,8 @@ const REGROW = 1.25;
 let generation = 0;
 let style: HTMLStyleElement | null = null;
 let urls: string[] = [];
-let io: IntersectionObserver | null = null;
+let unobserve: (() => void) | null = null;
 let resize: ResizeObserver | null = null;
-
-/** --fps-boil from tokens.css, so the boil rate is tuned in one place. */
-function tokenFps(): number {
-  const v = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fps-boil'));
-  return Number.isFinite(v) && v > 0 ? v : DEFAULT_FPS;
-}
-
-const idle = () =>
-  new Promise<void>((resolve) =>
-    typeof requestIdleCallback === 'function' ? requestIdleCallback(() => resolve(), { timeout: 300 }) : setTimeout(resolve, 16),
-  );
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -181,9 +172,8 @@ const pct = (v: number) => `${(v * 100).toFixed(4)}%`;
 /** The cycle, written for the rendered layers: masks, tint, timing and the freeze. */
 function rules(layers: Map<SlotName, Frames>, cycleMs: number): string {
   const css: string[] = [];
-  const frozen = ticker.frozenAt;
   // ?freeze=<ms>: hold the drawing that time shows, so screenshots are deterministic.
-  const timing = frozen === null ? `${cycleMs}ms step-end infinite` : `${cycleMs}ms step-end ${-frozen}ms infinite paused`;
+  const timing = frozenAt === null ? `${cycleMs}ms step-end infinite` : `${cycleMs}ms step-end ${-frozenAt}ms infinite paused`;
   const parts = (scope: string) =>
     [...layers.keys()].flatMap((n) => [`${scope} .layer--${n}>.layer__boil`, `${scope} .layer--${n}::before`, `${scope} .layer--${n}::after`]).join(',');
   for (const [name, { urls: [a, b], box }] of layers) {
@@ -202,9 +192,8 @@ function rules(layers: Map<SlotName, Frames>, cycleMs: number): string {
   css.push(`${parts(`html[${ATTR}~='paused']`)}{animation-play-state:paused}`);
   // While sketch-in hides or draws her line art (PLAN step 6), only the live
   // drawing can show that, so the cycle holds on drawing 0. fx-pending-sketch-in
-  // is the boot script's hidden start (base.css). Proposed contract for step 6:
-  // sketch-in adds the token "drawing" to its own <html data-fx-sketch-in>
-  // while it animates.
+  // is the boot script's hidden start (base.css); "drawing" is the handshake
+  // sketch-in sets on its own <html data-fx-sketch-in> while it animates.
   css.push(`${parts(`html.fx-pending-sketch-in`)},${parts(`html[data-fx-sketch-in~='drawing']`)}{animation:none}`);
   return css.join('\n');
 }
@@ -255,7 +244,7 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   if (!poster) return;
   const gen = generation;
   const names = (opts.quality === 'lite' ? LITE : FULL).filter((n) => document.querySelector(`.layer--${n}`));
-  const fps = opts.quality === 'lite' ? LITE_FPS : tokenFps();
+  const fps = opts.quality === 'lite' ? LITE_FPS : number('fps-boil', DEFAULT_FPS);
   const html = document.documentElement;
 
   let rendered = await render(root, poster, names, fps, gen);
@@ -264,16 +253,10 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   // Offscreen, the cycle pauses: nothing ticks for a poster nobody sees.
   let paused = false;
   const mark = () => html.setAttribute(ATTR, paused ? 'on paused' : 'on');
-  // The newest entry wins: one callback can carry an enter and a leave. Same
-  // margin as core/ticker's offscreen tracking, so effects pause at one edge.
-  io = new IntersectionObserver(
-    (entries) => {
-      paused = !entries[entries.length - 1]?.isIntersecting;
-      mark();
-    },
-    { rootMargin: '10% 0px' },
-  );
-  io.observe(poster);
+  unobserve = observeOnscreen(poster, (on) => {
+    paused = !on;
+    mark();
+  });
   mark();
 
   // Rotation or a wider window: re-draw at the new size once it settles. One
@@ -308,8 +291,8 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
 
 export function destroy(): void {
   generation++;
-  io?.disconnect();
-  io = null;
+  unobserve?.();
+  unobserve = null;
   resize?.disconnect();
   resize = null;
   document.documentElement.removeAttribute(ATTR);
