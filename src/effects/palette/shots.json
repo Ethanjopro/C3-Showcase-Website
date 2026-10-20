@@ -1,1 +1,11 @@
-[]
+[
+  {"name": "poster-black-red", "query": "?only=palette", "steps": [{"click": "label[for=\"cw-poster-black-red\"]"}, {"wait": 900}], "viewports": [390]},
+  {"name": "poster-mauve-periwinkle", "query": "?only=palette", "steps": [{"click": "label[for=\"cw-poster-mauve-periwinkle\"]"}, {"wait": 900}], "viewports": [390]},
+  {"name": "poster-teal-coral", "query": "?only=palette", "steps": [{"click": "label[for=\"cw-poster-teal-coral\"]"}, {"wait": 900}], "viewports": [390]},
+  {"name": "poster-indigo-pink", "query": "?only=palette", "steps": [{"click": "label[for=\"cw-poster-indigo-pink\"]"}, {"wait": 900}], "viewports": [390]},
+  {"name": "poster-violet-pink", "query": "?only=palette", "steps": [{"click": "label[for=\"cw-poster-violet-pink\"]"}, {"wait": 900}], "viewports": [390]},
+  {"name": "poster-brown-orange", "query": "?only=palette", "steps": [{"click": "label[for=\"cw-poster-brown-orange\"]"}, {"wait": 900}], "viewports": [390]},
+  {"name": "mid-wipe", "query": "?only=palette&freeze=420", "steps": [{"click": "label[for=\"cw-poster-black-red\"]"}, {"wait": 100}], "viewports": [390, 1440]},
+  {"name": "mid-wipe-late", "query": "?only=palette&freeze=500", "steps": [{"click": "label[for=\"cw-poster-black-red\"]"}, {"wait": 100}], "viewports": [390]},
+  {"name": "info-indigo-pink", "query": "?only=palette", "steps": [{"click": "label[for=\"cw-poster-indigo-pink\"]"}, {"wait": 900}, {"scrollTo": "#info"}, {"wait": 200}], "viewports": [390]}
+]
