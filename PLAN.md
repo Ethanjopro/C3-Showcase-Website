@@ -385,7 +385,7 @@ Build:
 - **Enhance, don't replace.** The step 1 `<dialog>` and its `<nav>` list keep working on their own. The effect only adds the 3D ring inside its mount in the dialog.
 - **Loading.** Lazy-load Three.js on first open, and prefetch it on idle.
 - **Scene.** A ring of boxy screens strung on a cable loop, with flat token colors (`MeshBasicMaterial`) and no gloss or lighting.
-  - Box edges jitter at 10 fps so they match her line.
+  - Box edges step subtly at 10 fps, matched to her final line weight, with no more wobble than line-boil.
   - Labels come from `sections.json`, rendered to canvas textures.
   - The Projects screen shows noise.
 - **Entrance.** When opened from the poster's halo, the ring grows out of the halo's `screens` rects.
@@ -463,7 +463,7 @@ Verify:
 Build:
 - **Ropes.** A canvas in the cables mount runs a Verlet rope for each `cables.anchors` entry: 12–20 segments, gravity, damping, and a fixed-step simulation at 60 Hz.
 - **Forces.** Scroll velocity sways the ropes, and a pointer or finger within reach pushes them. Listeners are passive; the effect never captures a gesture.
-- **Drawing.** `raster.roughStroke` draws the ropes in `--accent`. The stroke jitter re-seeds at 10 fps while the positions stay smooth.
+- **Drawing.** `raster.roughStroke` draws the ropes in `--accent`, matching the weight of her `cables` slot art. Keep the stroke's hand-drawn variation subtle (SPEC §4 Line); it re-seeds at 10 fps while the positions stay smooth.
 - **Sleep.** When the ropes settle, the effect stops ticking and sets `data-state="asleep"`. It wakes on scroll velocity or a nearby pointer.
 - **Static art.** `data-fx-cables` hides the static `cables` slot art while the ropes are live.
 - **Under `lite`:** half the segments, 30 Hz. **Under `static`:** don't start; her drawing stays.
@@ -502,6 +502,7 @@ Sequential. **Mode:** plan mode. **Owns:** shared files, for final fixes only.
    - Put her files in `art-src/final/`.
    - Point the manifest `source` entries at them and re-measure the geometry.
    - Run `npm run art`, then SPEC §9 step 13.
+   - Her final line is cleaner than the drafts: re-tune line-boil's `AMPLITUDE`, the halo-menu edge step and the cables stroke against it (SPEC §4 Line).
 3. **Real copy:** date, location, RSVP, follow and her credit, in `src/content/`.
 4. **Share and fallback pages:**
    - Render the static poster with Playwright as a 1200×630 share image, `public/og.png`. Add the Open Graph and Twitter meta tags with the absolute URL from `site.json`.

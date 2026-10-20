@@ -12,7 +12,7 @@ The site promotes the C3 Showcase, the Creative Computing class showcase. Most v
 
 1. Say **what, when and where** on the first screen: "C3 Showcase", Date 0.0.0, Location 0.0.0.
 2. Put **RSVP** and **follow** one tap away.
-3. Feel like **her poster came alive**: her art, colors and rough line, now moving and answering touch.
+3. Feel like **her poster came alive**: her art, colors and hand-drawn line, now moving and answering touch.
 4. **Tease** the student projects. The full project list comes after the event and is out of scope for launch.
 
 | Constraint | Decision |
@@ -145,7 +145,10 @@ Text color rules:
 
 Halftone dots appear only in the X-ray and the screens.
 
-**Line.** Rough, restless and stepped, with no smooth vector perfection anywhere in the art layer. UI chrome such as buttons and focus rings can be clean.
+**Line.** Hand-drawn, matching her final art. Her drafts are rougher than the final will be, so nothing adds wobble or roughness to imitate them.
+- Lines an effect draws itself (the cables, the menu ring's edges) match the weight and character of her final line.
+- Line boil stays subtle: a drawing that's alive, not a shaky one. Re-tune it once her final art is in.
+- UI chrome such as buttons and focus rings is clean.
 
 ---
 

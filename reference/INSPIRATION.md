@@ -24,7 +24,7 @@ Status key:
   - an anatomical heart
   - hand-lettered "C3 Showcase"
   - hatching and scribble lines
-  - rough, restless line work
+  - rough, restless line work in the drafts; her final art will be much cleaner (SPEC §4 Line)
 - **Her placeholders:** the poster itself says "Date 0.0.0" and "Location 0.0.0". Use the same placeholders until real details exist.
 
 ---

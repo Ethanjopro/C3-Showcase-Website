@@ -7,13 +7,13 @@ Website for the C3 Showcase (a Creative Computing class showcase). The look come
 - `reference/moodboard/`: 16 pins from her Pinterest board (other artists' work), summarized in INSPIRATION.md section 1b. Ideas only: never trace, crop or ship them. Nothing in `reference/` is bundled or deployed.
 - `reference/INSPIRATION.md`: palette, motifs, her moodboard, reference sites, effect map. Read it before planning any feature.
 - `SPEC.md` (what the site is and how it looks) and `PLAN.md` (build order, and which session owns which files) define scope and order.
-- IMPORTANT: palette, hand lettering, motifs and the rough line quality come from her drafts. No skill, library or template default overrides them. Never copy art, layout or copy from the reference sites.
+- IMPORTANT: palette, hand lettering and motifs come from her drafts. Line quality comes from her final art: the drafts are rougher than the final will be, so never add roughness to imitate them. No skill, library or template default overrides them. Never copy art, layout or copy from the reference sites.
 
 ## Design decisions
 - SPEC.md is the design system: page structure (§2), effects (§3), look and type (§4), accessibility (§6). There is no separate design-system file.
 - Where the spec leaves a choice open (the two text fonts, spacing, details of the info layer), use the frontend-design skill. Her drafts and SPEC.md still win over anything it suggests.
 - Fonts: choose them for this poster, not from habit, and compare candidates next to her lettering in a screenshot before deciding. Don't use the usual defaults: Inter, Roboto, Arial, Helvetica, system-ui, Geist, Poppins, Montserrat, DM Sans, Manrope, Outfit, Syne, Space Grotesk, Space Mono, JetBrains Mono, IBM Plex, Playfair Display, Fraunces or Instrument Serif.
-- The info layer borrows editorial marks from her moodboard: index numbers, thin rules, small print, columns. The same marks are today's generic "AI editorial" look, so each one must carry her poster (her rough line, her small print, her colorways). Clean hairlines and tracked-out mono labels on their own are not enough.
+- The info layer borrows editorial marks from her moodboard: index numbers, thin rules, small print, columns. The same marks are today's generic "AI editorial" look, so each one must carry her poster (her line, her small print, her colorways). Clean hairlines and tracked-out mono labels on their own are not enough.
 - Motion lives in the poster layer. The readable info layer animates only its entry wipe.
 
 ## Stack
