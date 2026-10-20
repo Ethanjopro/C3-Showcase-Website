@@ -11,9 +11,10 @@
 //     so her final art needs no code change. The xray layer rides with the ink
 //     (it draws her ribcage in ink).
 //   - A spring (smooth, not stepped: it's the paper moving, not her line)
-//     follows the target and settles back to 0. While it moves the layers are
-//     translate3d, on the compositor; once settled the transform is removed
-//     and the ticker subscription with it. Offscreen, the poster rests in
+//     follows the target and settles back to 0, integrated in fixed substeps
+//     so slow frames can't destabilize it. Offsets snap to device pixels and
+//     are written only when they change; once settled the transform is
+//     removed and the ticker subscription with it. Offscreen, the poster rests in
 //     register and nothing ticks.
 //   - `?misregister=<px>` holds that offset (for the mid-scroll shot).
 //
@@ -57,19 +58,32 @@ let x = 0;
 let y = 0;
 let vx = 0;
 let vy = 0;
+// The target, written by target() (no array per frame).
+let tx = 0;
+let ty = 0;
 let last = 0;
 let usePointer = false;
 let poster: HTMLElement | null = null;
 let onscreen = false;
+let dpr = 1;
+/** The transform last written to each group, so unchanged frames write nothing. */
+const written: string[] = [];
+
+/**
+ * Integration step, s. Semi-implicit Euler with this stiffness is stable only
+ * below ~37 ms per step, and a phone dropping frames gives longer ones, so a
+ * frame's time is integrated in steps of at most this.
+ */
+const SUBSTEP = 1 / 120;
 
 const ramp = (speed: number, start: number, full: number) => Math.min(1, Math.max(0, (Math.abs(speed) - start) / (full - start)));
 
-/** Where the inks want to be right now: along the motion, scaled by how fast it is. */
-function target(): [number, number] {
+/** Where the inks want to be right now: along the motion, scaled by how fast it is. Sets tx, ty. */
+function target() {
   // Scrolling down moves the page up on screen.
   const sy = -scroll.velocity;
-  let tx = 0;
-  let ty = Math.sign(sy) * ramp(sy, V_START.scroll, V_FULL.scroll);
+  tx = 0;
+  ty = Math.sign(sy) * ramp(sy, V_START.scroll, V_FULL.scroll);
   if (usePointer) {
     const speed = Math.hypot(pointer.vx, pointer.vy);
     const k = ramp(speed, V_START.pointer, V_FULL.pointer);
@@ -83,25 +97,30 @@ function target(): [number, number] {
     tx /= len;
     ty /= len;
   }
-  return [tx * MAX, ty * MAX];
+  tx *= MAX;
+  ty *= MAX;
 }
 
+/** Snapped to device pixels so the slipped line stays crisp. */
+const snap = (v: number) => Math.round(v * dpr) / dpr;
+
+/**
+ * A 2D translate, written only when the snapped value changes: offsets snap
+ * to a handful of values, so a flick repaints the poster a few times instead
+ * of promoting every layer to the compositor (translate3d: ~70 MB at 1440 px).
+ */
 function write(ox: number, oy: number) {
-  // Snap to device pixels so the slipped line stays crisp.
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const snap = (v: number) => Math.round(v * dpr) / dpr;
-  for (const g of groups) {
-    const t = ox === 0 && oy === 0 ? '' : `translate3d(${snap(ox * g.sign)}px, ${snap(oy * g.sign)}px, 0)`;
+  groups.forEach((g, i) => {
+    const sx = snap(ox * g.sign);
+    const sy = snap(oy * g.sign);
+    const t = sx === 0 && sy === 0 ? '' : `translate(${sx}px, ${sy}px)`;
+    if (t === written[i]) return;
+    written[i] = t;
     for (const el of g.els) el.style.transform = t;
-  }
+  });
 }
 
-function tick() {
-  // Wall-clock dt: under ?freeze the ticker passes dt = 0, and the spring must still settle.
-  const now = performance.now();
-  const dt = Math.min(0.05, (now - last) / 1000);
-  last = now;
-  const [tx, ty] = target();
+function step(dt: number) {
   vx += (STIFFNESS * (tx - x) - DAMPING * vx) * dt;
   vy += (STIFFNESS * (ty - y) - DAMPING * vy) * dt;
   x += vx * dt;
@@ -111,6 +130,19 @@ function tick() {
   if (len > MAX) {
     x = (x / len) * MAX;
     y = (y / len) * MAX;
+  }
+}
+
+function tick() {
+  // Wall-clock dt: under ?freeze the ticker passes dt = 0, and the spring must still settle.
+  const now = performance.now();
+  let dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  target();
+  while (dt > 0) {
+    const h = Math.min(SUBSTEP, dt);
+    step(h);
+    dt -= h;
   }
   const settled = tx === 0 && ty === 0 && Math.hypot(x, y) < REST && Math.hypot(vx, vy) < REST * 10;
   if (settled) {
@@ -159,6 +191,8 @@ export function init(_root: HTMLElement, opts: EffectOptions): void {
     { els: ink, sign: 1 },
     { els: accent, sign: -1 },
   ];
+  written.length = 0;
+  dpr = Math.min(2, window.devicePixelRatio || 1);
 
   const held = hold();
   if (held !== null) {
