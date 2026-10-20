@@ -55,7 +55,7 @@ finding. Commit and push the branch.
 
 Review each diff at claude.ai/code, select **Create PR**, and merge. Use `/effort high` for shader or physics bugs.
 
-Optional: for the biggest piece (halo navigation with the cable physics), try `/model fable`. If Claude Code asks to bill usage credits, decline and stay on Opus.
+Optional, while the cloud credit lasts: for the hardest sessions (the plan, halo navigation with cable physics, a bug that keeps coming back), type `/advisor fable` before your prompt. Opus keeps doing the work and consults Fable at decision points. Leave it off for routine effects, and type `/advisor off` once the credit is used up.
 
 ## 4. Final review
 
