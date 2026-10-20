@@ -38,7 +38,14 @@ function apply(name: Colorway) {
   } catch {
     // Private mode or storage disabled: the choice just won't persist.
   }
-  listeners.forEach((fn) => fn(name));
+  // One listener that throws must not stop the others or the bus event.
+  listeners.forEach((fn) => {
+    try {
+      fn(name);
+    } catch (err) {
+      console.error('[c3] a colorway listener failed', err);
+    }
+  });
   emit('colorway', { name, previous });
 }
 

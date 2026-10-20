@@ -34,19 +34,22 @@ export function initMenu() {
     if (outside) dialog.close();
   });
 
+  const navigateTo = (section: HTMLElement) => {
+    section.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    const heading = section.querySelector<HTMLElement>('h1, h2');
+    heading?.setAttribute('tabindex', '-1');
+    heading?.focus({ preventScroll: true });
+    history.replaceState(null, '', `#${section.id}`);
+  };
+
   // Where to go once the dialog has closed. Navigation waits for `close`, because
   // closing a dialog restores focus to its opener and would undo ours.
-  let target: string | null = null;
+  let target: HTMLElement | null = null;
 
   dialog.addEventListener('close', () => {
     emit('menu:close', {});
-    const goingTo = target ? document.getElementById(target) : null;
-    if (goingTo) {
-      goingTo.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
-      const heading = goingTo.querySelector<HTMLElement>('h1, h2');
-      heading?.setAttribute('tabindex', '-1');
-      heading?.focus({ preventScroll: true });
-      history.replaceState(null, '', `#${goingTo.id}`);
+    if (target) {
+      navigateTo(target);
     } else {
       // The halo hit area is pointer-only, so focus goes back to the Menu button.
       const back = opener?.dataset.menuOpen === 'halo' ? document.querySelector<HTMLElement>('[data-menu-open=""]') : opener;
@@ -57,10 +60,14 @@ export function initMenu() {
   });
 
   const go = (id: string) => {
-    if (!document.getElementById(id)) return;
-    target = id;
-    if (dialog.open) dialog.close();
-    else dialog.dispatchEvent(new Event('close'));
+    const section = document.getElementById(id);
+    if (!section) return;
+    if (dialog.open) {
+      target = section;
+      dialog.close();
+    } else {
+      navigateTo(section); // nothing to close, so no menu:close either
+    }
   };
 
   dialog.querySelectorAll<HTMLAnchorElement>('nav a[href^="#"]').forEach((a) => {

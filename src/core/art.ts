@@ -68,7 +68,10 @@ export function image(name: SlotName): Promise<HTMLImageElement> {
       const img = new Image();
       img.decoding = 'async';
       img.onload = () => img.decode().then(() => resolve(img), () => resolve(img));
-      img.onerror = () => reject(new Error(`art: could not load ${name} (${slots[name].src})`));
+      img.onerror = () => {
+        images.delete(name); // let the next call retry (a network blip shouldn't stick)
+        reject(new Error(`art: could not load ${name} (${slots[name].src})`));
+      };
       img.src = url(slots[name].src);
     });
     images.set(name, p);

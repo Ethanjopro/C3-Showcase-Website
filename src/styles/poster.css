@@ -215,10 +215,6 @@
   vector-effect: non-scaling-stroke;
 }
 
-.swatch__input:checked + .swatch__label .swatch__circle {
-  opacity: 1;
-}
-
 .swatch__input:focus-visible + .swatch__label {
   outline: var(--line-focus) solid var(--ink);
   outline-offset: 0;
@@ -240,9 +236,12 @@
   stroke-linecap: round;
 }
 
-/* --- Wide screens: poster centered, small print in the margins ------------- */
+/* --- Wide screens: poster centered, small print in the margins -------------
+   Landscape-ish only: on tall screens (iPad portrait, portrait monitors) a
+   height-sized poster would be wider than the middle column, so those keep the
+   stacked layout. */
 
-@media (min-width: 64rem) {
+@media (min-width: 64rem) and (min-aspect-ratio: 5 / 4) {
   .poster-section {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: end;
@@ -253,7 +252,12 @@
   .poster-stage {
     grid-column: 2;
     grid-row: 1;
-    width: calc((100svh - 2 * var(--space-6)) * var(--frame-w) / var(--frame-h));
+    /* As tall as the viewport, but never so wide that the margin columns
+       (date, location, color bar) drop below 10rem. */
+    width: min(
+      calc((100svh - 2 * var(--space-6)) * var(--frame-w) / var(--frame-h)),
+      calc(100vw - 4 * var(--space-7) - 20rem)
+    );
   }
 
   .poster-print {

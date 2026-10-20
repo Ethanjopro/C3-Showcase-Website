@@ -6,6 +6,7 @@
 
 import type { Plugin, ViteDevServer } from 'vite';
 import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 interface Rect {
@@ -132,8 +133,10 @@ function artLayer(name: string, slot: Slot, root: string): string {
  * so the art rules live here in the document, where relative URLs resolve
  * against the page under any base path.
  */
-function artStyles(manifest: Manifest): string {
-  const rules: string[] = [];
+function artStyles(manifest: Manifest, colorways: string[]): string {
+  const rules: string[] = colorways.map(
+    (id) => `html[data-colorway="${id}"] .swatch[data-colorway="${id}"] .swatch__circle{opacity:1}`,
+  );
   for (const [name, slot] of Object.entries(manifest.slots)) {
     const u = `url(${BASE}${slot.src})`;
     if (slot.tint === 'paper') rules.push(`body,.menu,.panel,.layer__art--paper{background-image:${u}}`);
@@ -152,14 +155,17 @@ function extras(name: string, slot: Slot): string {
   return '';
 }
 
-function colorbar(group: string, data: Data, current = 'teal-coral'): string {
+// No radio is `checked` in the HTML: the boot script may already have applied a
+// stored colorway, and initColorbar() syncs the radios. The scribble circle
+// follows <html data-colorway> (inline rules below), so it's right from first paint.
+function colorbar(group: string, data: Data): string {
   const cw = data.colorways as { label: string; items: { id: string; name: string }[] };
   const items = cw.items
     .map(({ id, name }, i) => {
       const inputId = `cw-${group}-${id}`;
       return (
         `<span class="swatch" data-colorway="${id}">` +
-        `<input class="swatch__input" type="radio" name="colorway-${group}" id="${inputId}" value="${id}" data-colorway-input${id === current ? ' checked' : ''}>` +
+        `<input class="swatch__input" type="radio" name="colorway-${group}" id="${inputId}" value="${id}" data-colorway-input>` +
         `<label class="swatch__label" for="${inputId}" title="${escape(name)}">` +
         `<span class="swatch__chip"><span class="swatch__fill"></span></span>` +
         `<span class="visually-hidden">${escape(name)}</span>${scribbleCircle(70 + i)}</label></span>`
@@ -167,6 +173,15 @@ function colorbar(group: string, data: Data, current = 'teal-coral'): string {
     })
     .join('');
   return `<fieldset class="colorbar colorbar--${group}"><legend class="colorbar__legend">${escape(cw.label)}</legend><div class="colorbar__items">${items}</div></fieldset>`;
+}
+
+/** A section's heading, as a small boxy screen tagged with its menu number. */
+function sectionTag(id: string, data: Data): string {
+  const sections = (data.sections as { items: { id: string; index: string; name: string }[] }).items;
+  const i = sections.findIndex((s) => s.id === id);
+  const s = sections[i];
+  if (!s) throw new Error(`c3-html: no section "${id}" in src/content/sections.json`);
+  return `<h2 id="${id}-title" class="screen-tag"><span class="screen-tag__no">${escape(s.index)}</span> ${escape(s.name)}${roughFrame(19 + 2 * i)}</h2>`;
 }
 
 function menuItems(data: Data): string {
@@ -188,17 +203,22 @@ function screens(data: Data): string {
   return `<ul class="screens" aria-hidden="true">${items}</ul>`;
 }
 
-function bootScript(features: { effects: Record<string, boolean>; prehide: string[] }, colorways: string[]): string {
-  // Mirrors src/core/flags.ts (?only then ?off) and src/core/motion.ts (?quality, reduced motion).
-  const js = `(function(){var h=document.documentElement;h.classList.add('js');
+/** src/core/parse-flags.js, ready to inline: the same code core/flags.ts runs. */
+const parseFlagsSource = readFileSync(fileURLToPath(new URL('../../src/core/parse-flags.js', import.meta.url)), 'utf8')
+  .replace(/^\/\/.*$/gm, '')
+  .replace(/\/\*\*[\s\S]*?\*\//g, '')
+  .replace('export function', 'function');
+
+export function bootScript(features: { effects: Record<string, boolean>; prehide: string[] }, colorways: string[]): string {
+  // Flags come from parseFlags itself; motion mirrors src/core/motion.ts (?quality, reduced motion).
+  const js = `(function(){${parseFlagsSource}
+var h=document.documentElement;h.classList.add('js');
 try{var c=localStorage.getItem('c3:colorway');if(c&&${JSON.stringify(colorways)}.indexOf(c)>-1)h.setAttribute('data-colorway',c)}catch(e){}
-var q=new URLSearchParams(location.search),f=${JSON.stringify(features.effects)},p=${JSON.stringify(features.prehide)};
-var l=function(k){return(q.get(k)||'').split(',').filter(Boolean)},only=l('only'),off=l('off'),qq=q.get('quality');
-var on=function(n){if(only.length&&only.indexOf(n)<0)return false;if(off.indexOf(n)>-1||off.indexOf('all')>-1)return false;return!!f[n]};
+var q=new URLSearchParams(location.search),on=parseFlags(${JSON.stringify(features.effects)},location.search),p=${JSON.stringify(features.prehide)},qq=q.get('quality');
 var still=qq==='static'||(qq!=='full'&&qq!=='lite'&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
-if(!still)p.forEach(function(n){var d=null;try{d=sessionStorage.getItem('c3:fx-done:'+n)}catch(e){}if(on(n)&&!d)h.classList.add('fx-pending-'+n)});
+if(!still)p.forEach(function(n){var d=null;try{d=sessionStorage.getItem('c3:fx-done:'+n)}catch(e){}if(on[n]&&!d)h.classList.add('fx-pending-'+n)});
 setTimeout(function(){p.forEach(function(n){h.classList.remove('fx-pending-'+n)})},4000)})();`;
-  return `<script>${js.replace(/\n/g, '')}</script>`;
+  return `<script>${js.replace(/\n\s*/g, '')}</script>`;
 }
 
 export function loadData(root: string): { data: Data; manifest: Manifest; features: { effects: Record<string, boolean>; prehide: string[] } } {
@@ -239,8 +259,9 @@ export function render(html: string, root: string): string {
   out = out.replace(/<c3-reg seed="(\d+)"><\/c3-reg>/g, (_, s: string) => regMark(Number(s)));
   out = out.replace(/<c3-colorbar group="(\w+)"><\/c3-colorbar>/g, (_, g: string) => colorbar(g, data));
   out = out.replace(/<c3-menu-items><\/c3-menu-items>/g, () => menuItems(data));
+  out = out.replace(/<c3-section-tag id="([\w-]+)"><\/c3-section-tag>/g, (_, id: string) => sectionTag(id, data));
   out = out.replace(/<c3-screens><\/c3-screens>/g, () => screens(data));
-  out = out.replace(/<c3-boot><\/c3-boot>/g, () => bootScript(features, colorways) + artStyles(manifest));
+  out = out.replace(/<c3-boot><\/c3-boot>/g, () => bootScript(features, colorways) + artStyles(manifest, colorways));
   out = out.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key: string) => {
     const v = lookup(data, key);
     if (v === undefined || typeof v === 'object') throw new Error(`c3-html: no copy for {{ ${key} }}`);

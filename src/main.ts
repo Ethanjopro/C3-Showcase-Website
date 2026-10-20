@@ -23,6 +23,13 @@ async function start(entry: EffectEntry, root: HTMLElement, q: Quality) {
   try {
     mod = await entry.load();
     await mod.init(root, { quality: q });
+    // The quality level may have changed while the chunk loaded or init ran;
+    // onChange only restarts effects already running, so catch up here.
+    while (quality() !== q) {
+      mod.destroy();
+      q = quality();
+      await mod.init(root, { quality: q });
+    }
     running.set(entry.name, { mod, root });
   } catch (err) {
     console.error(`[c3] effect "${entry.name}" failed and was skipped`, err);
@@ -47,12 +54,17 @@ function schedule(entry: EffectEntry, root: HTMLElement): Promise<void> | void {
     case 'idle':
       return new Promise((resolve) => idle(() => void go().then(resolve)));
     case 'visible': {
+      // Watch what the effect draws into: its `watch` targets, or the box
+      // around its mount (a hidden defs mount has no box of its own).
+      const targets = entry.watch
+        ? Array.from(document.querySelectorAll(entry.watch))
+        : [root.closest('.layer, section, .poster-stage') ?? root];
       const io = new IntersectionObserver((entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         io.disconnect();
         void go();
       });
-      io.observe(root.closest('.layer, section, .poster-stage') ?? root);
+      targets.forEach((t) => io.observe(t));
       return;
     }
     case 'interaction': {
@@ -81,9 +93,11 @@ function boot() {
       continue;
     }
     const p = schedule(entry, root);
-    if (p && entry.when === 'load') pending.push(p);
+    if (p) pending.push(p);
   }
-  // Tests and screenshots wait for this: every load-time effect has settled.
+  // Tests and screenshots wait for this: every `load` and `idle` effect has
+  // settled (started or failed). `visible` and `interaction` effects start later
+  // by design; shots and tests that need them scroll or interact first.
   void Promise.all(pending).then(() => (html.dataset.booted = ''));
 
   // Reduced motion switched on, or the device proved slow: restart running

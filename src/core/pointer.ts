@@ -50,10 +50,16 @@ const downListeners = new Set<Listener>();
 const upListeners = new Set<Listener>();
 
 let lastMove = 0;
+let lastSmooth = 0;
 let stopSmoothing: (() => void) | null = null;
 const SMOOTH_MS = 80; // time constant for the smoothed position
 
-function smooth(_t: number, dt: number) {
+// Uses wall-clock time, not the ticker's dt: under ?freeze the ticker passes
+// dt = 0, and the pointer must still settle (and unsubscribe) for screenshots.
+function smooth() {
+  const now = performance.now();
+  const dt = Math.min(100, now - lastSmooth);
+  lastSmooth = now;
   const k = 1 - Math.exp(-dt / SMOOTH_MS);
   pointer.sx += (pointer.x - pointer.sx) * k;
   pointer.sy += (pointer.y - pointer.sy) * k;
@@ -87,7 +93,10 @@ function onMove(e: PointerEvent) {
   pointer.y = e.clientY;
   pointer.type = e.pointerType as PointerType;
   pointer.seen = true;
-  stopSmoothing ??= addTick(smooth);
+  if (!stopSmoothing) {
+    lastSmooth = now;
+    stopSmoothing = addTick(smooth);
+  }
   moveListeners.forEach((fn) => fn(pointer, e));
 }
 

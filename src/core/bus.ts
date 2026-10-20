@@ -25,6 +25,13 @@ export function on<K extends keyof BusEvents>(type: K, fn: Handler<K>): () => vo
   return () => set.delete(fn as Handler<never>);
 }
 
+/** Calls every handler; one that throws is logged and the rest still run. */
 export function emit<K extends keyof BusEvents>(type: K, detail: BusEvents[K]): void {
-  handlers.get(type)?.forEach((fn) => (fn as Handler<K>)(detail));
+  handlers.get(type)?.forEach((fn) => {
+    try {
+      (fn as Handler<K>)(detail);
+    } catch (err) {
+      console.error(`[c3] a "${type}" handler failed`, err);
+    }
+  });
 }

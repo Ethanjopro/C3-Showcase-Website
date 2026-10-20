@@ -91,7 +91,9 @@ if (!args.includes('--no-build')) await build({ root: ROOT, logLevel: 'warn' });
 const server = await preview({ root: ROOT, preview: { port: 4174, strictPort: false }, logLevel: 'warn' });
 const base = server.resolvedUrls.local[0];
 const browser = await chromium.launch();
-await rm(OUT, { recursive: true, force: true });
+// A full run starts clean; a subset run (`npm run shots -- xray`) only
+// overwrites its own files and keeps the rest for comparison.
+if (!only.length) await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
 const written = [];
 const errors = [];

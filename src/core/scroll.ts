@@ -18,11 +18,17 @@ export const scroll = {
 
 let lastY = scroll.y;
 let lastTime = 0;
+let lastDecay = 0;
 let stopDecay: (() => void) | null = null;
 const velocityListeners = new Set<(v: number) => void>();
 
-function decay(_t: number, dt: number) {
-  if (performance.now() - lastTime > 60) scroll.velocity *= Math.exp(-dt / 120);
+// Uses wall-clock time, not the ticker's dt: under ?freeze the ticker passes
+// dt = 0, and velocity must still decay to 0 (and unsubscribe) for screenshots.
+function decay() {
+  const now = performance.now();
+  const dt = Math.min(100, now - lastDecay);
+  lastDecay = now;
+  if (now - lastTime > 60) scroll.velocity *= Math.exp(-dt / 120);
   velocityListeners.forEach((fn) => fn(scroll.velocity));
   if (Math.abs(scroll.velocity) < 1) {
     scroll.velocity = 0;
@@ -43,7 +49,10 @@ if (typeof window !== 'undefined') {
       scroll.y = y;
       lastY = y;
       lastTime = now;
-      stopDecay ??= addTick(decay);
+      if (!stopDecay) {
+        lastDecay = now;
+        stopDecay = addTick(decay);
+      }
     },
     { passive: true },
   );

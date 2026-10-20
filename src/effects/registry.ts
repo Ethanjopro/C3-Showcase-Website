@@ -4,7 +4,7 @@
 // when:
 //   load         right after main.ts runs (arrival effects)
 //   idle         when the browser is idle after load
-//   visible      when the mount first scrolls into view
+//   visible      when the mount's box (or any `watch` target) first scrolls into view
 //   interaction  on the first tap, key or scroll
 // prehide (listed in src/config/features.json): the boot script in index.html
 //   hides the effect's start state before first paint (see the fx-pending
@@ -22,6 +22,8 @@ export interface EffectEntry {
   name: EffectName;
   mount: string;
   when: LoadTrigger;
+  /** For `visible`: elements to watch instead of the mount's box. */
+  watch?: string;
   load: () => Promise<EffectModule>;
 }
 
@@ -38,7 +40,7 @@ export const effects: EffectEntry[] = [
   { name: 'misregister', mount: mount('misregister'), when: 'idle', load: () => import('./misregister/index') },
   { name: 'panel-wipe', mount: mount('panel-wipe'), when: 'idle', load: () => import('./panel-wipe/index') },
   { name: 'cables', mount: mount('cables'), when: 'visible', load: () => import('./cables/index') },
-  { name: 'crt-screens', mount: mount('crt-screens'), when: 'visible', load: () => import('./crt-screens/index') },
+  { name: 'crt-screens', mount: mount('crt-screens'), when: 'visible', watch: '[data-crt]', load: () => import('./crt-screens/index') },
 ];
 
 /** Effects whose start state is hidden before first paint. */

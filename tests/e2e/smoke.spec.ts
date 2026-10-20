@@ -40,6 +40,34 @@ test('no horizontal scrolling', async ({ page }) => {
   expect(scroll).toBeLessThanOrEqual(client);
 });
 
+test('tall screens keep the poster inside the page, beside nothing it would cover', async ({ browser }) => {
+  for (const viewport of [{ width: 1024, height: 1366 }, { width: 1080, height: 1920 }, { width: 1024, height: 768 }]) {
+    const context = await browser.newContext({ viewport });
+    const page = await context.newPage();
+    await open(page);
+    const poster = (await page.locator('.poster-stage').boundingBox())!;
+    expect(poster.x).toBeGreaterThanOrEqual(0);
+    expect(poster.x + poster.width).toBeLessThanOrEqual(viewport.width);
+    for (const sel of ['.print--date', '.print--location']) {
+      const box = (await page.locator(sel).boundingBox())!;
+      expect(box.width).toBeGreaterThan(40);
+      const overlaps = box.x < poster.x + poster.width && box.x + box.width > poster.x && box.y < poster.y + poster.height && box.y + box.height > poster.y;
+      expect(overlaps, `${sel} overlaps the poster at ${viewport.width}x${viewport.height}`).toBe(false);
+    }
+    await context.close();
+  }
+});
+
+test('a stored colorway is circled from first paint, before the main script runs', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('c3:colorway', 'black-red'));
+  await page.route(/\/assets\/index-[^/]+\.js$/, (route) => route.abort()); // only the inline boot script runs
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-colorway', 'black-red');
+  const opacity = (id: string) => page.locator(`.colorbar--poster .swatch[data-colorway="${id}"] .swatch__circle`).evaluate((el) => getComputedStyle(el).opacity);
+  expect(await opacity('black-red')).toBe('1');
+  expect(await opacity('teal-coral')).toBe('0');
+});
+
 test('axe finds no serious or critical violations', async ({ page }) => {
   await open(page);
   const results = await new AxeBuilder({ page }).analyze();

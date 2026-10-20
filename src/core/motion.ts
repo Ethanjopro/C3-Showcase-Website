@@ -1,7 +1,7 @@
 // How much motion this visit gets. Every effect reads it (SPEC §6):
 //   full    everything on
-//   lite    Save-Data, deviceMemory <= 2, or frames that keep running over
-//           24 ms; effects drop their extras
+//   lite    Save-Data, deviceMemory <= 2, or a device that keeps dropping
+//           frames; effects drop their extras
 //   static  prefers-reduced-motion; effects show their end state
 //
 // `?quality=full|lite|static` overrides it for testing.
@@ -53,19 +53,39 @@ function notify() {
 
 reduced?.addEventListener('change', notify);
 
-// Slow-frame detection, fed by the ticker. An average over 24 ms for two
-// seconds, after a one-second warm-up, drops the visit to `lite` for good.
+// Slow-frame detection, fed by the ticker. "Slow" means dropping frames
+// against the device's own cadence, not a long average: a display or browser
+// capped at 30 Hz (iOS Low Power Mode) delivers every frame on time at ~33 ms.
+// Each window of 60 frames after a one-second warm-up compares every frame with
+// the window's fast cadence (its 20th percentile); if over a third of frames run
+// 1.6x longer than that, two windows in a row, the visit drops to `lite`.
+const WINDOW = 60;
+const frames = new Float32Array(WINDOW);
+const sorted = new Float32Array(WINDOW);
+let filled = 0;
 let elapsed = 0;
-let slowFor = 0;
-let avg = 16.7;
+let slowWindows = 0;
+
+/** Pure: is this window of frame times janky against its own cadence? */
+export function janky(times: ArrayLike<number>, scratch: Float32Array = new Float32Array(times.length)): boolean {
+  const n = times.length;
+  for (let i = 0; i < n; i++) scratch[i] = times[i]!;
+  const view = scratch.subarray(0, n).sort();
+  const cadence = view[Math.floor(n * 0.2)]!;
+  let dropped = 0;
+  for (let i = 0; i < n; i++) if (times[i]! > cadence * 1.6) dropped++;
+  return dropped > n / 3;
+}
 
 export function reportFrame(dt: number) {
   if (slow) return;
   elapsed += dt;
-  avg += (dt - avg) * 0.05;
   if (elapsed < 1000) return;
-  slowFor = avg > 24 ? slowFor + dt : 0;
-  if (slowFor > 2000) {
+  frames[filled++] = dt;
+  if (filled < WINDOW) return;
+  filled = 0;
+  slowWindows = janky(frames, sorted) ? slowWindows + 1 : 0;
+  if (slowWindows >= 2) {
     slow = true;
     notify();
   }
