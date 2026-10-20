@@ -31,6 +31,8 @@ let generation = 0;
 let offs: (() => void)[] = [];
 let ring: Ring | null = null;
 let loading: Promise<typeof import('./ring')> | null = null;
+/** How the menu was last opened: the button or the poster's halo. */
+let opened: 'button' | 'halo' = 'button';
 
 /** The ring chunk, once. A failed load (a network blip) is forgotten, so the next open retries. */
 const load = () =>
@@ -124,6 +126,7 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
 
   offs.push(
     on('menu:open', ({ source }) => {
+      opened = source; // a reopen while the chunk loads must not grow the ring out of a stale halo
       if (!hasWebGL()) {
         html.setAttribute(ATTR, 'grid');
         root.dataset.state = 'grid';
@@ -138,7 +141,7 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
           if (gen !== generation || !dialog.open || ring) return;
           const list = links(dialog);
           const active = Math.max(0, list.indexOf(document.activeElement as HTMLAnchorElement));
-          ring = createRing(root, { links: list, active, fromHalo: source === 'halo' });
+          ring = createRing(root, { links: list, active, fromHalo: opened === 'halo' });
           root.dataset.state = 'ring';
         })
         .catch((err) => {

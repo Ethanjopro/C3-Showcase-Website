@@ -45,22 +45,27 @@ import './style.css';
 const ATTR = 'data-fx-c3-window';
 /** Pinned scroll, as a share of the viewport height (SPEC §6: at most one screen). */
 const PIN = 0.85;
-/** Letter width at arrival, as a share of the poster's width: wider, so its edges crop them. */
-const LETTER_W = 1.1;
 /**
- * Where the poster's edges sit mid-page (wide screens) a crop would read as a
- * clipping bug, so the letters stay whole there, at this width.
+ * Letter box width at arrival, as a share of the poster's width (the box has a
+ * 2 % pad each side, so her letters span about 96 %). Whole: a crop at the
+ * poster's edge, with paper beyond it, read as a clipping bug.
  */
-const LETTER_W_WHOLE = 0.94;
-/** The poster's edges count as the screen's edges within this many px (a phone's gutter). */
-const EDGE_GUTTER = 40;
+const LETTER_W = 1.0;
 /** Where the letters sit in the poster at arrival: their centre, as a share of its height. */
 const LETTER_Y = 0.5;
 /** Most the stage scales up at arrival. It also stays inside the viewport and clear of the small print. */
 const STAGE_MAX = 1.12;
 /** Gap kept between the scaled stage and the small print, px. */
 const CLEAR = 8;
-/** The inked letter edge fades out over this much of the opening. */
+/**
+ * Arrival shows her C3 solid in ink, as she drew it. Over the first DRAIN of
+ * the pinned scroll the ink drains out of the letters top to bottom, like one
+ * of her flat blocks sliding off, and the poster shows through them.
+ */
+const DRAIN = 0.3;
+/** The zoom into the letters starts here, a little before the drain ends, so the scroll never stalls. */
+const ZOOM_FROM = 0.2;
+/** The inked edge fades out over this much of the zoom. */
 const OUTLINE_FADE = 0.3;
 /** Resolution of the distance field that finds the deepest point in the letters. */
 const FIELD = 192;
@@ -94,6 +99,8 @@ let generation = 0;
 let stage: HTMLElement | null = null;
 let mount: HTMLElement | null = null;
 let outline: SVGSVGElement | null = null;
+/** Her letters in solid ink, drained away by the scroll. */
+let ink: SVGSVGElement | null = null;
 let masked = false;
 let lastAttr = '';
 let letters: Letters | null = null;
@@ -231,8 +238,7 @@ function measure(): Geometry {
   const h = s.offsetHeight;
   const f = w / frame.width; // stage px per frame unit
   const s0 = maxScale(box);
-  const atEdges = box.left < EDGE_GUTTER && window.innerWidth - box.right < EDGE_GUTTER;
-  const k0 = ((atEdges ? LETTER_W : LETTER_W_WHOLE) * w) / (L.box.w * f);
+  const k0 = (LETTER_W * w) / (L.box.w * f);
   // At arrival the letters are centred across the stage at LETTER_Y.
   const left = (w - L.box.w * f * k0) / 2;
   const top = LETTER_Y * h - (L.box.h * f * k0) / 2;
@@ -241,9 +247,9 @@ function measure(): Geometry {
   // Fully open: the deepest stroke's disc, around the zoom point, covers every corner.
   const reach = Math.max(Math.hypot(zx, zy), Math.hypot(w - zx, zy), Math.hypot(zx, h - zy), Math.hypot(w - zx, h - zy));
   const k1 = Math.max(k0 * 2, (reach / (L.deep.r * f)) * 1.05);
-  if (outline) {
-    outline.setAttribute('width', (L.box.w * f * k0).toFixed(2));
-    outline.setAttribute('height', (L.box.h * f * k0).toFixed(2));
+  for (const svg of [outline, ink]) {
+    svg?.setAttribute('width', (L.box.w * f * k0).toFixed(2));
+    svg?.setAttribute('height', (L.box.h * f * k0).toFixed(2));
   }
   return { w, h, s0, k0, k1, zx, zy };
 }
@@ -282,12 +288,17 @@ function apply(p: number) {
     setState(state, 'open');
     return;
   }
-  setState(state, 'window');
+  // "ink" while her solid letters cover the poster: there is nothing to X-ray
+  // yet, and xray keys off it to hold back its toggle.
+  setState(state, p < DRAIN ? 'window ink' : 'window');
   const { w, h, s0, k0, k1, zx, zy } = geo;
   const f = w / frame.width;
+  // First the ink drains, then the letters open: z is the zoom's own progress.
+  const drained = Math.min(1, p / DRAIN);
+  const z = Math.max(0, (p - ZOOM_FROM) / (1 - ZOOM_FROM));
   // Log-space: each step of scroll zooms by the same factor, so the dive feels even.
-  const k = k0 * (k1 / k0) ** p;
-  const s = s0 ** (1 - p);
+  const k = k0 * (k1 / k0) ** z;
+  const s = s0 ** (1 - z);
   const L = letters;
   const mw = L.box.w * f * k;
   const mh = L.box.h * f * k;
@@ -305,9 +316,15 @@ function apply(p: number) {
   // A mask hides but still takes taps: clip the stage to the letters' box too.
   const px = (v: number) => `${Math.max(0, v).toFixed(2)}px`;
   stage.style.clipPath = `inset(${px(my)} ${px(w - mx - mw)} ${px(h - my - mh)} ${px(mx)})`;
+  const move = `translate(${mx.toFixed(2)}px, ${my.toFixed(2)}px) scale(${(k / k0).toFixed(4)})`;
   if (outline) {
-    outline.style.transform = `translate(${mx.toFixed(2)}px, ${my.toFixed(2)}px) scale(${(k / k0).toFixed(4)})`;
-    outline.style.opacity = String(Math.max(0, 1 - p / OUTLINE_FADE));
+    outline.style.transform = move;
+    outline.style.opacity = String(Math.max(0, 1 - z / OUTLINE_FADE));
+  }
+  if (ink) {
+    ink.style.transform = move;
+    ink.style.clipPath = drained > 0.001 ? `inset(${(drained * 100).toFixed(2)}% 0 0 0)` : '';
+    ink.style.visibility = drained >= 1 ? 'hidden' : '';
   }
   stage.style.transform = s > 1.0005 ? `scale(${s.toFixed(4)})` : '';
 }
@@ -329,19 +346,24 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   if (!stage || !section) return;
   letters = buildLetters();
   if (!letters) return;
-  root.insertAdjacentHTML(
-    'beforeend',
-    `<svg class="c3-window__ink" viewBox="${letters.box.x} ${letters.box.y} ${letters.box.w} ${letters.box.h}" ` +
-      `preserveAspectRatio="none" fill-rule="${letters.rule}" aria-hidden="true" focusable="false">` +
-      `<g class="c3-window__boil">${letters.paths}</g></svg>`,
-  );
-  outline = root.lastElementChild as SVGSVGElement;
-  // Her line boils: the edge steps through three positions at 10 fps
+  // Two copies of her letters, under the stage's mask: the solid ink she drew
+  // them in (it drains away), and the inked edge that keeps them legible over
+  // bare paper while they open.
+  const L = letters;
+  const svg = (cls: string) =>
+    `<svg class="${cls}" viewBox="${L.box.x} ${L.box.y} ${L.box.w} ${L.box.h}" ` +
+    `preserveAspectRatio="none" fill-rule="${L.rule}" aria-hidden="true" focusable="false">` +
+    `<g class="c3-window__boil">${L.paths}</g></svg>`;
+  root.insertAdjacentHTML('beforeend', svg('c3-window__fill') + svg('c3-window__ink'));
+  ink = root.querySelector<SVGSVGElement>('.c3-window__fill');
+  outline = root.querySelector<SVGSVGElement>('.c3-window__ink');
+  // Her line boils: both copies step through three positions at 10 fps
   // (style.css). ?freeze holds the step that time shows, like line-boil.
   if (frozenAt !== null) {
-    const g = outline.firstElementChild as SVGGElement;
-    g.style.animationDelay = `${-frozenAt}ms`;
-    g.style.animationPlayState = 'paused';
+    for (const g of root.querySelectorAll<SVGGElement>('.c3-window__boil')) {
+      g.style.animationDelay = `${-frozenAt}ms`;
+      g.style.animationPlayState = 'paused';
+    }
   }
   geo = measure();
   apply(0);
@@ -354,6 +376,14 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
     // A relative end in % is a share of the viewport height, and ScrollTrigger
     // re-reads it on every refresh (rotation, resize).
     kill = progress(section, (p) => apply(p), { start: 'top top', end: `+=${PIN * 100}%`, pin: true });
+    // A visit to /#info: the browser's (smooth) scroll to the section is cut
+    // short by ScrollTrigger measuring the page, and the pin spacer then moves
+    // the section down anyway. Land on it, unless the visitor has already
+    // scrolled past it.
+    const hashTarget = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (hashTarget && !section.contains(hashTarget) && hashTarget.getBoundingClientRect().top > 0) {
+      hashTarget.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
     const to = forced();
     if (to !== null) {
       const top = section.getBoundingClientRect().top + window.scrollY;
@@ -386,6 +416,8 @@ export function destroy(): void {
   if (stage) clearStage(stage);
   outline?.remove();
   outline = null;
+  ink?.remove();
+  ink = null;
   if (mount) {
     delete mount.dataset.state;
     delete mount.dataset.ready;

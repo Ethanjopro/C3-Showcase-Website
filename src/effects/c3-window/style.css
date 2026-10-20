@@ -3,13 +3,18 @@
    repaints the mask, not the poster. index.ts writes the mask, clip and
    transform. */
 
-html[data-fx-c3-window='window'] .poster-stage {
+html[data-fx-c3-window~='window'] .poster-stage {
   will-change: transform;
 }
 
-/* Her letters' outline in ink, under the same mask as the stage: only its
-   inner half shows, an inked edge where a letter crosses bare paper. Its own
-   layer, so the zoom moves it without repainting the poster. */
+/* Her letters, twice, under the same mask as the stage, each on its own
+   layer so the zoom moves them without repainting the poster:
+   - .c3-window__fill: solid ink, as she drew them; the scroll drains it top
+     to bottom (clip-path, index.ts) to show the poster through the letters.
+     Its thin same-ink stroke covers the boil's sub-pixel shifts at the edges.
+   - .c3-window__ink: her outline; only its inner half shows, an inked edge
+     where a letter crosses bare paper while the window opens. */
+.c3-window__fill,
 .c3-window__ink {
   position: absolute;
   top: 0;
@@ -23,6 +28,12 @@ html[data-fx-c3-window='window'] .poster-stage {
   will-change: transform, opacity;
 }
 
+.c3-window__fill {
+  fill: var(--ink);
+  stroke-width: 3px;
+}
+
+.c3-window__fill path,
 .c3-window__ink path {
   vector-effect: non-scaling-stroke;
 }
@@ -46,6 +57,7 @@ html[data-fx-c3-window='window'] .poster-stage {
   }
 }
 
-html:not([data-fx-c3-window='window']) .c3-window__ink {
+html:not([data-fx-c3-window~='window']) .c3-window__fill,
+html:not([data-fx-c3-window~='window']) .c3-window__ink {
   display: none;
 }
