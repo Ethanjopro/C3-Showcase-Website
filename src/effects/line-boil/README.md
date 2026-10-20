@@ -6,17 +6,21 @@ Every hand-drawn layer jitters like pencil animation, stepping at 10 fps.
 
 - **Owns:** this folder. Nothing else (PLAN "Rules for parallel sessions").
 - **Mount:** the hidden defs mount at the top of `<body>`. It holds one generated `<style>` with the per-layer rules.
-- **Writes outside the mount:** `<html data-fx-line-boil>` only (`on`, or `on paused` while the poster is offscreen). The CSS keyed off it animates `filter` on `.layer__boil` (the property this effect owns) and draws `.layer--<slot>::before` / `::after`.
+- **Writes outside the mount:**
+  - `<html data-fx-line-boil>`: `on`, or `on paused` while the poster is offscreen.
+  - CSS keyed off that attribute animates `filter` on `.layer__boil`, which is the property PLAN gives this effect.
+  - The same CSS generates `.layer--<slot>::before` and `::after` on the boiling layers: `content`, position and size, `mask-image`, `background-color` (the slot's tint token) and an `opacity` animation. **PLAN's writer table doesn't list these pseudo-elements.** The proposed new row is in "Proposed shared changes" below.
+  - It reads two things from other owners: `html.fx-pending-sketch-in` (the boot script's prehide) and `html[data-fx-sketch-in~='drawing']` (proposed). While either is set, the cycle holds on her live drawing.
 - **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/art` and `core/ticker` (for `?freeze`) only.
-- **Screenshots:** `npm run shots -- line-boil` writes `.shots/line-boil-{t0,t50,t100,t200}@{390,1440}.png` and `line-boil-lite-t100@390.png`.
-- **Tests:** `line-boil.spec.ts`. It covers: stepping (t0 = t50 = t300, t0 ≠ t100 ≠ t200); which layers boil at full and lite quality; reduced motion; colorway tint; pausing offscreen.
+- **Screenshots:** `npm run shots -- line-boil` writes `.shots/line-boil-{t0,t50,t100,t200}@{390,1440}.png` and `line-boil-lite-t150@390.png`.
+- **Tests:** `line-boil.spec.ts`. It covers: stepping (t0 = t50 = t300, t0 ≠ t100 ≠ t200); which layers boil at full and lite quality; reduced motion; colorway tint; pausing offscreen; mask sizes.
 
 ## How it works
 
 The PLAN's first design, three `feTurbulence` + `feDisplacementMap` filters swapped on `.layer__boil` by `ticker.add(…, { fps: 10 })`, failed the PLAN's 2 ms gate. So this is PLAN's fallback, "pre-rendered frames":
 
 1. **Render once, at idle.** Each boiling slot's art is redrawn twice through a smooth two-octave value-noise displacement (`displace.ts`) into alpha masks, in ~8 ms slices. Sources come from `core/art`. Inline vector slots (lineart, title) are serialized from the page instead of being fetched a second time.
-2. **Show.** The masks become `.layer--<slot>::before` and `::after`, filled with the slot's tint token from the manifest. A colorway swap recolors them with no re-render.
+2. **Show.** Each mask is cropped to its art's bounding box, padded by the displacement, and capped at the manifest frame's resolution (her art has no finer detail). The masks become `.layer--<slot>::before` and `::after`, filled with the slot's tint token from the manifest. A colorway swap recolors them with no re-render.
 3. **Cycle.** Drawing 0 is her live art. A `step-end` CSS animation, 300 ms per cycle, shows drawing 0, 1, 2 on the compositor. It uses `filter: opacity()` on `.layer__boil` and `opacity` on the pseudo-elements. No JavaScript runs per step.
 4. **Clock.** `?freeze=<ms>` sets the animation to paused with `animation-delay: -<ms>`, so screenshots are deterministic, the same as the ticker's freeze. Hidden tabs stop CSS animations by themselves. An IntersectionObserver pauses the cycle offscreen.
 5. **Resize.** If the poster grows past 1.25× the rendered width (rotation, a wider window), it redraws.
@@ -28,6 +32,12 @@ The PLAN's first design, three `feTurbulence` + `feDisplacementMap` filters swap
 | `static` | nothing: her clean lines |
 
 **Cross-effect contract, proposed for sketch-in (PLAN step 6).** Drawings 1 and 2 are finished art, so they can't show sketch-in's drawing progress. While `<html data-fx-sketch-in>` contains the token `drawing`, the cycle holds on her live art (drawing 0). Sketch-in should set that token while it animates.
+
+## Proposed shared changes (for a plan-mode session)
+
+- **PLAN.md, "Who may write to which element":** add the row `.layer::before`, `.layer::after` | line-boil | content, box, mask, background-color, opacity (the boil frames).
+- **PLAN step 6 (sketch-in):** while it animates, sketch-in adds the token `drawing` to its own `<html data-fx-sketch-in>`. line-boil holds its cycle during that time, because only her live drawing shows the progress. Until then, line-boil holds during `html.fx-pending-sketch-in`.
+- **core/ticker:** a GSAP-free freeze accessor (for example `core/clock.ts` exporting `frozenAt`). line-boil and paper-grain import the ticker only to read `?freeze`, which loads GSAP at load time.
 
 ## Trace numbers (PLAN step 2)
 
@@ -45,7 +55,9 @@ For comparison, any main-thread DOM change at 10 Hz on this page (an opacity fli
 
 **One-time render** (4× throttle, 390 px): frames are ready 3.7 s after load at full quality, 0.95 s at lite. Long tasks are 50–88 ms, about 51 ms of TBT. Until the frames are ready, her clean lines show.
 
-**Memory.** Full quality holds 8 masks at poster size × DPR. On a phone that's ≈ 716×912, about 2.6 MB each once decoded.
+**Memory.** Full quality holds 8 masks (2 per layer), cropped to the art and capped at the 1200×1529 frame.
+- Phone at 390 px, DPR 2: lineart 716×912, halo 584×365, title 571×157, wings 571×117. About 2.05 M pixels, ≈ 8 MB decoded.
+- The worst case is a retina desktop, capped at the frame: ≈ 12 MB.
 
 ## Tuning knobs
 

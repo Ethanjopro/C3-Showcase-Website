@@ -22,7 +22,7 @@
 //   static  nothing: her clean, still lines
 
 import type { EffectOptions } from '../../core/effect';
-import { image, slot, type SlotName } from '../../core/art';
+import { frame, image, slot, type SlotName } from '../../core/art';
 import { ticker } from '../../core/ticker';
 import { AMPLITUDE, FRAMES, redraw, SEEDS, WAVELENGTH } from './displace';
 import './style.css';
@@ -94,8 +94,36 @@ function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   );
 }
 
-/** Renders the two re-drawings of one layer; returns their object URLs. */
-async function renderLayer(name: SlotName, width: number, height: number, alive: () => boolean): Promise<string[] | null> {
+/** One layer's two re-drawings, cropped to the art: mask URLs and the crop as fractions of the poster. */
+interface Frames {
+  urls: [string, string];
+  box: { x: number; y: number; w: number; h: number };
+}
+
+/** Bounding box of the non-transparent pixels, padded so a displaced line never clips. */
+function bounds(alpha: Uint8Array, width: number, height: number, pad: number) {
+  let x0 = width;
+  let y0 = height;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      if (!alpha[row + x]) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      y1 = y;
+    }
+  }
+  if (x1 < 0) return null;
+  x0 = Math.max(0, x0 - pad);
+  y0 = Math.max(0, y0 - pad);
+  return { x: x0, y: y0, w: Math.min(width, x1 + pad + 1) - x0, h: Math.min(height, y1 + pad + 1) - y0 };
+}
+
+/** Renders the two re-drawings of one layer, cropped to its art. Null if the art is empty or the render went stale. */
+async function renderLayer(name: SlotName, width: number, height: number, alive: () => boolean): Promise<Frames | null> {
   const img = await source(name, width, height);
   if (!alive()) return null;
   const canvas = document.createElement('canvas');
@@ -105,39 +133,61 @@ async function renderLayer(name: SlotName, width: number, height: number, alive:
   if (!ctx) throw new Error('line-boil: no 2D context');
   ctx.drawImage(img, 0, 0, width, height);
   const rgba = ctx.getImageData(0, 0, width, height).data;
-  const alpha = new Uint8Array(width * height);
-  for (let i = 0; i < alpha.length; i++) alpha[i] = rgba[i * 4 + 3]!;
+  const full = new Uint8Array(width * height);
+  for (let i = 0; i < full.length; i++) full[i] = rgba[i * 4 + 3]!;
+
+  // Masks cover only the art (the title and halo are a fraction of the frame).
+  const amplitude = AMPLITUDE * width;
+  const crop = bounds(full, width, height, Math.ceil(amplitude) + 2);
+  if (!crop) return null;
+  const alpha = new Uint8Array(crop.w * crop.h);
+  for (let y = 0; y < crop.h; y++) alpha.set(full.subarray((crop.y + y) * width + crop.x, (crop.y + y) * width + crop.x + crop.w), y * crop.w);
+  canvas.width = crop.w;
+  canvas.height = crop.h;
 
   const out: string[] = [];
-  const rowsPerSlice = Math.max(1, Math.floor(SLICE_PIXELS / width));
-  for (const seed of SEEDS) {
-    const frame = ctx.createImageData(width, height); // RGB 0: black, alpha from the redraw
-    const job = redraw(alpha, frame.data, width, height, seed, AMPLITUDE * width, WAVELENGTH * width);
-    for (let y = 0; y < height; y += rowsPerSlice) {
-      await idle();
+  const rowsPerSlice = Math.max(1, Math.floor(SLICE_PIXELS / crop.w));
+  try {
+    for (const seed of SEEDS) {
+      const pixels = ctx.createImageData(crop.w, crop.h); // RGB 0: black, alpha from the redraw
+      // Amplitude and wavelength stay relative to the whole poster, so every layer boils alike.
+      const job = redraw(alpha, pixels.data, crop.w, crop.h, seed, amplitude, WAVELENGTH * width);
+      for (let y = 0; y < crop.h; y += rowsPerSlice) {
+        await idle();
+        if (!alive()) return null;
+        job.rows(y, Math.min(crop.h, y + rowsPerSlice));
+      }
+      ctx.putImageData(pixels, 0, 0);
+      const blob = await toBlob(canvas);
       if (!alive()) return null;
-      job.rows(y, Math.min(height, y + rowsPerSlice));
+      out.push(URL.createObjectURL(blob));
     }
-    ctx.putImageData(frame, 0, 0);
-    out.push(URL.createObjectURL(await toBlob(canvas)));
+  } finally {
+    if (out.length < SEEDS.length) out.forEach((u) => URL.revokeObjectURL(u));
   }
-  return out;
+  return {
+    urls: [out[0]!, out[1]!],
+    box: { x: crop.x / width, y: crop.y / height, w: crop.w / width, h: crop.h / height },
+  };
 }
 
+const pct = (v: number) => `${(v * 100).toFixed(4)}%`;
+
 /** The cycle, written for the rendered layers: masks, tint, timing and the freeze. */
-function rules(layers: Map<SlotName, string[]>, cycleMs: number): string {
+function rules(layers: Map<SlotName, Frames>, cycleMs: number): string {
   const css: string[] = [];
   const frozen = ticker.frozenAt;
   // ?freeze=<ms>: hold the drawing that time shows, so screenshots are deterministic.
   const timing = frozen === null ? `${cycleMs}ms step-end infinite` : `${cycleMs}ms step-end ${-frozen}ms infinite paused`;
   const parts = (scope: string) =>
     [...layers.keys()].flatMap((n) => [`${scope} .layer--${n}>.layer__boil`, `${scope} .layer--${n}::before`, `${scope} .layer--${n}::after`]).join(',');
-  for (const [name, [a, b]] of layers) {
+  for (const [name, { urls: [a, b], box }] of layers) {
     const at = `html[${ATTR}~='on'] .layer--${name}`;
     const tint = `var(--${slot(name).tint})`;
     css.push(
       `${at}>.layer__boil{animation:c3-boil-live ${timing}}`,
-      `${at}::before,${at}::after{content:'';position:absolute;inset:0;background-color:${tint};opacity:0;pointer-events:none;` +
+      `${at}::before,${at}::after{content:'';position:absolute;left:${pct(box.x)};top:${pct(box.y)};width:${pct(box.w)};height:${pct(box.h)};` +
+        `background-color:${tint};opacity:0;pointer-events:none;` +
         `-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}`,
       `${at}::before{-webkit-mask-image:url(${a});mask-image:url(${a});animation:c3-boil-a ${timing}}`,
       `${at}::after{-webkit-mask-image:url(${b});mask-image:url(${b});animation:c3-boil-b ${timing}}`,
@@ -145,29 +195,38 @@ function rules(layers: Map<SlotName, string[]>, cycleMs: number): string {
   }
   // Offscreen: hold the current drawing, tick nothing.
   css.push(`${parts(`html[${ATTR}~='paused']`)}{animation-play-state:paused}`);
-  // While sketch-in draws her line art (PLAN step 6), only the live drawing can
-  // show its progress, so the cycle holds on drawing 0. Proposed contract for
-  // step 6: sketch-in adds the token "drawing" to its own <html data-fx-sketch-in>
+  // While sketch-in hides or draws her line art (PLAN step 6), only the live
+  // drawing can show that, so the cycle holds on drawing 0. fx-pending-sketch-in
+  // is the boot script's hidden start (base.css). Proposed contract for step 6:
+  // sketch-in adds the token "drawing" to its own <html data-fx-sketch-in>
   // while it animates.
-  css.push(`${parts(`html[data-fx-sketch-in~='drawing']`)}{animation:none}`);
+  css.push(`${parts(`html.fx-pending-sketch-in`)},${parts(`html[data-fx-sketch-in~='drawing']`)}{animation:none}`);
   return css.join('\n');
+}
+
+/**
+ * Mask resolution: the poster at device pixels (DPR capped at 2), but never
+ * beyond the manifest frame, which is all the detail her art has.
+ */
+function maskSize(poster: HTMLElement): { width: number; height: number } {
+  const box = poster.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const scale = Math.min(dpr, frame.width / Math.max(1, box.width));
+  return { width: Math.max(1, Math.round(box.width * scale)), height: Math.max(1, Math.round(box.height * scale)) };
 }
 
 async function render(root: HTMLElement, poster: HTMLElement, names: SlotName[], fps: number, gen: number): Promise<number> {
   const alive = () => gen === generation;
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const box = poster.getBoundingClientRect();
-  const width = Math.max(1, Math.round(box.width * dpr));
-  const height = Math.max(1, Math.round(box.height * dpr));
+  const { width, height } = maskSize(poster);
 
-  const layers = new Map<SlotName, string[]>();
+  const layers = new Map<SlotName, Frames>();
   for (const name of names) {
     const frames = await renderLayer(name, width, height, alive);
-    if (!frames) return width;
-    urls.push(...frames);
+    if (!alive()) return width;
+    if (!frames) continue; // empty art: nothing to boil
+    urls.push(...frames.urls);
     layers.set(name, frames);
   }
-  if (!alive()) return width;
 
   const next = document.createElement('style');
   next.textContent = rules(layers, (FRAMES * 1000) / fps);
@@ -201,19 +260,23 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   io.observe(poster);
   mark();
 
-  // Rotation or a wider window: re-draw at the new size once it settles.
+  // Rotation or a wider window: re-draw at the new size once it settles. One
+  // re-draw at a time; a resize during one is picked up when it finishes.
   let timer = 0;
+  let busy = false;
+  const regrow = async () => {
+    if (busy || gen !== generation || maskSize(poster).width <= rendered * REGROW) return;
+    busy = true;
+    const old = urls;
+    urls = [];
+    rendered = await render(root, poster, names, fps, gen);
+    busy = false;
+    old.forEach((u) => URL.revokeObjectURL(u)); // destroy() during the re-draw already revoked the new ones
+    if (gen === generation) void regrow();
+  };
   resize = new ResizeObserver(() => {
     clearTimeout(timer);
-    timer = window.setTimeout(async () => {
-      const want = poster.getBoundingClientRect().width * Math.min(2, window.devicePixelRatio || 1);
-      if (want <= rendered * REGROW || gen !== generation) return;
-      const old = urls;
-      urls = [];
-      rendered = await render(root, poster, names, fps, gen);
-      if (gen === generation) old.forEach((u) => URL.revokeObjectURL(u));
-      else urls.push(...old);
-    }, 300);
+    timer = window.setTimeout(regrow, 300);
   });
   resize.observe(poster);
 }

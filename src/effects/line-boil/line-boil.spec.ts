@@ -83,3 +83,23 @@ test('pauses while the poster is offscreen', async ({ page }) => {
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await expect(page.locator('html')).toHaveAttribute(ATTR, 'on');
 });
+
+test('masks never exceed the art: capped at the manifest frame, cropped to each layer', async ({ browser }, testInfo) => {
+  // A retina desktop is the worst case: the poster at DPR 2 is wider than the frame.
+  const context = await browser.newContext({ ...testInfo.project.use, viewport: { width: 2560, height: 1440 }, deviceScaleFactor: 2 });
+  const page = await context.newPage();
+  await open(page, '/?only=line-boil&freeze=0');
+  const sizes = await page.evaluate(async () => {
+    const css = [...document.querySelectorAll('[data-fx="line-boil"] style')].map((s) => s.textContent).join('');
+    const urls = [...new Set(css.match(/blob:[^)]+/g) ?? [])];
+    return Promise.all(urls.map(async (u) => createImageBitmap(await (await fetch(u)).blob()).then((b) => [b.width, b.height])));
+  });
+  expect(sizes).toHaveLength(8);
+  for (const [w, h] of sizes) {
+    expect(w).toBeLessThanOrEqual(1200);
+    expect(h).toBeLessThanOrEqual(1529);
+  }
+  const pixels = sizes.reduce((sum, [w, h]) => sum + w! * h!, 0);
+  expect(pixels, 'cropping saves at least a quarter of 8 full frames').toBeLessThan(8 * 1200 * 1529 * 0.75);
+  await context.close();
+});
