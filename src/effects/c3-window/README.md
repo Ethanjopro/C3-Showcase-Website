@@ -12,7 +12,7 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
 - **Writes outside its mount:**
   - `.poster-stage`: inline `mask`, `clip-path` and `transform` only (writer table: mask or clip, scale).
   - Inside its mount: `svg.c3-window__ink`, her letters' inked edge.
-  - `<html data-fx-c3-window>`: `window` or `open`. `style.css` keys off `window` to give the stage `will-change: transform`.
+  - `<html data-fx-c3-window>`: `window ink` while the solid ink covers the letters (xray holds back its toggle then), `window` while the window opens, `open` after. `style.css` keys off `window` to give the stage `will-change: transform`.
   - The pin, on `#poster` (see "Pin target" below).
 - **Contract:** `init(root, { quality })` and `destroy()`. Imports `core/art` statically. `core/scroll` (GSAP and ScrollTrigger) is a dynamic import that loads after the closed window is on screen.
 - **Screenshots:** `npm run shots -- c3-window` writes:
@@ -23,7 +23,9 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
   - arrival: the mask is her title's own C3 paths, and date and location are in the first viewport
   - arrival in solid ink, draining in the first part of the scroll
   - at every progress, nothing of the stage sits over the date or location (hit-tested), and the color bar takes taps while the window is closed
-  - phone: a cropped wordmark (letters wider than the poster); wide screens: whole letters; the stage's box stays on screen
+  - her letters arrive whole and nearly as wide as the poster; the stage's box stays on screen
+  - the X-ray toggle waits while the ink covers the chest
+  - a link straight to `#info` lands on it after the pin moves the page
   - pinned scroll of at most one screen; open at the end, closed again after scrolling back
   - progress only ever grows as the page scrolls down
   - line-boil keeps playing during the pin
@@ -36,7 +38,7 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
 1. **Her letters.** The inline title SVG's paths whose boxes sit inside the manifest's `title.regions.c3`, found with `getBBox()`, so her final title needs no code change. They're copied into an SVG data URL. The mask is an alpha mask, so only the paths' coverage counts, not their color.
 2. **The deepest point.** The letters are rasterized small (192 px wide), and a two-pass chamfer distance transform finds the centre and radius of the largest circle that fits inside them. Zooming into that point opens the window soonest, because the stroke there is thickest. With the placeholder title, that point is the stem of the 3.
 3. **Arrival (p = 0).**
-   - Where the poster reaches the screen's edges (a phone, within `EDGE_GUTTER`), the letters are `LETTER_W` (130 %) of its width, so its edges crop them: a cropped wordmark. Where the poster's edges sit mid-page (wide screens), a crop would read as a clipping bug, so the letters stay whole at `LETTER_W_WHOLE` (94 %). Either way they're centred at `LETTER_Y`.
+   - The letters arrive whole and nearly as wide as the poster (`LETTER_W`: the box is the poster's width, the letters about 96 % of it), centred at `LETTER_Y`. Earlier builds cropped them at the poster's edges, but with paper beyond the cut, a crop read as a clipping bug.
    - The stage may scale up slightly (`transform: scale`, at most `STAGE_MAX`), bringing the crop toward the viewport's edges. It never scales so far that its box leaves the viewport, or reaches the small print beside it (wide screens' margins) or below it (a phone's date and location), keeping `CLEAR` px away. On a 390 px phone that leaves about 1.02.
    - **Solid ink.** A copy of her letters filled with `--ink` (`.c3-window__fill`) sits in the mount under the same mask, so the letters arrive solid, as she drew them. Over the first `DRAIN` (30 %) of the pinned scroll, a `clip-path: inset()` drains it top to bottom, like one of her flat blocks sliding off, and the poster shows through. It boils with the edge.
    - **Inked edge.** Where a letter crosses bare poster paper (`--paper-2`), it would vanish into the page's `--paper`. So her letters' own outline, stroked in `--ink`, sits in the effect's mount, inside the stage and under the same mask. Only its inner half shows: an inked edge, like her lettering. It moves with the mask on its own compositor layer (a transform, no poster repaint), boils like her line (three positions stepped at 10 fps with a CSS `step-end` animation; `?freeze` holds one), and fades out over the first `OUTLINE_FADE` (30 %) of the zoom.
@@ -46,9 +48,10 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
    - the stage's scale eases back to 1.
 
    At p = 1 the mask, clip and transform are removed: the full poster. Scrolling back reverses it.
-5. **Re-measuring.** The geometry is measured again on resize and once the web fonts are ready, because the small print it keeps clear of can reflow when they swap in.
-6. **Arrival speed.** `main.ts` reveals the prehidden stage once `init` settles. The mask is applied synchronously from the DOM, and GSAP loads afterwards, so the poster never waits on it.
-7. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters.
+5. **Links to a section.** On a visit to `/#info`, ScrollTrigger measuring the page cuts the browser's smooth scroll to the section short, and the pin spacer moves the section down anyway. Once the pin exists, the effect scrolls to the URL's section, unless the visitor is already past it.
+6. **Re-measuring.** The geometry is measured again on resize and once the web fonts are ready, because the small print it keeps clear of can reflow when they swap in.
+7. **Arrival speed.** `main.ts` reveals the prehidden stage once `init` settles. The mask is applied synchronously from the DOM, and GSAP loads afterwards, so the poster never waits on it.
+8. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters.
 
 | Quality | What runs |
 |---|---|
@@ -90,9 +93,7 @@ That's about 4 ms a frame on average. With every effect off, the same scroll cos
 | Knob | Where | Default | Effect |
 |---|---|---|---|
 | `PIN` | `index.ts` | 0.85 | Pinned scroll, share of the viewport height (≤ 1) |
-| `LETTER_W` | `index.ts` | 1.3 | Letter width at arrival where the poster reaches the screen's edges, share of its width (above 1 crops) |
-| `LETTER_W_WHOLE` | `index.ts` | 0.94 | Letter width where the poster's edges sit mid-page (whole letters) |
-| `EDGE_GUTTER` | `index.ts` | 40 | Poster edges this close to the screen's count as its edges, px |
+| `LETTER_W` | `index.ts` | 1.0 | Letter box width at arrival, share of the poster's width (above 1 crops at its edges) |
 | `LETTER_Y` | `index.ts` | 0.5 | Letters' centre at arrival, share of the poster's height |
 | `STAGE_MAX` | `index.ts` | 1.12 | Most the stage scales at arrival, within the viewport and the small print's room |
 | `CLEAR` | `index.ts` | 8 | Gap kept between the scaled stage and the small print, px |

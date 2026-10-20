@@ -46,15 +46,14 @@ test('arrival: the poster shows through her C3, and when and where are on the fi
   expect(errors).toEqual([]);
 });
 
-test('phone: a cropped wordmark (wider than the poster); wide screens: whole letters; the box stays on screen', async ({ page }, testInfo) => {
+test('her letters arrive whole and nearly as wide as the poster; the box stays on screen', async ({ page }) => {
   await ready(page);
   const { letters, stage, vw } = await page.locator('.poster-stage').evaluate((el: HTMLElement) => {
     const cs = getComputedStyle(el);
     return { letters: parseFloat(cs.maskSize.split(' ')[0]!), stage: el.offsetWidth, vw: window.innerWidth };
   });
-  // The mask box carries a 2 % pad on each side, so whole letters sit within 0.94 x 1.04 of the stage.
-  if (testInfo.project.name === 'phone') expect(letters).toBeGreaterThan(stage);
-  else expect(letters).toBeLessThan(stage);
+  expect(letters).toBeLessThanOrEqual(stage * 1.001); // whole: never cut at the poster's edge
+  expect(letters).toBeGreaterThan(stage * 0.9); // and big
   const box = (await page.locator('.poster-stage').boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(vw);
@@ -196,4 +195,21 @@ test('arrival shows her C3 in solid ink; the first of the scroll drains it to sh
   expect((await state()).clip).toMatch(/^inset\(/); // draining
   await scrollTo(page, vh * 0.85 * 0.5);
   expect((await state()).visibility).toBe('hidden'); // drained
+});
+
+test('the X-ray toggle waits while her ink letters cover the chest', async ({ page }) => {
+  await open(page, '/?only=c3-window,xray');
+  await expect(page.locator(mount)).toHaveAttribute('data-ready', '');
+  await expect(page.locator('.xray-toggle')).toBeAttached();
+  await expect(page.locator('html')).toHaveAttribute('data-fx-c3-window', 'window ink');
+  await expect(page.locator('.xray-toggle')).toBeHidden();
+  await scrollTo(page, page.viewportSize()!.height * 0.85 * 0.5);
+  await expect(page.locator('html')).toHaveAttribute('data-fx-c3-window', 'window');
+  await expect(page.locator('.xray-toggle')).toBeVisible();
+});
+
+test('a link straight to a section lands on it, after the pin moves the page', async ({ page }) => {
+  await page.goto('/?only=c3-window#info');
+  await expect(page.locator(mount)).toHaveAttribute('data-ready', '', { timeout: 10_000 });
+  await expect.poll(() => page.locator('#info').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBeLessThan(40);
 });

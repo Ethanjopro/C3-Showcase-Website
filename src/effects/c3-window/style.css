@@ -3,7 +3,7 @@
    repaints the mask, not the poster. index.ts writes the mask, clip and
    transform. */
 
-html[data-fx-c3-window='window'] .poster-stage {
+html[data-fx-c3-window~='window'] .poster-stage {
   will-change: transform;
 }
 
@@ -57,7 +57,7 @@ html[data-fx-c3-window='window'] .poster-stage {
   }
 }
 
-html:not([data-fx-c3-window='window']) .c3-window__fill,
-html:not([data-fx-c3-window='window']) .c3-window__ink {
+html:not([data-fx-c3-window~='window']) .c3-window__fill,
+html:not([data-fx-c3-window~='window']) .c3-window__ink {
   display: none;
 }

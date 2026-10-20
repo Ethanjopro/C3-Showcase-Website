@@ -45,15 +45,12 @@ import './style.css';
 const ATTR = 'data-fx-c3-window';
 /** Pinned scroll, as a share of the viewport height (SPEC §6: at most one screen). */
 const PIN = 0.85;
-/** Letter width at arrival, as a share of the poster's width: wider, so its edges crop them. */
-const LETTER_W = 1.3;
 /**
- * Where the poster's edges sit mid-page (wide screens) a crop would read as a
- * clipping bug, so the letters stay whole there, at this width.
+ * Letter box width at arrival, as a share of the poster's width (the box has a
+ * 2 % pad each side, so her letters span about 96 %). Whole: a crop at the
+ * poster's edge, with paper beyond it, read as a clipping bug.
  */
-const LETTER_W_WHOLE = 0.94;
-/** The poster's edges count as the screen's edges within this many px (a phone's gutter). */
-const EDGE_GUTTER = 40;
+const LETTER_W = 1.0;
 /** Where the letters sit in the poster at arrival: their centre, as a share of its height. */
 const LETTER_Y = 0.5;
 /** Most the stage scales up at arrival. It also stays inside the viewport and clear of the small print. */
@@ -241,8 +238,7 @@ function measure(): Geometry {
   const h = s.offsetHeight;
   const f = w / frame.width; // stage px per frame unit
   const s0 = maxScale(box);
-  const atEdges = box.left < EDGE_GUTTER && window.innerWidth - box.right < EDGE_GUTTER;
-  const k0 = ((atEdges ? LETTER_W : LETTER_W_WHOLE) * w) / (L.box.w * f);
+  const k0 = (LETTER_W * w) / (L.box.w * f);
   // At arrival the letters are centred across the stage at LETTER_Y.
   const left = (w - L.box.w * f * k0) / 2;
   const top = LETTER_Y * h - (L.box.h * f * k0) / 2;
@@ -292,7 +288,9 @@ function apply(p: number) {
     setState(state, 'open');
     return;
   }
-  setState(state, 'window');
+  // "ink" while her solid letters cover the poster: there is nothing to X-ray
+  // yet, and xray keys off it to hold back its toggle.
+  setState(state, p < DRAIN ? 'window ink' : 'window');
   const { w, h, s0, k0, k1, zx, zy } = geo;
   const f = w / frame.width;
   // First the ink drains, then the letters open: z is the zoom's own progress.
@@ -378,6 +376,14 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
     // A relative end in % is a share of the viewport height, and ScrollTrigger
     // re-reads it on every refresh (rotation, resize).
     kill = progress(section, (p) => apply(p), { start: 'top top', end: `+=${PIN * 100}%`, pin: true });
+    // A visit to /#info: the browser's (smooth) scroll to the section is cut
+    // short by ScrollTrigger measuring the page, and the pin spacer then moves
+    // the section down anyway. Land on it, unless the visitor has already
+    // scrolled past it.
+    const hashTarget = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (hashTarget && !section.contains(hashTarget) && hashTarget.getBoundingClientRect().top > 0) {
+      hashTarget.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
     const to = forced();
     if (to !== null) {
       const top = section.getBoundingClientRect().top + window.scrollY;

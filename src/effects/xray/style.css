@@ -23,6 +23,13 @@ html[data-fx-xray~='lens'] .poster {
 
 /* --- The toggle and its hint, in the poster's small print ------------------- */
 
+/* While c3-window's solid ink letters cover the poster there is no chest to
+   X-ray, so the toggle and its hint wait, keeping their space (no shift).
+   visibility also takes the button out of the tab order. */
+html[data-fx-c3-window~='ink'] .print--xray {
+  visibility: hidden;
+}
+
 .print--xray {
   display: flex;
   flex-wrap: wrap;

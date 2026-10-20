@@ -106,8 +106,11 @@ test('phone: sideways strokes across the chest paint the X-ray, and it heals', a
   expect(await page.evaluate(() => window.scrollY), 'sideways strokes never scroll').toBe(0);
   const painted = await shown(page);
   expect(painted.share).toBeGreaterThan(0.1);
-  await page.waitForTimeout(4400);
-  expect((await shown(page)).share, 'healed after 4 s').toBe(0);
+  // Heals 4 s after each stroke's last segment; under a loaded runner the
+  // drags themselves take a while, so poll rather than wait a fixed time.
+  await page.waitForTimeout(3000);
+  expect((await shown(page)).share, 'still healing at 3 s').toBeGreaterThan(0);
+  await expect.poll(async () => (await shown(page)).share, { message: 'healed', timeout: 6000 }).toBe(0);
   expect(errors).toEqual([]);
 });
 
