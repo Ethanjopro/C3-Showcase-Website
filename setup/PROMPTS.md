@@ -107,7 +107,13 @@ Effect sessions can't touch shared files, so they queue what they need in OWNER.
 Work through the "Shared changes queue" in OWNER.md, following CLAUDE.md,
 SPEC.md and PLAN.md. Skip anything marked as my call and ask me about it
 instead. Run npm run check, npm run build, npm run test:e2e and
-npm run shots, then the design-reviewer subagent, and fix its Must-fix
+npm run shots.
+
+Then check the site as a whole, now that every effect is merged: scroll it
+top to bottom at 390 and 1440 with all effects on, and look for effects that
+fight each other (two moving at once, overlapping controls, gestures that
+clash, timing that doesn't feel like one poster). Run the design-reviewer
+subagent on the whole site, not just this diff, and fix its Must-fix
 findings. Move each finished item to "Decided" in OWNER.md. Run /code-review,
 then open a pull request into main and merge it.
 ```

@@ -18,7 +18,9 @@ Everything waiting on Ethan or the artist, in one place.
 | 5 | **Follow link:** which platform, and the URL | Launch | Hidden |
 | 6 | **Effects to switch off:** try `?off=<effect>` on your phone and pick anything that feels like too much | Launch (PLAN step 13) | Everything on |
 
-## Open: ask her
+## Open: ask her (on hold: Ethan will ask when he's ready)
+
+Sessions add to this list but don't wait on it; until she answers, the "Until then" column holds.
 
 | # | Question | Needed by | Until then |
 |---|---|---|---|
