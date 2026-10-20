@@ -46,13 +46,15 @@ test('arrival: the poster shows through her C3, and when and where are on the fi
   expect(errors).toEqual([]);
 });
 
-test('a cropped wordmark: the letters are wider than the poster, and its box stays on screen', async ({ page }) => {
+test('phone: a cropped wordmark (wider than the poster); wide screens: whole letters; the box stays on screen', async ({ page }, testInfo) => {
   await ready(page);
   const { letters, stage, vw } = await page.locator('.poster-stage').evaluate((el: HTMLElement) => {
     const cs = getComputedStyle(el);
     return { letters: parseFloat(cs.maskSize.split(' ')[0]!), stage: el.offsetWidth, vw: window.innerWidth };
   });
-  expect(letters).toBeGreaterThan(stage);
+  // The mask box carries a 2 % pad on each side, so whole letters sit within 0.94 x 1.04 of the stage.
+  if (testInfo.project.name === 'phone') expect(letters).toBeGreaterThan(stage);
+  else expect(letters).toBeLessThan(stage);
   const box = (await page.locator('.poster-stage').boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(vw);

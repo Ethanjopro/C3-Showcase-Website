@@ -27,6 +27,25 @@ html[data-fx-c3-window='window'] .poster-stage {
   vector-effect: non-scaling-stroke;
 }
 
+/* Her line boils (CLAUDE.md: hand-drawn steps at 8-12 fps): the edge steps
+   through three positions, under a frame unit apart (less than half the edge), at 10 fps. */
+.c3-window__boil {
+  animation: c3-window-boil 300ms step-end infinite;
+}
+
+@keyframes c3-window-boil {
+  0% {
+    transform: translate(0, 0);
+  }
+  33.33% {
+    transform: translate(0.8px, -0.5px);
+  }
+  66.66%,
+  100% {
+    transform: translate(-0.5px, 0.7px);
+  }
+}
+
 html:not([data-fx-c3-window='window']) .c3-window__ink {
   display: none;
 }

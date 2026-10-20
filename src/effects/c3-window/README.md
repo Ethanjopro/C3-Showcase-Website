@@ -22,7 +22,7 @@ On arrival, a giant cropped "C3" in her lettering, with the poster showing only 
 - **Tests:** `c3-window.spec.ts` covers:
   - arrival: the mask is her title's own C3 paths, and date and location are in the first viewport
   - at every progress, nothing of the stage sits over the date or location (hit-tested), and the color bar takes taps while the window is closed
-  - a cropped wordmark: the letters are wider than the poster, and the stage's box stays on screen
+  - phone: a cropped wordmark (letters wider than the poster); wide screens: whole letters; the stage's box stays on screen
   - pinned scroll of at most one screen; open at the end, closed again after scrolling back
   - progress only ever grows as the page scrolls down
   - line-boil keeps playing during the pin
@@ -35,9 +35,9 @@ On arrival, a giant cropped "C3" in her lettering, with the poster showing only 
 1. **Her letters.** The inline title SVG's paths whose boxes sit inside the manifest's `title.regions.c3`, found with `getBBox()`, so her final title needs no code change. They're copied into an SVG data URL. The mask is an alpha mask, so only the paths' coverage counts, not their color.
 2. **The deepest point.** The letters are rasterized small (192 px wide), and a two-pass chamfer distance transform finds the centre and radius of the largest circle that fits inside them. Zooming into that point opens the window soonest, because the stroke there is thickest. With the placeholder title, that point is the stem of the 3.
 3. **Arrival (p = 0).**
-   - The letters are `LETTER_W` (110 %) of the poster's width, centred at `LETTER_Y`, so the poster's edges crop them: a cropped wordmark.
+   - Where the poster reaches the screen's edges (a phone, within `EDGE_GUTTER`), the letters are `LETTER_W` (110 %) of its width, so its edges crop them: a cropped wordmark. Where the poster's edges sit mid-page (wide screens), a crop would read as a clipping bug, so the letters stay whole at `LETTER_W_WHOLE` (94 %). Either way they're centred at `LETTER_Y`.
    - The stage may scale up slightly (`transform: scale`, at most `STAGE_MAX`), bringing the crop toward the viewport's edges. It never scales so far that its box leaves the viewport, or reaches the small print beside it (wide screens' margins) or below it (a phone's date and location), keeping `CLEAR` px away. On a 390 px phone that leaves about 1.02.
-   - **Inked edge.** Where a letter crosses bare poster paper (`--paper-2`), it would vanish into the page's `--paper`. So her letters' own outline, stroked in `--ink`, sits in the effect's mount, inside the stage and under the same mask. Only its inner half shows: an inked edge, like her lettering. It moves with the mask on its own compositor layer (a transform, no poster repaint), and fades out over the first `OUTLINE_FADE` (30 %) of the opening.
+   - **Inked edge.** Where a letter crosses bare poster paper (`--paper-2`), it would vanish into the page's `--paper`. So her letters' own outline, stroked in `--ink`, sits in the effect's mount, inside the stage and under the same mask. Only its inner half shows: an inked edge, like her lettering. It moves with the mask on its own compositor layer (a transform, no poster repaint), boils like her line (three positions stepped at 10 fps with a CSS `step-end` animation; `?freeze` holds one), and fades out over the first `OUTLINE_FADE` (30 %) of the opening.
    - **Clip.** A mask hides but still takes taps, so the stage is also clipped with `clip-path: inset()` to the letters' box. Clip-path cuts hit testing too.
 4. **Opening.** `core/scroll.progress` pins `#poster` for `PIN` (85 %) of the viewport height. Over that distance:
    - the mask zooms about the deepest point, in log space, so each step of scroll zooms by the same factor, until that stroke's circle covers every corner of the stage;
@@ -75,23 +75,26 @@ Chromium at 390×844, DPR 2, 4× CPU throttle, scrolling through the pin and bac
 
 | | mean | p95 |
 |---|---|---|
-| Paint (the mask and clip repaint; the stage is its own layer) | 2.53 ms | 4.81 ms |
-| Style recalc | 1.28 ms | 3.08 ms |
-| Scroll event (ScrollTrigger and `apply`) | 0.68 ms | 2.98 ms |
-| rAF (GSAP ticker) | 0.35 ms | 1.11 ms |
+| Paint (the mask and clip repaint; the stage is its own layer) | 2.41 ms | 4.37 ms |
+| Style recalc (the mask image is written once; updates move and size it) | 0.60 ms | 1.66 ms |
+| Scroll event (ScrollTrigger and `apply`) | 0.65 ms | 2.41 ms |
+| rAF (GSAP ticker) | 0.32 ms | 1.21 ms |
 
-That's about 5 ms a frame on average. With every effect off, the same scroll costs about 0.6 ms. If the mask repaint ever matters on a real phone, pre-rasterize the letters to a bitmap once.
+That's about 4 ms a frame on average. With every effect off, the same scroll costs about 0.6 ms. If the mask repaint ever matters on a real phone, pre-rasterize the letters to a bitmap once.
 
 ## Tuning knobs
 
 | Knob | Where | Default | Effect |
 |---|---|---|---|
 | `PIN` | `index.ts` | 0.85 | Pinned scroll, share of the viewport height (≤ 1) |
-| `LETTER_W` | `index.ts` | 1.1 | Letter width at arrival, share of the poster's width (above 1 crops) |
+| `LETTER_W` | `index.ts` | 1.1 | Letter width at arrival where the poster reaches the screen's edges, share of its width (above 1 crops) |
+| `LETTER_W_WHOLE` | `index.ts` | 0.94 | Letter width where the poster's edges sit mid-page (whole letters) |
+| `EDGE_GUTTER` | `index.ts` | 40 | Poster edges this close to the screen's count as its edges, px |
 | `LETTER_Y` | `index.ts` | 0.5 | Letters' centre at arrival, share of the poster's height |
 | `STAGE_MAX` | `index.ts` | 1.12 | Most the stage scales at arrival, within the viewport and the small print's room |
 | `CLEAR` | `index.ts` | 8 | Gap kept between the scaled stage and the small print, px |
 | `OUTLINE_FADE` | `index.ts` | 0.3 | Share of the opening over which the inked letter edge fades |
 | `--line-frame` × 1.2 | `style.css` | | Inked edge stroke (half of it shows) |
+| `c3-window-boil` | `style.css` | 300 ms, 3 steps | The inked edge's boil (10 fps) |
 | `FIELD` | `index.ts` | 192 | Resolution of the distance field that finds the zoom point |
 | `?c3=<0–1>` | URL | | Scrolls to that progress once the pin exists, for screenshots |

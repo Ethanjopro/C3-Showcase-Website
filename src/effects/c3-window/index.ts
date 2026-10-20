@@ -13,10 +13,13 @@
 //      stays outside the stage, readable and tappable around the letters.
 //      A clip-path to the letters' box keeps the stage from taking taps where
 //      the mask hides it (masks don't stop taps).
+//      On wide screens the poster's edges sit mid-page, where a crop reads as
+//      a clipping bug, so there the letters stay whole.
 //      Where a letter crosses bare poster paper it would vanish into the
 //      page's paper, so her letters' own outline, in ink, sits in this
 //      effect's mount under the same mask: only its inner half shows, an
-//      inked edge, and it fades as the window opens.
+//      inked edge, boiling at 10 fps like her line; it fades as the window
+//      opens.
 //   3. Scrolling, pinned for at most one viewport (PIN), zooms into one point
 //      deep inside a letter stroke (the centre of the largest circle that fits
 //      in the letters) until that stroke covers the whole stage, while the
@@ -36,6 +39,7 @@
 
 import type { EffectOptions } from '../../core/effect';
 import { frame, slot, type Rect } from '../../core/art';
+import { frozenAt } from '../../core/clock';
 import './style.css';
 
 const ATTR = 'data-fx-c3-window';
@@ -43,6 +47,13 @@ const ATTR = 'data-fx-c3-window';
 const PIN = 0.85;
 /** Letter width at arrival, as a share of the poster's width: wider, so its edges crop them. */
 const LETTER_W = 1.1;
+/**
+ * Where the poster's edges sit mid-page (wide screens) a crop would read as a
+ * clipping bug, so the letters stay whole there, at this width.
+ */
+const LETTER_W_WHOLE = 0.94;
+/** The poster's edges count as the screen's edges within this many px (a phone's gutter). */
+const EDGE_GUTTER = 40;
 /** Where the letters sit in the poster at arrival: their centre, as a share of its height. */
 const LETTER_Y = 0.5;
 /** Most the stage scales up at arrival. It also stays inside the viewport and clear of the small print. */
@@ -83,6 +94,8 @@ let generation = 0;
 let stage: HTMLElement | null = null;
 let mount: HTMLElement | null = null;
 let outline: SVGSVGElement | null = null;
+let masked = false;
+let lastAttr = '';
 let letters: Letters | null = null;
 let geo: Geometry | null = null;
 let kill: (() => void) | null = null;
@@ -218,7 +231,8 @@ function measure(): Geometry {
   const h = s.offsetHeight;
   const f = w / frame.width; // stage px per frame unit
   const s0 = maxScale(box);
-  const k0 = (LETTER_W * w) / (L.box.w * f);
+  const atEdges = box.left < EDGE_GUTTER && window.innerWidth - box.right < EDGE_GUTTER;
+  const k0 = ((atEdges ? LETTER_W : LETTER_W_WHOLE) * w) / (L.box.w * f);
   // At arrival the letters are centred across the stage at LETTER_Y.
   const left = (w - L.box.w * f * k0) / 2;
   const top = LETTER_Y * h - (L.box.h * f * k0) / 2;
@@ -234,8 +248,26 @@ function measure(): Geometry {
   return { w, h, s0, k0, k1, zx, zy };
 }
 
+const MASK_PROPS = ['mask-image', 'mask-repeat', 'mask-position', 'mask-size'];
+
 function clearStage(el: HTMLElement) {
-  for (const prop of ['transform', '-webkit-mask', 'mask', 'clip-path']) el.style.removeProperty(prop);
+  for (const prop of ['transform', 'clip-path', ...MASK_PROPS, ...MASK_PROPS.map((m) => `-webkit-${m}`)]) el.style.removeProperty(prop);
+  masked = false;
+}
+
+/** Writes a mask property, prefixed too. */
+function setMask(el: HTMLElement, prop: string, value: string) {
+  el.style.setProperty(`-webkit-${prop}`, value);
+  el.style.setProperty(prop, value);
+}
+
+/** Writes the state attributes only when they change (apply runs on every scroll update). */
+function setState(state: string, attr: string) {
+  if (mount && mount.dataset.state !== state) mount.dataset.state = state;
+  if (attr !== lastAttr) {
+    lastAttr = attr;
+    document.documentElement.setAttribute(ATTR, attr);
+  }
 }
 
 /** Applies progress p (0 closed, 1 open) to the stage: transform and mask only. */
@@ -244,16 +276,13 @@ function apply(p: number) {
   last = p;
   // ScrollTrigger can report a hair above 0 at the very top.
   const state = p >= 1 ? 'open' : p < 0.001 ? 'closed' : 'opening';
-  if (mount) {
-    mount.dataset.state = state;
-    mount.dataset.progress = p.toFixed(3);
-  }
+  if (mount) mount.dataset.progress = p.toFixed(3);
   if (p >= 1) {
-    clearStage(stage);
-    document.documentElement.setAttribute(ATTR, 'open');
+    if (masked) clearStage(stage);
+    setState(state, 'open');
     return;
   }
-  document.documentElement.setAttribute(ATTR, 'window');
+  setState(state, 'window');
   const { w, h, s0, k0, k1, zx, zy } = geo;
   const f = w / frame.width;
   // Log-space: each step of scroll zooms by the same factor, so the dive feels even.
@@ -265,9 +294,14 @@ function apply(p: number) {
   // The zoom point stays put: the deepest point of the letters sits at (zx, zy).
   const mx = zx - (L.deep.x - L.box.x) * f * k;
   const my = zy - (L.deep.y - L.box.y) * f * k;
-  const mask = `${letters.url} ${mx.toFixed(2)}px ${my.toFixed(2)}px / ${mw.toFixed(2)}px ${mh.toFixed(2)}px no-repeat`;
-  stage.style.setProperty('-webkit-mask', mask);
-  stage.style.setProperty('mask', mask);
+  // The image (a 13 kB data URL) is written once; each update moves and sizes it.
+  if (!masked) {
+    setMask(stage, 'mask-image', letters.url);
+    setMask(stage, 'mask-repeat', 'no-repeat');
+    masked = true;
+  }
+  setMask(stage, 'mask-position', `${mx.toFixed(2)}px ${my.toFixed(2)}px`);
+  setMask(stage, 'mask-size', `${mw.toFixed(2)}px ${mh.toFixed(2)}px`);
   // A mask hides but still takes taps: clip the stage to the letters' box too.
   const px = (v: number) => `${Math.max(0, v).toFixed(2)}px`;
   stage.style.clipPath = `inset(${px(my)} ${px(w - mx - mw)} ${px(h - my - mh)} ${px(mx)})`;
@@ -298,9 +332,17 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   root.insertAdjacentHTML(
     'beforeend',
     `<svg class="c3-window__ink" viewBox="${letters.box.x} ${letters.box.y} ${letters.box.w} ${letters.box.h}" ` +
-      `preserveAspectRatio="none" fill-rule="${letters.rule}" aria-hidden="true" focusable="false">${letters.paths}</svg>`,
+      `preserveAspectRatio="none" fill-rule="${letters.rule}" aria-hidden="true" focusable="false">` +
+      `<g class="c3-window__boil">${letters.paths}</g></svg>`,
   );
   outline = root.lastElementChild as SVGSVGElement;
+  // Her line boils: the edge steps through three positions at 10 fps
+  // (style.css). ?freeze holds the step that time shows, like line-boil.
+  if (frozenAt !== null) {
+    const g = outline.firstElementChild as SVGGElement;
+    g.style.animationDelay = `${-frozenAt}ms`;
+    g.style.animationPlayState = 'paused';
+  }
   geo = measure();
   apply(0);
 
@@ -347,6 +389,7 @@ export function destroy(): void {
     delete mount.dataset.progress;
   }
   document.documentElement.removeAttribute(ATTR);
+  lastAttr = '';
   stage = null;
   mount = null;
   letters = null;
