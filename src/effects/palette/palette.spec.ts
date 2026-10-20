@@ -92,7 +92,7 @@ test('quick picks in a row do not queue a wipe each', async ({ page }) => {
   await page.locator('#cw-poster-black-red').focus();
   const t0 = Date.now();
   for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
-  await expect.poll(() => colorway(page)).toBe('brown-orange');
+  await expect.poll(() => colorway(page), { intervals: [50] }).toBe('brown-orange');
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'idle');
   expect(Date.now() - t0, 'five picks settle in about one wipe, not five').toBeLessThan(2000);
 });
@@ -142,4 +142,36 @@ test('the art, the UI and the text all take the new colorway', async ({ page }) 
   expect(colors.fill).toBe(colors.accent);
   expect(colors.value).toBe(colors.text);
   expect(colors.menu).toBe(colors.ink);
+});
+
+test('holding an arrow key: at most 3 colorway changes in any second (SPEC §6 flash safety)', async ({ page }) => {
+  await open(page, '/?only=palette');
+  // What actually renders: the colorway sampled once per frame.
+  await page.evaluate(() => {
+    const w = window as unknown as { changes: number[] };
+    w.changes = [];
+    let last = document.documentElement.dataset.colorway;
+    const frame = (t: number) => {
+      const now = document.documentElement.dataset.colorway;
+      if (now !== last) w.changes.push(t);
+      last = now;
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
+  await page.locator('#cw-poster-black-red').focus();
+  // Key auto-repeat: a press every ~33 ms for 2 s.
+  for (let i = 0; i < 60; i++) {
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(33);
+  }
+  await page.waitForTimeout(1500);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'idle');
+  const changes = await page.evaluate(() => (window as unknown as { changes: number[] }).changes);
+  expect(changes.length).toBeGreaterThan(0);
+  const worst = Math.max(...changes.map((t) => changes.filter((u) => u >= t && u < t + 1000).length));
+  expect(worst, `frames with a change: ${changes.map((t) => Math.round(t)).join(', ')}`).toBeLessThanOrEqual(3);
+  // The page ends on the radio that's checked.
+  const checked = await page.locator('.colorbar--poster input:checked').getAttribute('value');
+  expect(await colorway(page)).toBe(checked);
 });
