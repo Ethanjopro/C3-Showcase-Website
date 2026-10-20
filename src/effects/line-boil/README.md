@@ -38,6 +38,12 @@ The PLAN's first design, three `feTurbulence` + `feDisplacementMap` filters swap
 - **PLAN.md, "Who may write to which element":** add the row `.layer::before`, `.layer::after` | line-boil | content, box, mask, background-color, opacity (the boil frames).
 - **PLAN step 6 (sketch-in):** while it animates, sketch-in adds the token `drawing` to its own `<html data-fx-sketch-in>`. line-boil holds its cycle during that time, because only her live drawing shows the progress. Until then, line-boil holds during `html.fx-pending-sketch-in`.
 - **core/ticker:** a GSAP-free freeze accessor (for example `core/clock.ts` exporting `frozenAt`). line-boil and paper-grain import the ticker only to read `?freeze`, which loads GSAP at load time.
+- **core helpers:** `idle()`, a numeric token reader (`--fps-boil`, `--fps-grain`) and core/ticker's offscreen tracker are each needed by both effects here, and later effects will need them too. They belong in `src/core/`. Until then, both effects keep local copies, and line-boil's offscreen observer uses the ticker's `10% 0px` margin.
+
+## Known trade-offs
+
+- **Very large posters.** The masks are capped at the 1200 px manifest frame. On a poster wider than that in device pixels (for example a 2560 px retina monitor, where the poster is about 2000 device px), drawings 1 and 2 are slightly softer than her live vector line, so sharpness pulses with the boil. Phones and ordinary laptops are under the cap. Raising the cap would cost about 3× the memory.
+- **A quality downgrade re-renders.** When `core/motion` drops a slow device from `full` to `lite`, main.ts calls `destroy()` and then `init()`. The lineart frames are rendered again rather than reused: about 1 s of idle-slice work, with no long tasks.
 
 ## Trace numbers (PLAN step 2)
 
@@ -53,7 +59,9 @@ These come from a Chromium trace at 390×844, DPR 2, with 4× CPU throttle. The 
 
 For comparison, any main-thread DOM change at 10 Hz on this page (an opacity flip) costs 1.9 ms per step, so a JavaScript-driven swap of pre-rendered frames would also have sat right at the gate.
 
-**One-time render** (4× throttle, 390 px): frames are ready 3.7 s after load at full quality, 0.95 s at lite. Long tasks are 50–88 ms, about 51 ms of TBT. Until the frames are ready, her clean lines show.
+**One-time render** (4× throttle, 390 px): the frames are ready 2.5 s after load at full quality and 1.0 s at lite. Each heavy step gets its own idle slice, so there's one long task of 60 ms and 10 ms of TBT. The first unsliced version had 50–88 ms tasks and 51 ms of TBT. Until the frames are ready, her clean lines show. With both effects running together: 28 ms of TBT.
+
+**Failures.** A slot that won't load or draw is skipped with a warning; its layer keeps her clean line while the others still boil. A failed resize re-draw keeps the frames already on screen.
 
 **Memory.** Full quality holds 8 masks (2 per layer), cropped to the art and capped at the 1200×1529 frame.
 - Phone at 390 px, DPR 2: lineart 716×912, halo 584×365, title 571×157, wings 571×117. About 2.05 M pixels, ≈ 8 MB decoded.
@@ -68,6 +76,6 @@ For comparison, any main-thread DOM change at 10 Hz on this page (an opacity fli
 | `AMPLITUDE` | `displace.ts` | 0.0025 | Peak wobble, as a fraction of the poster width |
 | `WAVELENGTH` | `displace.ts` | 0.022 | Length of one bend, as a fraction of the poster width |
 | `DETAIL_SCALE`, `DETAIL_WEIGHT` | `displace.ts` | 0.4, 0.4 | The finer second octave: the tooth in the bends |
-| `SEEDS` | `displace.ts` | 17, 41 | Which two redrawings |
+| `SEEDS` | `displace.ts` | 17, 41 | Which two redrawings. Always two: they're the two pseudo-elements, and the CSS steps in thirds. |
 | `FULL`, `LITE` | `index.ts` | — | Which slots boil |
 | `SLICE_PIXELS` | `index.ts` | 120 000 | Work per idle slice while rendering |

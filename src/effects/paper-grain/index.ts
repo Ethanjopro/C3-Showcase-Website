@@ -76,7 +76,8 @@ function tile(seed: number, px: number, dpr: number): HTMLCanvasElement {
     const jitter = fine[i + 3]! / 255;
     const grain = d[i] === 0 && d[i + 3]! >= threshold && jitter >= RAGGED;
     d[i] = d[i + 1] = d[i + 2] = 0;
-    d[i + 3] = grain ? Math.round(on * (0.5 + 0.5 * jitter)) : 0;
+    // Surviving jitter spans [RAGGED, 1]; map it to half..full ink.
+    d[i + 3] = grain ? Math.round(on * (0.5 + (0.5 * (jitter - RAGGED)) / (1 - RAGGED))) : 0;
   }
   ctx.putImageData(img, 0, 0);
   return canvas;

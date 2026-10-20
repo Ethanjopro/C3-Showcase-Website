@@ -5,11 +5,14 @@
 
 import { rng } from '../../core/raster';
 
-/** Drawings in the cycle: her live art plus two re-drawings. The classic pencil-test boil. */
-export const FRAMES = 3;
+/**
+ * Noise seeds for the two re-drawings. Any distinct integers. Exactly two:
+ * index.ts shows them as ::before and ::after, and style.css steps in thirds.
+ */
+export const SEEDS: readonly [number, number] = [17, 41];
 
-/** Noise seeds for the two re-drawings. Any distinct integers. */
-export const SEEDS = [17, 41] as const;
+/** Drawings in the cycle: her live art plus the re-drawings. The classic pencil-test boil. */
+export const FRAMES = SEEDS.length + 1;
 
 /**
  * Peak displacement, as a fraction of the poster width (PLAN step 2: about
@@ -27,12 +30,6 @@ export const WAVELENGTH = 0.022;
 /** A finer second octave adds tooth to the bends. Its size and weight relative to the first. */
 const DETAIL_SCALE = 0.4;
 const DETAIL_WEIGHT = 0.4;
-
-/** Which drawing shows at clock time `t` (ms), stepping `fps` times a second. */
-export function boilFrame(t: number, fps: number): number {
-  const step = Math.floor((t * fps) / 1000);
-  return ((step % FRAMES) + FRAMES) % FRAMES;
-}
 
 /** Value-noise lattice: random -1..1 per node, two channels (x and y). */
 interface Lattice {
@@ -68,8 +65,6 @@ function lattice(width: number, height: number, cell: number, rand: () => number
 
 /** One re-drawing of an alpha mask: everything needed to displace it, row by row. */
 export interface Redraw {
-  readonly width: number;
-  readonly height: number;
   /** Displaces rows [from, to) of `alpha` into `out` (RGBA, alpha channel written). */
   rows(from: number, to: number): void;
 }
@@ -96,8 +91,6 @@ export function redraw(
   const maxY = height - 1;
 
   return {
-    width,
-    height,
     rows(from, to) {
       for (let y = from; y < to; y++) {
         const gc = y / coarse.cell;

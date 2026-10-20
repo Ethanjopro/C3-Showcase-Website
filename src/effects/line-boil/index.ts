@@ -131,10 +131,15 @@ async function renderLayer(name: SlotName, width: number, height: number, alive:
   canvas.height = height;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('line-boil: no 2D context');
+  // Each heavy step gets its own idle slice: rasterize, read back, find the art.
   ctx.drawImage(img, 0, 0, width, height);
+  await idle();
+  if (!alive()) return null;
   const rgba = ctx.getImageData(0, 0, width, height).data;
   const full = new Uint8Array(width * height);
   for (let i = 0; i < full.length; i++) full[i] = rgba[i * 4 + 3]!;
+  await idle();
+  if (!alive()) return null;
 
   // Masks cover only the art (the title and halo are a fraction of the frame).
   const amplitude = AMPLITUDE * width;
@@ -166,7 +171,7 @@ async function renderLayer(name: SlotName, width: number, height: number, alive:
     if (out.length < SEEDS.length) out.forEach((u) => URL.revokeObjectURL(u));
   }
   return {
-    urls: [out[0]!, out[1]!],
+    urls: out as [string, string],
     box: { x: crop.x / width, y: crop.y / height, w: crop.w / width, h: crop.h / height },
   };
 }
@@ -221,9 +226,15 @@ async function render(root: HTMLElement, poster: HTMLElement, names: SlotName[],
 
   const layers = new Map<SlotName, Frames>();
   for (const name of names) {
-    const frames = await renderLayer(name, width, height, alive);
+    let frames: Frames | null = null;
+    try {
+      frames = await renderLayer(name, width, height, alive);
+    } catch (err) {
+      // One slot that won't load or draw keeps her clean line; the rest still boil.
+      console.warn(`[c3] line-boil: skipped ${name}`, err);
+    }
     if (!alive()) return width;
-    if (!frames) continue; // empty art: nothing to boil
+    if (!frames) continue; // empty art, or skipped
     urls.push(...frames.urls);
     layers.set(name, frames);
   }
@@ -253,10 +264,15 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
   // Offscreen, the cycle pauses: nothing ticks for a poster nobody sees.
   let paused = false;
   const mark = () => html.setAttribute(ATTR, paused ? 'on paused' : 'on');
-  io = new IntersectionObserver(([entry]) => {
-    paused = !entry?.isIntersecting;
-    mark();
-  });
+  // The newest entry wins: one callback can carry an enter and a leave. Same
+  // margin as core/ticker's offscreen tracking, so effects pause at one edge.
+  io = new IntersectionObserver(
+    (entries) => {
+      paused = !entries[entries.length - 1]?.isIntersecting;
+      mark();
+    },
+    { rootMargin: '10% 0px' },
+  );
   io.observe(poster);
   mark();
 
@@ -269,8 +285,17 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
     busy = true;
     const old = urls;
     urls = [];
-    rendered = await render(root, poster, names, fps, gen);
-    busy = false;
+    try {
+      rendered = await render(root, poster, names, fps, gen);
+    } catch (err) {
+      // Keep the frames on screen; drop whatever the failed re-draw made.
+      console.warn('[c3] line-boil: re-draw failed', err);
+      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls = old;
+      return;
+    } finally {
+      busy = false;
+    }
     old.forEach((u) => URL.revokeObjectURL(u)); // destroy() during the re-draw already revoked the new ones
     if (gen === generation) void regrow();
   };
