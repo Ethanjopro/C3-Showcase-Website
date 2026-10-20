@@ -1,1 +1,7 @@
-[]
+[
+  { "name": "t0", "query": "?only=line-boil&freeze=0" },
+  { "name": "t50", "query": "?only=line-boil&freeze=50" },
+  { "name": "t100", "query": "?only=line-boil&freeze=100" },
+  { "name": "t200", "query": "?only=line-boil&freeze=200" },
+  { "name": "lite-t100", "query": "?only=line-boil&quality=lite&freeze=100", "viewports": [390] }
+]
