@@ -41,7 +41,7 @@ If a step runs late, use SPEC §3's cut order: `crt-screens`, then `cables`, the
 - `src/content/<name>.json`, if the effect has copy.
 
 **Everything else is shared.** Step 1 owns the shared files; after that, only a sequential session in plan mode changes them:
-- `index.html`, `src/main.ts`, `src/core/`, `src/styles/`, `src/effects/registry.ts`
+- `index.html`, `src/main.ts`, `src/core/`, `src/ui/`, `src/styles/`, `src/effects/registry.ts`
 - `src/art/`, `art-src/`, `public/`, `src/config/features.json`, the other `src/content/*.json`
 - `scripts/`, `tests/`, `package.json` and its lockfile, `.github/`, `vite.config.ts`, `playwright.config.ts`
 
@@ -63,7 +63,7 @@ Step 1 installs every dependency this plan needs, so no effect step touches `pac
 | `.layer__boil` | line-boil | `filter` |
 | `.layer__art` and the SVG paths inside it | sketch-in | Stroke dash, clip, opacity |
 | `[data-fx="<name>"]` mounts | That effect | Anything inside the mount, plus `data-state` on the mount, which tests read |
-| An effect's own slot layer | The effect that replaces it (cables) | Hide or show, through its `data-fx-<name>` attribute only |
+| An effect's own slot layer | The effect that replaces it: cables (`cables` slot), xray (`ribcage` slot) | Hide or show, through its `data-fx-<name>` attribute only |
 
 ---
 
@@ -162,7 +162,7 @@ This is the contract every effect codes against. Effects import only from here. 
   - A `[data-fx="panel-wipe"]` mount in each section header.
 - Poster layers, bottom to top:
   - paper, wings, fill, lineart
-  - the xray mount, then eyescreen
+  - ribcage (her sketch shows the panel, so the static poster does too), the xray mount, then eyescreen
   - cables (slot art plus the cables mount)
   - halo, title, small print, and the halo hit button
 - Each layer is `.layer > .layer__boil > .layer__art`, nested inside `.poster-stage > .poster`.

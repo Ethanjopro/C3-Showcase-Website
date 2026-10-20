@@ -1,0 +1,9 @@
+{
+  "$comment": "One entry per section, in page order. The index doubles as the section's screen number in the halo menu.",
+  "items": [
+    { "id": "poster", "index": "01", "name": "Poster" },
+    { "id": "info", "index": "02", "name": "Info" },
+    { "id": "projects", "index": "03", "name": "Projects" },
+    { "id": "credits", "index": "04", "name": "Credits" }
+  ]
+}
