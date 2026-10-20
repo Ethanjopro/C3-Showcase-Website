@@ -76,6 +76,8 @@ let undo: (() => void)[] = [];
 let mount: HTMLElement | null = null;
 let playing = false;
 let off: (() => void) | null = null;
+/** Animations paused because the tab is hidden. */
+const held = new Set<Animation>();
 
 const html = () => document.documentElement;
 
@@ -199,6 +201,7 @@ function finish() {
   playing = false;
   anims.forEach((a) => a.cancel());
   anims = [];
+  held.clear();
   undo.reverse().forEach((fn) => fn());
   undo = [];
   html().setAttribute(ATTR, 'done');
@@ -219,7 +222,16 @@ function listenForSkip() {
   window.addEventListener('wheel', skip, opts);
   window.addEventListener('scroll', onScroll, opts);
   // A hidden tab holds the drawing where it is (CLAUDE.md: the loop pauses when hidden).
-  const onVisibility = () => anims.forEach((a) => (document.hidden ? a.pause() : a.play()));
+  // Only what was running pauses and resumes: play() on a finished animation
+  // would rewind it, un-drawing lines already drawn.
+  const onVisibility = () => {
+    if (document.hidden) {
+      for (const a of anims) if (a.playState === 'running' || a.pending) (a.pause(), held.add(a));
+    } else {
+      held.forEach((a) => a.play());
+      held.clear();
+    }
+  };
   if (frozenAt === null) document.addEventListener('visibilitychange', onVisibility);
   off = () => {
     window.removeEventListener('pointerdown', skip, opts);
@@ -277,7 +289,7 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
   // One start time for all of them, so every step lands on the same 12 fps grid.
   const t0 = document.timeline.currentTime;
   if (t0 !== null) anims.forEach((a) => (a.startTime = t0));
-  if (document.hidden) anims.forEach((a) => a.pause());
+  if (document.hidden) anims.forEach((a) => (a.pause(), held.add(a)));
   listenForSkip();
   const all = anims;
   Promise.all(all.map((a) => a.finished)).then(

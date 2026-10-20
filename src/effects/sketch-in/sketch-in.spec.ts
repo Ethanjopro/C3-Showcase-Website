@@ -103,3 +103,21 @@ test('lite: stepped wipes instead of per-path drawing', async ({ page }) => {
   expect(clip).toMatch(/^inset/);
   expect(await page.locator('.layer--lineart [pathLength]').count()).toBe(0);
 });
+
+test('a hidden tab pauses the drawing; coming back resumes it without un-drawing finished lines', async ({ page }) => {
+  await open(page, '/?only=sketch-in');
+  await page.waitForTimeout(900); // most of the line art is drawn
+  const drawn = () => page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'finished').length);
+  const before = await drawn();
+  expect(before).toBeGreaterThan(0);
+  const setHidden = (hidden: boolean) =>
+    page.evaluate((h) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => h });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+  await setHidden(true);
+  expect(await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running').length)).toBe(0);
+  await setHidden(false);
+  expect(await drawn(), 'finished paths stay drawn').toBeGreaterThanOrEqual(before);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'done', { timeout: 3000 });
+});

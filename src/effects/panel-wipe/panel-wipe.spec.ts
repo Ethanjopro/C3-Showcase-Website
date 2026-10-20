@@ -89,3 +89,23 @@ test('reduced motion: off, the headings are simply there', async ({ browser }, t
   await expect(page.locator('.panel-wipe')).toHaveCount(0);
   await context.close();
 });
+
+test('a restart (quality change) never covers a header again', async ({ page }) => {
+  await open(page, '/?only=panel-wipe');
+  await scrollTo(page, '#info-title');
+  await expect.poll(async () => (await states(page))[0], { timeout: 2000 }).toBe('done');
+  // What main.ts does on a quality change: destroy(), then init().
+  await page.evaluate(async () => {
+    const src = [...document.querySelectorAll('link[rel=modulepreload], script')].map((e) => (e as HTMLLinkElement).href || (e as HTMLScriptElement).src);
+    const url = performance.getEntriesByType('resource').map((e) => e.name).find((n) => /panel-wipe-[^/]+\.js$/.test(n)) ?? src.find((n) => /panel-wipe/.test(n));
+    const mod = await import(url!);
+    mod.destroy();
+    mod.init(document.querySelector('[data-fx="panel-wipe"]:not([data-part])'), { quality: 'lite' });
+  });
+  // Info was wiped; the poster section above is behind; only headers still ahead get covered.
+  expect((await states(page))[0]).toBe('done');
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await scrollTo(page, '#info-title');
+  await page.waitForTimeout(200);
+  await expect(page.locator('#info .panel-wipe')).toHaveCount(0);
+});

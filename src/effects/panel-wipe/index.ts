@@ -5,8 +5,9 @@
 //     header). Headers below the fold at init start covered; on the header's
 //     first scroll.onEnter its block slides off to the right (--dur-wipe,
 //     about 500 ms) and is removed. Each section plays once.
-//   - A header already on screen at init gets no block: covering what the
-//     visitor is reading would be a flash, not an entrance.
+//   - A header already on screen or scrolled past at init gets no block:
+//     covering what the visitor is reading would be a flash, not an entrance.
+//     Headers stay done across restarts (a quality change re-runs init).
 //   - The heading stays in the accessibility tree throughout: the block is in
 //     an aria-hidden mount, absolutely positioned, and moves by transform only
 //     (no layout shift). Focus landing in a header (the menu jumps to a
@@ -43,10 +44,17 @@ function duration(style: CSSStyleDeclaration, token: string, fallback: number): 
   return /ms$/.test(raw) ? v : /s$/.test(raw) ? v * 1000 : v;
 }
 
-/** Is any of the element on screen right now? */
-function visible(el: Element): boolean {
+/**
+ * Headers whose entrance is over: wiped, on screen at init, or already
+ * scrolled past. Module state, so a restart (a quality change calls destroy()
+ * then init()) never covers them again: each section plays once.
+ */
+const seen = new WeakSet<Element>();
+
+/** Still ahead of the visitor: entirely below the viewport. */
+function ahead(el: Element): boolean {
   const r = el.getBoundingClientRect();
-  return r.bottom > 0 && r.top < window.innerHeight && r.width > 0;
+  return r.width > 0 && r.top >= window.innerHeight;
 }
 
 export function init(root: HTMLElement, opts: EffectOptions): void {
@@ -60,7 +68,8 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
   mounts = [root, ...document.querySelectorAll<HTMLElement>('[data-fx="panel-wipe"][data-part]')];
   mounts.forEach((mount, i) => {
     const header = mount.parentElement;
-    if (!header || visible(header)) {
+    if (!header || seen.has(header) || !ahead(header)) {
+      if (header) seen.add(header);
       mount.dataset.state = 'done';
       return;
     }
@@ -74,6 +83,7 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
     mount.dataset.state = 'covered';
 
     const finish = () => {
+      seen.add(header);
       wrap.remove();
       mount.dataset.state = 'done';
       header.removeEventListener('focusin', finish);
@@ -87,6 +97,7 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
         () => {
           if (mount.dataset.state !== 'covered') return;
           mount.dataset.state = 'wiping';
+          seen.add(header);
           const anim = block.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(101%)' }], { duration: ms, easing, fill: 'forwards' });
           anims.push(anim);
           if (frozenAt !== null) {
