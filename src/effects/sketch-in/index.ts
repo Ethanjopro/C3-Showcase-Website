@@ -58,6 +58,8 @@ const TITLE_AT = 21;
 const TITLE_STEPS = 7;
 /** Last step: 28 steps at 12 fps is 2.33 s (PLAN: at most 2.4 s). */
 const TOTAL_STEPS = TITLE_AT + TITLE_STEPS;
+/** PLAN: the whole intro takes at most 2.4 s, whatever the step rate. */
+const MAX_MS = 2400;
 /**
  * Reveal stroke width, in the SVG's own units (1200 across the poster). It
  * must cover her thickest line from both edges of its contour; anything wider
@@ -238,7 +240,8 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
     root.dataset.state = 'skipped';
     return;
   }
-  const step = 1000 / number('fps-sketch', DEFAULT_FPS);
+  // A slower --fps-sketch (CLAUDE.md allows 8) must not stretch past the cap.
+  const step = Math.min(1000 / number('fps-sketch', DEFAULT_FPS), MAX_MS / TOTAL_STEPS);
   if (frozenAt !== null && frozenAt >= TOTAL_STEPS * step) {
     // A frozen clock past the end: the finished poster, as a live visit ends.
     root.dataset.state = 'done';

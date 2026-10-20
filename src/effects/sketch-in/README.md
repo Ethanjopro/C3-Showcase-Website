@@ -18,7 +18,7 @@ On the first visit of a session, her line art draws itself in at 12 fps, the fil
 
 ## How it works
 
-1. **Hidden start.** The boot script adds `fx-pending-sketch-in` before first paint (only with JS, full motion, and no `c3:fx-done:sketch-in` in `sessionStorage`). `init()` builds every animation with `fill: 'both'`, so the start state (nothing drawn) applies at once, before `main.ts` lifts the class. LCP goes to the small print, which is never hidden.
+1. **Hidden start.** The boot script adds `fx-pending-sketch-in` before first paint (only with JS, full motion, and no `c3:fx-done:sketch-in` in `sessionStorage`). `init()` builds every animation with `fill: 'both'`, so the start state (nothing drawn) applies at once, before `main.ts` lifts the class. LCP lands on a layer that is never hidden: a buffered LCP observer reports the `wings` mask at about 370 ms (390 px) and 450 ms (1440 px). If wings are ever prehidden, re-check it.
 2. **Lines.** Her art is potrace output: filled contours, not strokes, and connected strokes merge into a few large contours. So each path is drawn by a thick dashed stroke (`REVEAL` units wide) running along its own contour, and the whole drawing is clipped to her ink (`clip-rule: evenodd`, like the file). The stroke uncovers exactly her line, as if the pen were following it. When a path's stroke finishes, its solid fill switches on, which fills any part thicker than the reveal (the frame).
    - Paths start top to bottom over the first `SPREAD` of the window.
    - Each takes `sqrt(length / longest)` of the time left. The square root matters: a contour runs out and back along each stroke, so half its dash already uncovers most of the line, and the long ones need the whole window. Path-data length stands in for contour length, so there's no `getTotalLength()` pass at load.
@@ -48,7 +48,7 @@ Chromium at 390×844, DPR 2, 4× CPU throttle, software GL (this cloud VM), `?on
 | full | ≈ 270 ms | ≈ 28 frames of 4–6 ms (p95 5.8 ms) | 24 ms |
 | lite | ≈ 240 ms | similar | 14 ms |
 
-No long animation frame (over 50 ms) happens during the steps. Most of a step is repainting her 250 KB line-art SVG (paint, layerize, commit), which lite pays too. That's above SPEC §6's 2 ms per step, accepted here because it runs once per session, for 2.3 s, before anything else moves. If it shows on a real phone, rasterize the line art once and draw the reveal on a canvas.
+No long animation frame (over 50 ms) happens during the steps. Most of a step is repainting her 250 KB line-art SVG (paint, layerize, commit), which lite pays too. That's above SPEC §6's 2 ms per step. It's accepted here because that budget is about scrolling at 60 fps, and any scroll ends the intro, so the two never overlap. It also runs only once per session, for 2.3 s. These are software-raster numbers, which inflate SVG paint: take one local 4×-throttled trace on a GPU machine before launch (PLAN step 13). If it shows on a real phone, rasterize the line art once and draw the reveal on a canvas.
 
 ## Known trade-offs
 
@@ -60,7 +60,7 @@ No long animation frame (over 50 ms) happens during the steps. Most of a step is
 
 | Knob | Where | Default | Effect |
 |---|---|---|---|
-| `--fps-sketch` | `src/styles/tokens.css` | 12 | Steps per second |
+| `--fps-sketch` | `src/styles/tokens.css` | 12 | Steps per second. Below 11.7 the step is capped so the intro still ends by 2.4 s |
 | `LINE_STEPS` | `index.ts` | 16 | Steps for the line art |
 | `SPREAD` | `index.ts` | 0.55 | Share of the line window over which paths start, top first |
 | `FILL_AT`, `FILL_STEPS` | `index.ts` | 14, 7 | When the flood starts, and its frames |
