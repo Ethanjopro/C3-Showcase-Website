@@ -57,7 +57,7 @@ Her screens get scanlines, a slight two-ink split and stepped static. The projec
 
 The spec asserts both stay under 10 %, over a full loop, in teal-coral and mauve (the lightest inks, so the hardest case for light specks). As a check, raising `SPECK_MAX` to 0.9 makes it fail (about a third of the screen flashing).
 
-**Cost.** 2.2 KB gzip JS + 0.6 KB CSS, loaded lazily. One-time: one 192 px tile and one `toBlob`. Per step: nothing on the main thread. Each screen's static field is one compositor layer, the screen plus one tile each way. On a 390 px phone at DPR 2, a project screen's glass is 74×146 CSS px, so its field is 340×484 device px, about 0.66 MB (4 MB for all six). The eye screen's is about a third of that.
+**Cost.** 2.4 KB gzip JS + 0.6 KB CSS, loaded lazily. One-time: one 192 px tile and one `toBlob`. Per step: nothing on the main thread. Each screen's static field is one compositor layer, the screen plus one tile each way. On a 390 px phone at DPR 2, a project screen's glass is 74×146 CSS px, so its field is 340×484 device px, about 0.66 MB (4 MB for all six). The eye screen's is about a third of that.
 
 ## Tuning knobs
 
