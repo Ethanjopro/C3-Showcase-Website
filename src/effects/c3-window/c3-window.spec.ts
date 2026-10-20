@@ -170,3 +170,30 @@ test('no layout shift on arrival', async ({ page }) => {
   );
   expect(shift).toBeLessThanOrEqual(0.01);
 });
+
+test('arrival shows her C3 in solid ink; the first of the scroll drains it to show the poster', async ({ page }) => {
+  await ready(page);
+  const fill = page.locator(`${mount} .c3-window__fill`);
+  const state = () =>
+    fill.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { clip: cs.clipPath, visibility: cs.visibility, fill: getComputedStyle(el.querySelector('path')!).fill };
+    });
+  const ink = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.style.color = 'var(--ink)';
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  });
+  const arrival = await state();
+  expect(arrival.clip).toBe('none');
+  expect(arrival.visibility).toBe('visible');
+  expect(arrival.fill).toBe(ink);
+  const vh = page.viewportSize()!.height;
+  await scrollTo(page, vh * 0.85 * 0.15);
+  expect((await state()).clip).toMatch(/^inset\(/); // draining
+  await scrollTo(page, vh * 0.85 * 0.5);
+  expect((await state()).visibility).toBe('hidden'); // drained
+});

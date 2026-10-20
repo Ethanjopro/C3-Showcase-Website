@@ -68,12 +68,21 @@ html[data-fx-xray~='lens'] .poster {
   line-height: var(--leading-snug);
 }
 
-/* Wide screens: the toggle sits in the right margin, under the color bar. */
+/* Wide screens: the shared layout (poster.css) puts this mount in the right
+   margin's cell, the same one as the color bar, and on laptop heights
+   (720-864 px) the two overlap. The left margin's middle is empty (the
+   vertical class line is at its top, the date at its bottom), and it sits
+   level with her chest: the toggle goes there. */
 @media (min-width: 64rem) and (min-aspect-ratio: 5 / 4) {
   .print--xray {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    justify-self: end;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: flex-start;
     max-width: 10rem;
+    text-align: right;
   }
 }

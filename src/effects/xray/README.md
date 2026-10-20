@@ -8,6 +8,7 @@ Through a hole in her drawing: her ribcage panel in halftone ink, like an X-ray 
 - **Mounts:**
   - `.layer--xray [data-fx="xray"]`: the canvas, between her ribcage slot and the eye screen. The eye screen, cables, halo and title stay on top.
   - `[data-fx="xray"][data-part="toggle"]` in the poster's small print: the X-ray toggle and its hint. Built from JS; without JS the mount is empty and hidden (`.print--xray:empty`).
+    - On wide screens its CSS moves this mount from the right margin's cell, which it shared with the color bar (they overlapped at 1280×720 to 1536×864), to the middle of the left margin, level with her chest. A test checks it clears the other small print at four laptop sizes. **Proposed shared change:** set this placement in `poster.css` itself.
 - **Writes outside its mounts:** only `<html data-fx-xray>`, written only when its tokens change. Its own CSS keys off it. It never hides her `ribcage` slot (the writer table would allow it): the film is an opaque sheet the size of the rect, so wherever it shows it covers her panel.
 
   | Token | Set when | CSS |
