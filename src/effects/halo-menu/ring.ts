@@ -72,7 +72,7 @@ const VARIANTS = 3;
 const JITTER = 0.035;
 /** Camera: field of view, height above the ring, and the margin kept around it. */
 const FOV = 30;
-const CAMERA_Y = 2.3;
+const CAMERA_Y = 3.6;
 const FIT_MARGIN = 1.04;
 /** Drag: radians per canvas width. */
 const DRAG = Math.PI * 0.9;
@@ -230,13 +230,43 @@ interface Screen {
   fronts: Texture[];
   base: Float32Array;
   angle: number;
+  /** Its place on the ring, ring-local. */
+  home: Vector3;
   /** Entrance: where the screen starts, in ring-local space. */
   from: { pos: Vector3; scale: number; yaw: number } | null;
 }
 
 const clampIndex0 = (opts: RingOptions) => Math.max(0, Math.min(opts.links.length - 1, opts.active));
 
+/** What build() has made so far, so a failure part-way can undo it. */
+interface Made {
+  canvas?: HTMLCanvasElement;
+  renderer?: WebGLRenderer;
+  resize?: ResizeObserver;
+  disposables: { dispose(): void }[];
+}
+
+/**
+ * Builds the ring in `mount`. If anything throws part-way, whatever was made
+ * (the canvas, the WebGL context, GPU resources) is released before the
+ * error goes on to index.ts, which falls back to the grid: a failing open
+ * never leaves a context behind for the next one to pile onto.
+ */
 export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
+  const made: Made = { disposables: [] };
+  try {
+    return build(mount, opts, made);
+  } catch (err) {
+    made.resize?.disconnect();
+    made.disposables.forEach((d) => d.dispose());
+    made.renderer?.dispose();
+    made.renderer?.forceContextLoss();
+    made.canvas?.remove();
+    throw err;
+  }
+}
+
+function build(mount: HTMLElement, opts: RingOptions, made: Made): Ring {
   const p = palette();
   const sections = content.sections.items;
   const fps = number('fps-boil', 10);
@@ -246,7 +276,9 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
   const canvas = document.createElement('canvas');
   canvas.className = 'halo-ring';
   mount.append(canvas);
+  made.canvas = canvas;
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
+  made.renderer = renderer;
   renderer.setPixelRatio(dpr);
   renderer.outputColorSpace = SRGBColorSpace;
   const scene = new Scene();
@@ -254,7 +286,7 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
   const ring = new Group();
   scene.add(ring);
 
-  const disposables: { dispose(): void }[] = [];
+  const disposables = made.disposables;
   const keep = <T extends { dispose(): void }>(x: T) => (disposables.push(x), x);
 
   // Shared faces: sides (hatched), top and bottom, back. VARIANTS drawings each.
@@ -262,11 +294,9 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
   const frontH = Math.round((TEX * BOX.h) / BOX.w);
   const sides = Array.from({ length: VARIANTS }, (_, s) => keep(drawSide(p, s, sideW, frontH, true)));
   const tops = Array.from({ length: VARIANTS }, (_, s) => keep(drawSide(p, s + 5, TEX, sideW, false)));
-  const backs = Array.from({ length: VARIANTS }, (_, s) => keep(drawSide(p, s + 9, TEX, frontH, true)));
   const focusFrames = Array.from({ length: VARIANTS }, (_, s) => keep(drawFocus(p, s)));
   const sideMat = keep(new MeshBasicMaterial({ map: sides[0] }));
   const topMat = keep(new MeshBasicMaterial({ map: tops[0] }));
-  const backMat = keep(new MeshBasicMaterial({ map: backs[0] }));
 
   const screens: Screen[] = opts.links.map((link, i) => {
     const id = link.hash.slice(1);
@@ -276,13 +306,16 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
     const front = keep(new MeshBasicMaterial({ map: fronts[0] }));
     const geo = keep(new BoxGeometry(BOX.w, BOX.h, BOX.d));
     // BoxGeometry faces: +x, -x, +y, -y, +z (front, facing out of the ring), -z.
-    const mesh = new Mesh(geo, [sideMat, sideMat, topMat, topMat, front, backMat] as Material[]);
+    // The back carries the label too, so the screen at the back of the ring
+    // still says which section it is (and Projects still shows its static).
+    const mesh = new Mesh(geo, [sideMat, sideMat, topMat, topMat, front, front] as Material[]);
     const angle = (i / opts.links.length) * TAU;
-    mesh.position.set(Math.sin(angle) * RADIUS, 0, Math.cos(angle) * RADIUS);
+    const home = new Vector3(Math.sin(angle) * RADIUS, 0, Math.cos(angle) * RADIUS);
+    mesh.position.copy(home);
     mesh.rotation.y = yaw(angle, -((clampIndex0(opts) / opts.links.length) * TAU));
     mesh.userData.index = i;
     ring.add(mesh);
-    return { id, link, mesh, front, fronts, base: (geo.attributes.position as BufferAttribute).array.slice() as Float32Array, angle, from: null };
+    return { id, link, mesh, front, fronts, base: (geo.attributes.position as BufferAttribute).array.slice() as Float32Array, angle, home, from: null };
   });
 
   // The focus frame: her accent rough frame on the front screen's face.
@@ -292,32 +325,51 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
   focus.position.z = BOX.d / 2 + 0.02;
 
   // The cable loop the screens hang on, through their middles, sagging between
-  // them; doubled, like her line. Plus a few drips, as on her halo.
+  // them; doubled, like her line. Plus a few drips, as on her halo. Her
+  // cables are scratchy strokes, so each is drawn VARIANTS times with
+  // wandering points, and the boil step shows one drawing at a time.
   const cableMat = keep(new MeshBasicMaterial({ color: p.accent }));
   const n = screens.length;
-  const loop: Vector3[] = [];
-  for (let i = 0; i < n * 4; i++) {
-    const a = (i / (n * 4)) * TAU;
-    const between = Math.sin(((i % 4) / 4) * Math.PI); // 0 at a screen, 1 midway
-    loop.push(new Vector3(Math.sin(a) * RADIUS, -0.05 - between * 0.32, Math.cos(a) * RADIUS));
-  }
-  for (const [r, lift, k] of [
-    [0.034, 0, 1],
-    [0.016, 0.09, 0.985],
-  ] as const) {
-    const curve = new CatmullRomCurve3(loop.map((v) => new Vector3(v.x * k, v.y + lift, v.z * k)), true);
-    ring.add(new Mesh(keep(new TubeGeometry(curve, n * 40, r, 6, true)), cableMat));
-  }
+  const cables: Group[] = [];
+  const drips: Group[][] = screens.map(() => []);
   const dripRand = rng(5);
-  for (const s of screens) {
-    for (const side of [-1, 1]) {
-      if (dripRand() < 0.35) continue;
-      const x = side * BOX.w * (0.25 + dripRand() * 0.2);
-      const len = 0.9 + dripRand() * 1.4;
-      const pts = [new Vector3(x, -BOX.h / 2, 0), new Vector3(x + side * 0.05, -BOX.h / 2 - len * 0.5, 0.05), new Vector3(x - side * 0.04, -BOX.h / 2 - len, 0)];
-      const drip = new Mesh(keep(new TubeGeometry(new CatmullRomCurve3(pts), 16, 0.018, 5, false)), cableMat);
-      s.mesh.add(drip);
+  const dripShapes = screens.map(() =>
+    [-1, 1].flatMap((side) => (dripRand() < 0.35 ? [] : [{ side, x: side * BOX.w * (0.25 + dripRand() * 0.2), len: 0.9 + dripRand() * 1.4 }])),
+  );
+  for (let v = 0; v < VARIANTS; v++) {
+    const r = rng(101 + v * 17);
+    const wobble = (a: number) => (r() - 0.5) * a;
+    const group = new Group();
+    for (const [radius, lift, k] of [
+      [0.034, 0, 1],
+      [0.016, 0.09, 0.985],
+    ] as const) {
+      const pts: Vector3[] = [];
+      for (let i = 0; i < n * 6; i++) {
+        const a = (i / (n * 6)) * TAU;
+        const between = Math.sin(((i % 6) / 6) * Math.PI); // 0 at a screen, 1 midway
+        const rr = RADIUS * k + wobble(0.09);
+        pts.push(new Vector3(Math.sin(a) * rr, -0.05 - between * 0.32 + lift + wobble(0.08), Math.cos(a) * rr));
+      }
+      group.add(new Mesh(keep(new TubeGeometry(new CatmullRomCurve3(pts, true), n * 48, radius * (0.8 + r() * 0.4), 6, true)), cableMat));
     }
+    group.visible = v === 0;
+    ring.add(group);
+    cables.push(group);
+    screens.forEach((s, i) => {
+      const g = new Group();
+      for (const { side, x, len } of dripShapes[i]!) {
+        const pts = [
+          new Vector3(x + wobble(0.04), -BOX.h / 2, 0),
+          new Vector3(x + side * 0.05 + wobble(0.08), -BOX.h / 2 - len * 0.5, 0.05),
+          new Vector3(x - side * 0.04 + wobble(0.1), -BOX.h / 2 - len + wobble(0.1), 0),
+        ];
+        g.add(new Mesh(keep(new TubeGeometry(new CatmullRomCurve3(pts), 16, 0.018, 5, false)), cableMat));
+      }
+      g.visible = v === 0;
+      s.mesh.add(g);
+      drips[i]!.push(g);
+    });
   }
 
   // --- State --------------------------------------------------------------------
@@ -326,8 +378,13 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
   let target = clampIndex(opts.active);
   let dragging: { id: number; x: number; y: number; t: number; phi: number; lastX: number; lastT: number; moved: boolean } | null = null;
   let dolly: { start: number; index: number; from: Vector3; to: Vector3 } | null = null;
-  let entrance = opts.fromHalo && frozenAt === null ? ticker.now() : null;
+  // The entrance's clock starts at the first frame (NaN until then), not
+  // while the textures are still being drawn.
+  let entrance: number | null = opts.fromHalo && frozenAt === null ? Number.NaN : null;
+  if (entrance !== null) mount.dataset.entrance = 'growing';
   let boilStep = -1;
+  let rendered = false;
+  let atRest = false;
   let dirty = true;
   let size = { w: 1, h: 1 };
   let front = target;
@@ -387,6 +444,7 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
     camera.updateProjectionMatrix();
     if (entrance !== null) startFromHalo();
     dirty = true;
+    atRest = false; // re-measure where the front screen sits
   }
 
   /** Each screen starts where one of her halo's screens is on the poster. */
@@ -416,24 +474,25 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
   }
 
   // --- Boil: three drawings and jittered corners, stepped ---------------------------
+  const offsets = new Float32Array(24); // x, y, z for each of a box's 8 corners
   function boil(step: number) {
     const v = step % VARIANTS;
     sideMat.map = sides[v]!;
     topMat.map = tops[v]!;
-    backMat.map = backs[v]!;
     focusMat.map = focusFrames[v]!;
+    cables.forEach((g, k) => (g.visible = k === v));
     screens.forEach((s, i) => {
       s.front.map = s.fronts[v]!;
+      drips[i]!.forEach((g, k) => (g.visible = k === v));
       const r = rng(step * 31 + i * 7 + 1);
-      const offsets = Array.from({ length: 8 }, () => [(r() - 0.5) * JITTER * 2, (r() - 0.5) * JITTER * 2, (r() - 0.5) * JITTER * 2]);
+      for (let c = 0; c < 24; c++) offsets[c] = (r() - 0.5) * JITTER * 2;
       const attr = s.mesh.geometry.attributes.position as BufferAttribute;
       const a = attr.array as Float32Array;
       for (let k = 0; k < a.length; k += 3) {
-        const corner = (s.base[k]! > 0 ? 1 : 0) | (s.base[k + 1]! > 0 ? 2 : 0) | (s.base[k + 2]! > 0 ? 4 : 0);
-        const o = offsets[corner]!;
-        a[k] = s.base[k]! + o[0]!;
-        a[k + 1] = s.base[k + 1]! + o[1]!;
-        a[k + 2] = s.base[k + 2]! + o[2]!;
+        const corner = ((s.base[k]! > 0 ? 1 : 0) | (s.base[k + 1]! > 0 ? 2 : 0) | (s.base[k + 2]! > 0 ? 4 : 0)) * 3;
+        a[k] = s.base[k]! + offsets[corner]!;
+        a[k + 1] = s.base[k + 1]! + offsets[corner + 1]!;
+        a[k + 2] = s.base[k + 2]! + offsets[corner + 2]!;
       }
       attr.needsUpdate = true;
     });
@@ -528,6 +587,7 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
   opts.links.forEach((a) => a.addEventListener('focus', onFocus));
 
   const resize = new ResizeObserver(layout);
+  made.resize = resize;
   resize.observe(mount);
   layout();
 
@@ -565,17 +625,18 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
     if (entrance === null) for (const sc of screens) sc.mesh.rotation.y = yaw(sc.angle, phi);
 
     if (entrance !== null) {
+      if (Number.isNaN(entrance)) entrance = t;
       const e = Math.min(1, (t - entrance) / ENTRANCE_MS);
       const k = easeOut(e);
       for (const sc of screens) {
         if (!sc.from) continue;
-        const home = new Vector3(Math.sin(sc.angle) * RADIUS, 0, Math.cos(sc.angle) * RADIUS);
-        sc.mesh.position.lerpVectors(sc.from.pos, home, k);
+        sc.mesh.position.lerpVectors(sc.from.pos, sc.home, k);
         sc.mesh.scale.setScalar(sc.from.scale + (1 - sc.from.scale) * k);
         sc.mesh.rotation.y = sc.from.yaw + delta(sc.from.yaw, yaw(sc.angle, phi)) * k;
       }
       if (e >= 1) {
         entrance = null;
+        delete mount.dataset.entrance;
         for (const sc of screens) sc.from = null;
       }
       dirty = true;
@@ -596,10 +657,18 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
     if (dirty) {
       renderer.render(scene, camera);
       dirty = false;
-      mount.dataset.rendered = '';
-      // Where the front screen is, as fractions of the canvas (tests tap it).
-      screens[front]!.mesh.getWorldPosition(probe).project(camera);
-      mount.dataset.frontAt = `${((probe.x + 1) / 2).toFixed(3)},${((1 - probe.y) / 2).toFixed(3)}`;
+      if (!rendered) {
+        rendered = true;
+        mount.dataset.rendered = '';
+      }
+      // Where the front screen is, as fractions of the canvas (tests tap it):
+      // written once each time the ring comes to rest, not every frame.
+      const resting = !dragging && !velocity && entrance === null && !dolly && Math.abs(delta(phi, -screens[target]!.angle)) < 1e-3;
+      if (resting && !atRest) {
+        screens[front]!.mesh.getWorldPosition(probe).project(camera);
+        mount.dataset.frontAt = `${((probe.x + 1) / 2).toFixed(3)},${((1 - probe.y) / 2).toFixed(3)}`;
+      }
+      atRest = resting;
     }
   }
   const off = addTick(frame);
@@ -621,6 +690,7 @@ export function createRing(mount: HTMLElement, opts: RingOptions): Ring {
       delete mount.dataset.front;
       delete mount.dataset.rendered;
       delete mount.dataset.frontAt;
+      delete mount.dataset.entrance;
     },
   };
 }

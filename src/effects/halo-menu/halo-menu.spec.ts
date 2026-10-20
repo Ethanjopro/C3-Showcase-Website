@@ -104,6 +104,16 @@ test('tapping the front screen dollies in, closes the menu and lands on the sect
   await expect(page.locator('#info-title')).toBeFocused();
 });
 
+test('opened from the halo, the screens grow out of her halo, then settle into the ring', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'the halo hit area is pointer-only');
+  await open(page, '/?only=halo-menu');
+  await page.locator('.halo-hit').hover(); // intent: the ring chunk starts loading
+  await page.locator('.halo-hit').click();
+  await expect(page.locator(mount)).toHaveAttribute('data-entrance', 'growing', { timeout: 15_000 });
+  await expect(page.locator(mount)).not.toHaveAttribute('data-entrance', /.*/, { timeout: 15_000 });
+  await expect(page.locator(mount)).toHaveAttribute('data-front', 'poster');
+});
+
 test('ten open and close cycles leave no warnings or errors', async ({ page }) => {
   const messages: string[] = [];
   // Chromium's own GPU-process notes when WebGL runs in software (CI and cloud

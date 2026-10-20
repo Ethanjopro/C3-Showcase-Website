@@ -16,8 +16,9 @@
 //
 // Outside its mount it writes only <html data-fx-halo-menu>:
 //   "grid"  the list is the menu (static, lite, no WebGL, or the ring failed)
-//   "ring"  the ring is live: style.css turns the list into a strip of small
-//           screens under the ring, still visible, focusable and clickable
+//   "ring"  the menu is open with the ring loading or live: style.css turns
+//           the list into a strip of small screens under the ring, still
+//           visible, focusable and clickable
 
 import type { EffectOptions } from '../../core/effect';
 import { on } from '../../core/bus';
@@ -103,6 +104,9 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
 
   offs.push(
     on('menu:open', ({ source }) => {
+      // The ring's layout (stage above, strip below) goes up at once, so the
+      // links don't jump under a finger when the chunk arrives.
+      html.setAttribute(ATTR, 'ring');
       root.dataset.state = 'loading';
       load()
         .then(({ createRing }) => {
@@ -110,7 +114,6 @@ export function init(root: HTMLElement, opts: EffectOptions): void {
           const list = links(dialog);
           const active = Math.max(0, list.indexOf(document.activeElement as HTMLAnchorElement));
           ring = createRing(root, { links: list, active, fromHalo: source === 'halo' });
-          html.setAttribute(ATTR, 'ring');
           root.dataset.state = 'ring';
         })
         .catch((err) => {

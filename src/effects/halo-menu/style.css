@@ -33,7 +33,10 @@ html[data-fx-halo-menu~='ring'] .menu {
 }
 
 html[data-fx-halo-menu~='ring'] .menu__list {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* One row, however many sections sections.json lists. */
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: var(--space-2);
   margin-top: var(--halo-ring-h);
 }

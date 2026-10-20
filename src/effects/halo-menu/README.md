@@ -9,9 +9,10 @@ The menu becomes her halo: a ring of boxy screens strung on a cable loop, one sc
   - `data-state`: `idle`, `loading`, `ring` or `grid`
   - `data-front`: the section at the front
   - `data-rendered`: set once a frame is drawn
-  - `data-front-at`: the front screen's centre as canvas fractions, which tests tap
+  - `data-front-at`: the front screen's centre as canvas fractions, which tests tap. It's written each time the ring comes to rest, not every frame.
+  - `data-entrance="growing"`: set while the screens grow out of the halo
 - **Writes outside its mount:**
-  - `<html data-fx-halo-menu>`: `grid` or `ring`. While it's `ring`, `style.css` turns the list into a strip of small screens under the ring and gives `.menu` a `--halo-ring-h` for the space above it.
+  - `<html data-fx-halo-menu>`: `grid` or `ring`. It turns `ring` the moment the menu opens at full quality with WebGL, while the chunk is still loading, so the links never jump under a finger. It drops back to `grid` only if the ring fails. While it's `ring`, `style.css` turns the list into a strip of small screens under the ring and gives `.menu` a `--halo-ring-h` for the space above it.
   - `data-halo-front` on the link of the screen at the front, so its strip screen takes the accent frame too.
 
   Both are proposed for the writer table in the PR. `menu.ts`, the dialog and its `<nav>` are untouched.
@@ -22,7 +23,8 @@ The menu becomes her halo: a ring of boxy screens strung on a cable loop, one sc
   - `.shots/halo-menu-open@{390,1440}.png`
   - `halo-menu-open-reduced@390.png`
   - `halo-menu-swiped@390.png`
-  - `halo-menu-from-halo@1440.png`
+
+  The entrance from the halo is too quick to catch in a software-GL screenshot, so a test covers it instead.
 
   The section shots also include `menu@{390,1440}.png`.
 - **Tests:** `halo-menu.spec.ts` covers:
@@ -31,6 +33,7 @@ The menu becomes her halo: a ring of boxy screens strung on a cable loop, one sc
   - the list stays visible, with links at least 44 px and the ring `aria-hidden`
   - phone: a touch swipe changes the front screen, and its link takes focus
   - tapping the front screen dollies in, closes the menu and lands on the section
+  - desktop: opened from the halo, the screens grow out of it (`data-entrance`), then settle
   - ten open and close cycles leave no warnings or errors
   - reduced motion: the grid, arrow keys still work, and no Three.js
   - Chromium with WebGL disabled: the grid, no Three.js, no errors
@@ -44,11 +47,11 @@ The menu becomes her halo: a ring of boxy screens strung on a cable loop, one sc
 3. **Scene.** One screen per `sections.json` entry on a ring of radius 2.7:
    - Each screen is a box with flat `MeshBasicMaterial` faces: no lights, no gloss.
    - Her line lives in the face textures, drawn with `raster.roughStroke`: overshooting rough frames, an inner screen bezel, and her ≡ hatching on the sides and back.
-   - Fronts carry the section number (`--font-display`) and name (`--font-text`) in `--text` on `--paper-2`. The Projects front adds chunky static: `raster.noiseTile` at 22 % ink.
-   - A doubled `--accent` cable loop runs through the screens, sagging between them, with drips hanging below, as on her halo.
+   - Fronts carry the section number (`--font-display`) and name (`--font-text`) in `--text` on `--paper-2`. The Projects front adds chunky static: `raster.noiseTile` at 22 % ink. Backs carry the same label, so the screen at the back of the ring still says which section it is.
+   - A doubled `--accent` cable loop runs through the screens, sagging between them, with drips hanging below, as on her halo. Her cables are scratchy strokes, so the loop and the drips are drawn three times with wandering points and slightly different thicknesses.
    - The screen at the front wears her `--accent` frame.
    - The screens face out of the ring, but turned 55 % toward the viewer (`YAW`), so the side screens show their labels.
-4. **Boil.** Every face has three drawings, and the box corners jitter by `JITTER`. Both step together at `--fps-boil` (10), so silhouettes and lines boil like her poster. Swapping maps is free: all three drawings are made at open.
+4. **Boil.** Every face and cable has three drawings, and the box corners jitter by `JITTER`. All of it steps together at `--fps-boil` (10), so silhouettes and lines boil like her poster. Swapping maps is free: all three drawings are made at open.
 5. **Interaction.**
    - Drag or swipe turns the ring 0.9π per canvas width. Inertia decays with `FRICTION`; below `SNAP_SPEED` it snaps to the nearest screen, and that screen's link takes focus.
    - The ring follows focus, so Tab, the arrows or a tap on a strip link turn it.
@@ -56,8 +59,9 @@ The menu becomes her halo: a ring of boxy screens strung on a cable loop, one sc
    - The canvas has `touch-action: pan-y pinch-zoom`: sideways drags are the ring's, and pinch-zoom is never disabled.
 6. **Entrance.** When the menu opens from the poster's halo, each screen starts at one of her halo's `screens` rects, projected into the scene, and grows into the ring over 560 ms.
 7. **Rendering.** One ticker subscription while the menu is open. It renders only when something changed: a drag, a snap, the entrance, the dolly, or a boil step (10 fps at rest). DPR is capped at 1.5 on phones and 2 elsewhere.
-8. **Cleanup.** On `menu:close`, everything goes: the ticker subscription, listeners, the ResizeObserver, geometries, materials, textures, and `renderer.dispose()` then `forceContextLoss()`, so ten cycles never pile up WebGL contexts.
-9. **`?freeze`.** Snaps, the entrance and the dolly finish at once, and the boil holds a step.
+8. **Failure.** If building the ring throws part-way, whatever was made (the canvas, the WebGL context, GPU resources) is released before the error reaches `index.ts`, which falls back to the grid.
+9. **Cleanup.** On `menu:close`, everything goes: the ticker subscription, listeners, the ResizeObserver, geometries, materials, textures, and `renderer.dispose()` then `forceContextLoss()`, so ten cycles never pile up WebGL contexts.
+10. **`?freeze`.** Snaps, the entrance and the dolly finish at once, and the boil holds a step.
 
 | Quality | What runs |
 |---|---|
@@ -73,8 +77,11 @@ SPEC §6 says Three.js is "prefetched when the browser is idle". SPEC §9.14 and
 
 ## Numbers
 
-- **Chunk:** `ring-*.js` (Three.js plus the scene) is **138.4 KB gzip** (547 KB minified), within the 170 KB budget. `halo-menu-*.js` is 1.2 KB gzip. GSAP stays in the shared ticker chunk.
+- **Chunk:** `ring-*.js` (Three.js plus the scene) is **138.7 KB gzip** (548 KB minified), within the 170 KB budget. `halo-menu-*.js` is 1.2 KB gzip. GSAP stays in the shared ticker chunk.
 - **Smoothness:** the cloud VM renders WebGL in software, so it only shows that the ring is correct. Judge frame rate on a real phone. At rest the ring renders 10 times a second (the boil). While it's dragged or snapping, it renders every frame.
+
+- **Frame loop:** the boil, the entrance and the rest marker don't allocate per frame.
+- The strip is one row whatever the number of sections in `sections.json` (`grid-auto-flow: column`).
 
 ## Tuning knobs
 
@@ -84,7 +91,7 @@ SPEC §6 says Three.js is "prefetched when the browser is idle". SPEC §9.14 and
 | `YAW` | `ring.ts` | 0.55 | How far screens face out of the ring (1) vs toward the viewer (0) |
 | `VARIANTS` | `ring.ts` | 3 | Drawings per face in the boil |
 | `JITTER` | `ring.ts` | 0.035 | Corner jitter per boil step |
-| `FOV`, `CAMERA_Y`, `FIT_MARGIN` | `ring.ts` | 30°, 2.3, 1.04 | Camera and how tightly the ring fits (phones let side screens run off the edges) |
+| `FOV`, `CAMERA_Y`, `FIT_MARGIN` | `ring.ts` | 30°, 3.6, 1.04 | Camera and how tightly the ring fits (phones let side screens run off the edges) |
 | `DRAG` | `ring.ts` | 0.9π | Radians per canvas width of drag |
 | `FRICTION`, `SNAP_SPEED`, `SNAP_RATE` | `ring.ts` | 3.5, 1.4, 11 | Inertia decay, snap threshold, snap stiffness |
 | `TAP_MOVE`, `TAP_MS` | `ring.ts` | 8 px, 400 ms | What counts as a tap |
