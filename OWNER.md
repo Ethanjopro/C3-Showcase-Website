@@ -17,6 +17,7 @@ Everything waiting on Ethan or the artist, in one place.
 | 4 | **RSVP link** | Launch | "RSVP opens soon", and no RSVP chip |
 | 5 | **Follow link:** which platform, and the URL | Launch | Hidden |
 | 6 | **Effects to switch off:** try `?off=<effect>` on your phone and pick anything that feels like too much | Launch (PLAN step 13) | Everything on |
+| 7 | **sketch-in is hidden by the new C3 arrival.** Since PR #7 the poster arrives behind her solid-ink C3, so the line art draws itself in unseen, and the scroll that drains the ink also finishes the intro. On a default visit nobody sees it. Pick one: (a) switch `sketch-in` off (`src/config/features.json`); (b) keep it for `?off=c3-window` visits only; (c) let it play inside the letters as the ink drains (a cross-effect change: sketch-in would wait for c3-window's `data-state` and not skip on the pin's scroll). Compare `?off=c3-window` and the default on your phone. | Launch (PLAN step 13) | Both on; the intro plays unseen (2.3 s, once per session) |
 | 17 | **Ticking on the poster:** SPEC §6 allows at most two effects ticking on one screen, and the arrival screen already steps line-boil and paper-grain. So crt-screens keeps the eye screen's static still (it keeps its scanlines and two-ink split), and only the project screens' static steps. All three run on the compositor, with no JS per step. Should the eye's static step too? | Launch (PLAN step 13) | Eye still. Stepping it is one constant (`POSTER_STEPS` in `src/effects/crt-screens/index.ts`). |
 
 ## Open: ask her (on hold: Ethan will ask when he's ready)
@@ -49,7 +50,15 @@ From PR #6 (xray, c3-window, halo-menu):
 - **`vite.config.ts`:** raise `build.chunkSizeWarningLimit` to about 600 for the lazy ring chunk (139 KB gzip).
 - **Cross-effect:** `.halo-hit` is tappable inside the letters at arrival; c3-window's inked edge could share a core boil filter. (The X-ray toggle now waits while the ink letters cover the chest: done in PR #7.)
 
-From the crt-screens PR (PLAN step 12):
+From PR #8 (sketch-in, palette, misregister, panel-wipe):
+- **`core/palette`:** a `duration(token, fallback)` helper that understands `s` and `ms`. `number()` drops units and the CSS minifier writes `600ms` as `.6s`, so `number('dur-palette', 600)` returns 0.6. palette and panel-wipe each carry a local copy; delete both once it lands.
+- **`core/palette.request()`:** "latest pick wins" and a 350 ms minimum between visible colorway changes (SPEC §6 flash safety). The palette effect does this itself today, which relies on core running queued picks in the same task and on reading the color bar's `change` events; under reduced motion (no transition) nothing limits it.
+- **`src/ui/colorbar.ts`:** don't move the checked radio back to an intermediate colorway while an arrow key is held.
+- **`scripts/shots.mjs`:** section shots are no longer deterministic. Set `sessionStorage['c3:fx-done:sketch-in']='1'` before unfrozen section shots (the poster otherwise catches the intro mid-flood), and wait for no `[data-fx="panel-wipe"][data-state="wiping"]` (or use `?off=panel-wipe`) before each section shot.
+- **`src/styles/base.css` prehide:** the halo, wings, cables, ribcage and eye screen show before the figure draws in. If wings join the prehide, LCP moves (today it's the wings layer); re-check it.
+- **PLAN step 6:** sketch-in's 4–6 ms per step (4× throttle, software raster) is over SPEC §6's 2 ms; take one GPU trace locally (step 13). If it's still over, rasterize the line art once and draw the reveal on a canvas.
+
+From PR #9 (crt-screens, PLAN step 12):
 - **`tokens.css`:** add `--fps-crt: 10` next to the other rates. crt-screens reads it with `number('fps-crt', 10)`, so it's 10 either way until then.
 - **SPEC §3 row 11 and PLAN step 12:** change "RGB split" to "two-ink split". A red/green/blue split would bring off-palette colors into every colorway, so the eye screen splits in `--accent` and `--on-ink` instead.
 - **`vitest.config.ts`:** also collect `src/effects/*/*.test.ts`, so effects can own unit tests. Until then, PLAN step 12's luminance check runs in `crt-screens.spec.ts`, on real rendered frames.
@@ -66,4 +75,5 @@ From PR #7 (arrival polish):
 - **2026-10-20:** Project screens are portrait (9:16): three across on phones, six across from tablet width up.
 - **2026-10-20:** Her drafts can be public, and her work can be used freely on the site (Ethan has her go-ahead). Placeholders cut from them can ship.
 - **2026-10-20:** Steps 1–7 are built and merged (scaffold; line-boil, paper-grain; xray, c3-window, halo-menu).
+- **2026-10-20:** Steps 6, 8, 9 and 10 are built (sketch-in, palette, misregister, panel-wipe; PR #8).
 - **2026-10-20:** C3 arrival (Ethan, from mockups): her C3 arrives solid in ink, whole and nearly as wide as the poster; the scroll drains the ink to show the poster through the letters, then opens the window. Letters no longer crop at the poster's edges (PR #7).
