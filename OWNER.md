@@ -17,6 +17,7 @@ Everything waiting on Ethan or the artist, in one place.
 | 4 | **RSVP link** | Launch | "RSVP opens soon", and no RSVP chip |
 | 5 | **Follow link:** which platform, and the URL | Launch | Hidden |
 | 6 | **Effects to switch off:** try `?off=<effect>` on your phone and pick anything that feels like too much | Launch (PLAN step 13) | Everything on |
+| 17 | **Ticking on the poster:** SPEC §6 allows at most two effects ticking on one screen. With crt-screens, the arrival screen steps three: line-boil, paper-grain and the eye screen's static. All three run on the compositor (no JS per step). Is that OK, or should the eye's static hold still? | Launch (PLAN step 13) | Three under `full`. Slow devices (`lite`) already hold the eye still. |
 
 ## Open: ask her (on hold: Ethan will ask when he's ready)
 
@@ -27,7 +28,7 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 | 8 | What name or handle goes in her credit line? | Any time | "Poster art: 0.0.0" |
 | 9 | **Composition (not settled yet).** Her newest drafts (`figure-lineart-with-halo` / `-no-halo`, 2026-10-20) keep the praying figure, head wings and a ring of 6 screens, but show no cables, no ribcage X-ray panel and no eye screen, and add a small second halo at the chest and a decorated bodice. Ask her: are the cables, ribcage panel and eye screen still coming as separate layers, or are they gone? Is the chest halo part of the design? Will the title and small print be drawn into the frame? | Before `cables`, and before her final art | `cables` on hold; x-ray and eye screen use the older sketch's positions |
 | 10 | Final art layers, one file per slot, per the SPEC §5 handoff list | 2026-10-30 | Placeholders cut from her drafts |
-| 11 | The project screens are now phone-shaped (most projects are phone apps). Should they look like upright CRTs, as now, or more like old phones or handhelds? | Before `crt-screens` merges | Upright CRTs in her frame style |
+| 11 | The project screens are now phone-shaped (most projects are phone apps). Should they look like upright CRTs, as now, or more like old phones or handhelds? | Before launch | Upright CRTs in her frame style. crt-screens merged with this default; a phone look only needs `panels.css` and the frame, not the effect. |
 | 12 | The halo and cables are ink on the site, but red in her sketch (coral would vanish on the coral fill). Which does she want? It's one manifest field. | Any time | Ink |
 | 13 | The poster uses her newest concept (halo and ribcage). The circled poster's figure, with headphones, the device and the ≡ hatching, isn't on it. Is that right? | Before her final art | Newest concept |
 | 14 | The small print (date, location) is typeset outside the frame for legibility; her thumbnail hand-letters it inside. OK? | Any time | Typeset, outside |
@@ -47,6 +48,12 @@ From PR #6 (xray, c3-window, halo-menu):
 - **`roughFrame`:** the X-ray toggle copies the generator from `scripts/vite/c3-html.ts`. Move it into one module that both import.
 - **`vite.config.ts`:** raise `build.chunkSizeWarningLimit` to about 600 for the lazy ring chunk (139 KB gzip).
 - **Cross-effect:** `.halo-hit` is tappable inside the letters at arrival; c3-window's inked edge could share a core boil filter. (The X-ray toggle now waits while the ink letters cover the chest: done in PR #7.)
+
+From the crt-screens PR (PLAN step 12):
+- **`tokens.css`:** add `--fps-crt: 10` next to the other rates. crt-screens reads it with `number('fps-crt', 10)`, so it's 10 either way until then.
+- **SPEC §3 row 11 and PLAN step 12:** change "RGB split" to "two-ink split". A red/green/blue split would bring off-palette colors into every colorway, so the eye screen splits in `--accent` and `--on-ink` instead.
+- **`vitest.config.ts`:** also collect `src/effects/*/*.test.ts`, so effects can own unit tests. Until then, PLAN step 12's luminance check runs in `crt-screens.spec.ts`, on real rendered frames.
+- **`scripts/shots.mjs`:** a subset run (`npm run shots -- projects`) captures the skip link, focused, at the top of `projects@390`. A full run doesn't.
 
 From PR #7 (arrival polish):
 - **`poster.css`:** give `.print--xray` its own cell in the wide layout (left margin, centre). xray's own CSS moves it there today, because the shared cell is the color bar's and they overlapped on laptop screens.

@@ -16,7 +16,9 @@
 // color is a token. Each screen starts at a different step of the walk.
 //
 //   full    static at 10 fps; the words slip sideways for one step now and then
-//   lite    static at 10 fps; no slip
+//   lite    static at 10 fps on the project screens only; poster screens
+//           hold one frame (the poster already steps line-boil and grain);
+//           no slip
 //   static  one still frame (reduced motion)
 //
 // Offscreen screens pause (core/onscreen), and ?freeze=<ms> pins every screen
@@ -154,22 +156,26 @@ export async function init(mount: HTMLElement, opts: EffectOptions): Promise<voi
   const len = Math.max(4, ...words.map((w) => w.length));
 
   targets.forEach((target, i) => {
-    const word = posterSlot(target) ? undefined : words[glass.indexOf(target)];
-    const crt = build(target, i, word, len, moving, opts.quality === 'full');
+    const onPoster = posterSlot(target) !== null;
+    const word = onPoster ? undefined : words[glass.indexOf(target)];
+    // The poster already has two steppers (line-boil, paper-grain); SPEC §6
+    // allows two per screen, so under lite a poster screen holds one frame.
+    const stepping = moving && !(onPoster && opts.quality === 'lite');
+    const crt = build(target, i, word, len, stepping, opts.quality === 'full');
     crt.style.setProperty('--crt-tile', `${TILE}px`);
     crt.style.setProperty('--crt-mask', `url("${blobUrl}")`);
     crt.style.setProperty('--crt-step', `${1000 / fps}ms`);
     crt.style.setProperty('--crt-steps', String(STEPS));
     crt.style.setProperty('--crt-slip-steps', String(SLIP_STEPS));
     crt.style.setProperty('--crt-frozen', `${frozenAt ?? 0}ms`);
-    if (!moving) {
+    if (!stepping) {
       // One still frame: the step this screen (or the frozen clock) shows.
       const step = (Math.floor(((frozenAt ?? 0) * fps) / 1000) + ((i * PHASE) % STEPS)) % STEPS;
       const [x, y] = walk[step]!;
       crt.querySelector<HTMLElement>('.crt__static')!.style.transform = `translate(${x}px,${y}px)`;
     }
     if (frozenAt !== null) crt.dataset.paused = '';
-    else if (moving) {
+    else if (stepping) {
       offs.push(observeOnscreen(target, (on) => (on ? delete crt.dataset.paused : (crt.dataset.paused = ''))));
     }
     target.append(crt);

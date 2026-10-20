@@ -17,6 +17,7 @@ Her screens get scanlines, a slight two-ink split and stepped static. The projec
   - a poster screen is masked to its own slot's art and gets the split
   - a page without an eye screen still works
   - a mid-visit switch to reduced motion restarts cleanly
+  - under `lite`, poster screens hold still
 
 ## How it works
 
@@ -25,11 +26,11 @@ Her screens get scanlines, a slight two-ink split and stepped static. The projec
 | Target | Where | Gets |
 |---|---|---|
 | Poster screen | a `[data-crt]` inside a poster layer (`.layer[data-slot]`): today, the eye screen | Static and scanlines masked to that slot's own art (its manifest `src`, lined up with its `rect`), so they cover only her ink panel. Plus the two-ink split. |
-| Glass | any other `[data-crt]`: the six portrait project screens | Static, scanlines, and a chunk of the teaser line |
+| Glass | any other `[data-crt]`: the six portrait project screens | Static and a chunk of the teaser line, over the glass's own faint scanlines from `panels.css` |
 
-1. **Static.** `static.ts` builds one 96 px tile of light specks from two `raster.noiseTile`s, the same way paper-grain builds its tooth: grains about 1.25 CSS px, ragged edges, 42 % coverage, at device resolution (DPR ≤ 2). The tile is a *mask* over a `--on-ink` fill, so the static is colored by a token.
+1. **Static.** `static.ts` builds one 96 px tile of light specks from two `raster.noiseTile`s, the same way paper-grain builds its tooth: grains about 2.25 CSS px, so specks clump like riso tooth, ragged edges, 42 % coverage, at device resolution (DPR ≤ 2). The tile is a *mask* over a `--on-ink` fill, so the static is colored by a token.
 2. **Steps.** Noise is uncorrelated with itself a few grains away, so one tile shifted to a new random offset reads as a new frame. A `step-end` keyframe walk of 12 offsets runs at `--fps-crt` (10). That's a compositor transform: no JS and no repaint per step. Each screen starts at a different step (`PHASE`).
-3. **Scanlines.** A 1 px ink line every 4 px, sitting 2 px below the faint paper lines `panels.css` already draws on the glass, so the two sets interleave instead of beating.
+3. **Scanlines.** The project glass already has faint paper lines from `panels.css`, and a second set over specks this small turned into generic hatching (design review), so it gets none. Poster screens get a 1 px ink line every 4 px. The split fringes sit above those lines, so her line's ghost stays whole and isn't dashed.
 4. **Split.** On a poster screen, two 1 px fringes: her ink minus her ink shifted 1 px (`mask-composite: subtract`), in `--accent` on one side of every edge and `--on-ink` at 60 % on the other. It uses her two inks, not RGB, so it stays in the colorway. On the eye, the coral fill shows through her drawn eye, so the accent side widens the coral strokes and the light side ghosts them.
 5. **Teaser line.** `words.ts` splits `projects.teaser` over the glass screens in reading order: one word per screen when it fits ("Projects / are / revealed / at / the / show."), otherwise the most even runs. It's set in the big-word face, in `--on-ink`, all at one size (fitted to the longest chunk with container units). The screens are `aria-hidden`; the readable `.teaser` paragraph below them stays the source of truth.
 6. **Slip** (full quality only). Once every 23 steps (2.3 s) a screen's word loses hold for one step and jumps 1.5 px sideways. Screens slip at different times.
@@ -39,7 +40,7 @@ Her screens get scanlines, a slight two-ink split and stepped static. The projec
 | Quality | Static | Slip | Split |
 |---|---|---|---|
 | `full` | 12 frames at 10 fps | yes | yes |
-| `lite` | 12 frames at 10 fps | no | yes |
+| `lite` | 12 frames at 10 fps on the project screens. Poster screens hold one frame: the poster already steps line-boil and paper-grain, and SPEC §6 allows two steppers per screen. | no | yes |
 | `static` | one still frame | no | yes |
 
 ## Numbers
@@ -48,8 +49,8 @@ Her screens get scanlines, a slight two-ink split and stepped static. The projec
 
 | | Static alone (`lite`) | With the slip (`full`) |
 |---|---|---|
-| Largest change in mean luminance, step to step | 0.31 % | 0.83 % (black-red) |
-| Largest share of the screen changing by ≥ 0.1 | **0 %** (no pixel changes by more than 0.083) | 2.1 % (the slipping word's edges, once per 2.3 s) |
+| Largest change in mean luminance, step to step | 0.51 % | 1.04 % (black-red) |
+| Largest share of the screen changing by ≥ 0.1 | **0 %** (no pixel changes by more than 0.083) | 3.0 % at 390, 2.3 % at 1440 (the slipping word's edges, once per 2.3 s) |
 
 The spec asserts both stay under 10 %, over a full loop, in teal-coral and mauve (the lightest inks, so the hardest case for light specks). As a check, raising `SPECK_MAX` to 0.9 makes it fail (34.6 % of the screen flashing).
 
@@ -59,13 +60,13 @@ The spec asserts both stay under 10 %, over a full loop, in teal-coral and mauve
 
 | Knob | Where | Default | Effect |
 |---|---|---|---|
-| `--fps-crt` | `src/styles/tokens.css` (not there yet; see the PR) | 10 | Steps per second |
+| `--fps-crt` | `src/styles/tokens.css` (proposed in OWNER.md; until it lands, `number()` falls back to 10) | 10 | Steps per second |
 | `SPECK_MAX` | `static.ts` | 0.24 | Brightest speck. Above about 0.28, a speck on teal crosses the 0.1 flash threshold. |
 | `COVERAGE` | `static.ts` | 0.42 | Share of grain cells that light up |
-| `GRAIN_PX` | `static.ts` | 1.25 | Grain size in CSS px |
+| `GRAIN_PX` | `static.ts` | 2.25 | Grain size in CSS px. Below about 2, scanlines turn the specks into generic hatching. |
 | `RAGGED` | `static.ts` | 0.25 | Share of a grain's pixels knocked out (edge roughness) |
 | `TILE`, `STEPS` | `static.ts` | 96, 12 | Tile edge, and frames in the loop |
 | `PHASE` | `index.ts` | 5 | Steps between screens' starting frames (coprime with `STEPS`) |
 | `SLIP_STEPS`, `SLIP_PHASE` | `index.ts` | 23, 7 | Slip cycle, and the offset between screens |
-| Scanline weight | `style.css` `.crt::after` | ink at 70 %, 1 px in 4 | |
+| Scanline weight | `style.css` `.crt--poster::after` | ink at 70 %, 1 px in 4 | Poster screens only |
 | Split strength | `style.css` `.crt__split--b` | 60 % | The light fringe |

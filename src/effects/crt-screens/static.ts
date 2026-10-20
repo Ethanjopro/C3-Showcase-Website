@@ -22,7 +22,7 @@ export const SPECK_MAX = 0.24;
 /** Share of grain cells that light up. */
 const COVERAGE = 0.42;
 /** Grain size in CSS px: specks clump like riso tooth, not a 1 px digital haze. */
-const GRAIN_PX = 1.25;
+const GRAIN_PX = 2.25;
 /** Share of a grain's pixels knocked out, so its edge is ragged like print. */
 const RAGGED = 0.25;
 /** Seeds: the tile, and the walk of offsets. */

@@ -37,9 +37,9 @@
   animation-delay: calc(-1 * (var(--crt-phase) * var(--crt-step) + var(--crt-frozen)));
 }
 
-/* Scanlines in the ink, between the faint paper lines the glass already has
-   (panels.css draws one every 4 px; these sit 2 px below each). */
-.crt::after {
+/* Scanlines on a poster screen. The project glass already has its own faint
+   paper lines (panels.css), so it gets no second set. */
+.crt--poster::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -79,6 +79,7 @@
 .crt__split {
   position: absolute;
   inset: 0;
+  z-index: 1; /* above the scanlines, so her line's ghost stays whole */
 }
 
 .crt__split--a {

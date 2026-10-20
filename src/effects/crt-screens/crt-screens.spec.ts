@@ -170,3 +170,11 @@ test('switching to reduced motion mid-visit restarts it cleanly', async ({ page 
   await expect(page.locator('[data-crt] > .crt')).toHaveCount(targets);
   await expect(page.locator(`${mount} style`)).toHaveCount(1);
 });
+
+test('lite: the project screens still step, the poster screens hold one frame', async ({ page }) => {
+  await toProjects(page, '/?only=crt-screens&quality=lite');
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'moving');
+  await expect(page.locator(`${glass} .crt__static--moving`)).toHaveCount(projects.screens);
+  await expect(page.locator(`${poster} .crt__static--moving`)).toHaveCount(0);
+  await expect(page.locator(`${glass} .crt__word--slip`)).toHaveCount(0);
+});
