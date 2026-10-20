@@ -57,35 +57,60 @@ design-reviewer subagent, fix its Must-fix findings, and commit and push.
 
 Once step 1 is merged and Pages is set up, the site deploys on every merge to `main`. Opening it on your phone is the 24-hour preview.
 
-## 3. Effects (PLAN steps 2–12)
+## 3. Effects (PLAN steps 2–12), one session per batch
 
-One effect per session, two or three sessions at a time. Each works only inside its own folder, so parallel sessions don't collide. Run them in these batches (PLAN's schedule):
+Each batch is one session in **Auto** mode that builds its effects one after another, then reviews, merges and records questions for you. Batches 3 and 4 can run in parallel.
 
-| Batch | Effects, in parallel | Notes |
+| Batch | Replace `<LIST>` with | Type first, one per message |
 |---|---|---|
-| 1 | `line-boil` (step 2), `paper-grain` (3) | Both short. Merge them the same day if you can. |
-| 2 | `xray` (4), `c3-window` (5), `halo-menu` (7) | Start halo-menu first; it's the longest step. |
-| 3 | `sketch-in` (6), `palette` (8), `misregister` (9), then `panel-wipe` (10) | panel-wipe takes the first free slot. |
-| 4 | `cables` (11), `crt-screens` (12) | First to cut if time runs short (SPEC §3). |
+| 1 (done) | `step 2 (line-boil), step 3 (paper-grain)` | (nothing) |
+| 2 (done) | `step 4 (xray), step 5 (c3-window), step 7 (halo-menu)` | `/effort high`, then `/advisor fable` |
+| 3 | `step 6 (sketch-in), step 8 (palette), step 9 (misregister), step 10 (panel-wipe)` | (nothing) |
+| 4 | `step 11 (cables), step 12 (crt-screens)` | `/effort high`, then `/advisor fable` |
 
-For each one, fill in the step number and name, then send:
+If her composition isn't settled (OWNER.md #9), run batch 4 as just `step 12 (crt-screens)` and do cables later. `/advisor fable` is optional, and only while the cloud credit lasts.
 
 ```
-Implement step <N> (<effect>) of PLAN.md, following CLAUDE.md and SPEC.md.
-Work only inside src/effects/<effect>/, plus src/content/<effect>.json if the
-step lists it. If you need a shared change, build it inside the folder and
-describe it in the PR instead.
+Implement these steps of PLAN.md, one at a time, in this order:
+<LIST>
+Follow CLAUDE.md and SPEC.md.
 
-When it works, run npm run build && npm run shots, show me the screenshots
-next to the drafts and list the differences. Then run the design-reviewer
-subagent, fix every Must-fix finding, and commit and push.
+For each effect:
+- Work only inside src/effects/<name>/, plus src/content/<name>.json if the
+  step lists it. If you need a shared change, build it inside the folder and
+  describe it in the PR instead.
+- When it works, run npm run build && npm run shots, compare the screenshots
+  with the drafts and list the differences.
+- Run the design-reviewer subagent on that effect and fix every Must-fix
+  finding.
+- Commit it as its own commit before starting the next effect.
+
+When all are done:
+1. Run /code-review on the branch and fix what it finds.
+2. Merge the latest main into the branch if it has moved, then re-run
+   npm run check and npm run build.
+3. Add any questions for me, and any shared changes you couldn't make, to
+   OWNER.md.
+4. Push, open a pull request into main, and merge it. If you can't create or
+   merge the PR from here, tell me and I'll do it.
+5. Show me the screenshots for each effect and summarize what each one does
+   and anything you'd cut.
 ```
 
-Then send `/code-review` as its own message, create the PR and merge.
+After each merge, try the live site on your phone. Add `?off=<effect>` to the URL to compare with and without an effect (SPEC §3).
 
-- Type `/effort high` before the prompt for `halo-menu` and `cables`, and for any shader or physics bug.
-- Optional, while the cloud credit lasts: for the hardest sessions (halo-menu, cables, a bug that keeps coming back), type `/advisor fable` before your prompt. Opus keeps doing the work and consults Fable at decision points. Leave it off for routine effects, and type `/advisor off` once the credit is used up.
-- After each merge, try the live site on your phone. Add `?off=<effect>` to the URL to compare with and without an effect (SPEC §3).
+## 3b. Shared changes (after the effect batches)
+
+Effect sessions can't touch shared files, so they queue what they need in OWNER.md. Once batches 3 and 4 have merged, start one **Plan** session at `/effort high`:
+
+```
+Work through the "Shared changes queue" in OWNER.md, following CLAUDE.md,
+SPEC.md and PLAN.md. Skip anything marked as my call and ask me about it
+instead. Run npm run check, npm run build, npm run test:e2e and
+npm run shots, then the design-reviewer subagent, and fix its Must-fix
+findings. Move each finished item to "Decided" in OWNER.md. Run /code-review,
+then open a pull request into main and merge it.
+```
 
 ## 4. Launch (PLAN step 13)
 
