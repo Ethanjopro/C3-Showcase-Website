@@ -41,7 +41,7 @@ If a step runs late, use SPEC §3's cut order: `crt-screens`, then `cables`, the
 - `src/content/<name>.json`, if the effect has copy.
 
 **Everything else is shared.** Step 1 owns the shared files; after that, only a sequential session in plan mode changes them:
-- `index.html`, `src/main.ts`, `src/core/`, `src/styles/`, `src/effects/registry.ts`
+- `index.html`, `src/main.ts`, `src/core/`, `src/ui/`, `src/styles/`, `src/effects/registry.ts`
 - `src/art/`, `art-src/`, `public/`, `src/config/features.json`, the other `src/content/*.json`
 - `scripts/`, `tests/`, `package.json` and its lockfile, `.github/`, `vite.config.ts`, `playwright.config.ts`
 
@@ -63,7 +63,7 @@ Step 1 installs every dependency this plan needs, so no effect step touches `pac
 | `.layer__boil` | line-boil | `filter` |
 | `.layer__art` and the SVG paths inside it | sketch-in | Stroke dash, clip, opacity |
 | `[data-fx="<name>"]` mounts | That effect | Anything inside the mount, plus `data-state` on the mount, which tests read |
-| An effect's own slot layer | The effect that replaces it (cables) | Hide or show, through its `data-fx-<name>` attribute only |
+| An effect's own slot layer | The effect that replaces it: cables (`cables` slot), xray (`ribcage` slot) | Hide or show, through its `data-fx-<name>` attribute only |
 
 ---
 
@@ -116,7 +116,7 @@ This is the contract every effect codes against. Effects import only from here. 
 | Module | API |
 |---|---|
 | `ticker.ts` | `add(fn: (t, dt) => void, opts?: { fps?: number; el?: Element }) → off()`. <br>- One `requestAnimationFrame` loop for the whole site. <br>- `fps` steps the callback; hand-drawn effects use 8–12. <br>- `el` skips the callback while that element is offscreen. <br>- The loop pauses when the tab is hidden. <br>- `?freeze=<ms>` pins the clock for deterministic screenshots. |
-| `motion.ts` | `quality(): 'full' \| 'lite' \| 'static'` and `onChange(cb)`. <br>- `static` means reduced motion. <br>- `lite` means Save-Data, `deviceMemory ≤ 2`, or frames that keep running over 24 ms. |
+| `motion.ts` | `quality(): 'full' \| 'lite' \| 'static'` and `onChange(cb)`. <br>- `static` means reduced motion. <br>- `lite` means Save-Data, `deviceMemory ≤ 2`, or sustained dropped frames against the device's own cadence (a 30 Hz cap is not slow). |
 | `pointer.ts` | Shared pointer state: <br>- position, in client space and relative to an element (`local(el)` returns 0–1) <br>- a smoothed position and velocity <br>- `type` (`mouse`, `touch` or `pen`) and `down` <br>- `fine`, true for a hover-capable fine pointer <br>All listeners are passive. |
 | `scroll.ts` | `y` and `velocity`. <br>- `progress(el, cb, { start, end, pin })` returns `kill()` and uses GSAP ScrollTrigger internally. <br>- `onEnter(el, cb, { once })` returns `off()`. <br>Native scroll only. |
 | `palette.ts` | `current`, `list`, `request(name)`, `setTransition(fn)`, `color(token)`, `onChange(cb)`. <br>- With no transition registered, `request` applies the change instantly. <br>- `color()` reads the resolved CSS value, for use in canvas and WebGL. <br>- The choice persists in `localStorage`. |
@@ -162,7 +162,7 @@ This is the contract every effect codes against. Effects import only from here. 
   - A `[data-fx="panel-wipe"]` mount in each section header.
 - Poster layers, bottom to top:
   - paper, wings, fill, lineart
-  - the xray mount, then eyescreen
+  - ribcage (her sketch shows the panel, so the static poster does too), the xray mount, then eyescreen
   - cables (slot art plus the cables mount)
   - halo, title, small print, and the halo hit button
 - Each layer is `.layer > .layer__boil > .layer__art`, nested inside `.poster-stage > .poster`.
@@ -296,7 +296,7 @@ Verify:
 
 Build:
 - Use `raster.noiseTile` to make four grain tiles once.
-- The fixed full-viewport mount behind all content cycles them at 8 fps with a multiply blend.
+- The fixed full-viewport mount (above the content, below the chrome, `pointer-events: none`) cycles them at 8 fps with a multiply blend.
 - Grain opacity stays at or below 4 % behind text blocks, so contrast holds.
 - Under `static`: one tile, still.
 

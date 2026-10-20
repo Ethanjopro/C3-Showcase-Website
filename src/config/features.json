@@ -1,0 +1,20 @@
+{
+  "$comment": "Effects on by default. Override per visit with ?off=a,b, ?only=a,b or ?off=all (SPEC \u00a73). Order follows SPEC \u00a73 priority. prehide: effects whose start state the boot script hides before first paint (see fx-pending in src/styles/base.css).",
+  "effects": {
+    "line-boil": true,
+    "paper-grain": true,
+    "xray": true,
+    "c3-window": true,
+    "sketch-in": true,
+    "halo-menu": true,
+    "palette": true,
+    "misregister": true,
+    "panel-wipe": true,
+    "cables": true,
+    "crt-screens": true
+  },
+  "prehide": [
+    "c3-window",
+    "sketch-in"
+  ]
+}

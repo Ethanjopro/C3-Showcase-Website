@@ -1,0 +1,109 @@
+/* Fixed buttons and the menu dialog. UI chrome may be clean (SPEC §4). */
+
+.chrome {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--gutter);
+  z-index: var(--z-chrome);
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chrome__button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 0 var(--space-4);
+  border: 0;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.chrome__button[hidden] {
+  display: none;
+}
+
+.chrome__button--rsvp {
+  background: var(--paper-2);
+  color: var(--text);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* --- Menu ------------------------------------------------------------------- */
+
+.menu {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: calc(var(--tap) + var(--space-6)) var(--gutter) var(--space-6);
+  border: 0;
+  background-color: var(--paper);
+  background-blend-mode: soft-light;
+  color: var(--text);
+}
+
+.menu::backdrop {
+  background: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+@media (min-width: 48rem) {
+  .menu {
+    width: min(42rem, 100% - 2 * var(--gutter));
+    height: fit-content; /* not auto: a fixed dialog with inset 0 would stretch */
+    margin: auto;
+    padding: var(--space-8) var(--space-7) var(--space-7);
+  }
+}
+
+.menu__list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.menu__screen {
+  position: relative;
+  display: grid;
+  align-content: end;
+  gap: var(--space-1);
+  aspect-ratio: 4 / 3;
+  padding: var(--space-4);
+  background: var(--paper-2);
+  font-size: var(--text-lead);
+  font-weight: 600;
+  line-height: 1.1;
+  text-decoration: none;
+  --line-frame: 4px;
+}
+
+.menu__no {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+
+/* Hover and focus redraw the screen's frame in the accent; text stays --text. */
+.menu__screen:hover .rough-frame,
+.menu__screen:focus-visible .rough-frame {
+  stroke: var(--accent);
+}
+
+.menu__ring {
+  z-index: 0;
+}
+
+.menu__close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--gutter);
+}

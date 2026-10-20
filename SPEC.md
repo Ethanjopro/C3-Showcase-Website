@@ -207,7 +207,7 @@ To replace art, replace the files and edit the JSON. No code changes.
   - devicePixelRatio is capped at 2, and at 1.5 for WebGL on phones.
 - `src/core/motion.ts` sets a quality level, and every effect respects it:
   - `full`: everything on.
-  - `lite`: Save-Data, 2 GB of device memory or less, or frames that keep running over 24 ms. Effects drop their extras.
+  - `lite`: Save-Data, 2 GB of device memory or less, or a device that keeps dropping frames against its own refresh cadence (a 30 Hz cap is not slow). Effects drop their extras.
   - `static`: reduced motion. Effects show their end state.
 - Nothing ticks while the tab is hidden or the effect is offscreen.
 

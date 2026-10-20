@@ -1,0 +1,355 @@
+/* Section 01: her poster, its small print and the color bar. */
+
+.poster-section {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: start;
+  gap: var(--space-4);
+  min-height: 100svh;
+  padding: calc(var(--tap) + var(--space-5)) var(--gutter) var(--space-6);
+}
+
+/* The poster keeps the manifest frame's aspect ratio, so nothing shifts on load.
+   Phone: full width. Wider: as tall as the viewport allows. */
+.poster-stage {
+  position: relative;
+  width: min(100%, calc((100svh - 13rem) * var(--frame-w) / var(--frame-h)));
+  aspect-ratio: var(--frame-w) / var(--frame-h);
+}
+
+.poster {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.layer,
+.layer__boil,
+.layer__art {
+  position: absolute;
+  inset: 0;
+}
+
+.tint-ink {
+  --tint: var(--ink);
+  color: var(--ink);
+}
+
+.tint-accent {
+  --tint: var(--accent);
+  color: var(--accent);
+}
+
+/* Black-on-transparent art, colored by its tint token. The mask-image urls
+   come from the inline <style> c3-html writes into index.html. */
+.layer__art--mask {
+  background-color: var(--tint);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.layer__art--vector .art-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* The lighter paper inside her poster frame. */
+.layer__art--paper {
+  background-color: var(--paper-2);
+  background-blend-mode: soft-light; /* texture url: inline <style> from c3-html */
+}
+
+.layer__crt {
+  position: absolute;
+}
+
+/* Tapping the halo opens the menu (pointer only; keyboards use Menu). */
+.halo-hit {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --- Small print ------------------------------------------------------------ */
+
+.poster-print {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'date class location'
+    'colors colors colors'
+    'xray xray xray';
+  align-items: end;
+  column-gap: var(--space-4);
+  row-gap: var(--space-4);
+  width: 100%;
+  max-width: 40rem;
+}
+
+.print {
+  font-size: var(--text-small);
+  line-height: var(--leading-snug);
+}
+
+.print__label {
+  display: block;
+  font-weight: 600;
+}
+
+.print__value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+
+.print--date {
+  grid-area: date;
+}
+
+.print--class {
+  grid-area: class;
+  font-size: var(--text-caption);
+  text-align: center;
+  align-self: center;
+}
+
+.print--location {
+  grid-area: location;
+  text-align: right;
+}
+
+.print--xray {
+  grid-area: xray;
+}
+
+.poster-print .colorbar {
+  grid-area: colors;
+}
+
+.print--xray:empty {
+  display: none;
+}
+
+/* --- The color bar: six mini posters, her scribble circle on the chosen one ---- */
+
+.colorbar {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.colorbar__legend {
+  margin: 0 auto var(--space-1);
+  padding: 0;
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.colorbar__items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.swatch {
+  position: relative;
+}
+
+.swatch__input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.swatch__label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  cursor: pointer;
+}
+
+/* Each chip carries its own colorway's tokens via [data-colorway] on .swatch. */
+.swatch__chip {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.9rem;
+  border: 3px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.swatch__fill {
+  width: 70%;
+  height: 62%;
+  background: var(--accent);
+}
+
+.swatch__circle {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  overflow: visible;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.swatch__circle path {
+  vector-effect: non-scaling-stroke;
+}
+
+.swatch__input:focus-visible + .swatch__label {
+  outline: var(--line-focus) solid var(--ink);
+  outline-offset: 0;
+}
+
+/* Registration marks in the corners of the sheet: wide screens only, where the
+   margins have room for them (SPEC §2). */
+.regmarks {
+  display: none;
+}
+
+.reg {
+  width: 2rem;
+  height: 2rem;
+  overflow: visible;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+
+/* --- Wide screens: poster centered, small print in the margins -------------
+   Landscape-ish only: on tall screens (iPad portrait, portrait monitors) a
+   height-sized poster would be wider than the middle column, so those keep the
+   stacked layout. */
+
+@media (min-width: 64rem) and (min-aspect-ratio: 5 / 4) {
+  .poster-section {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    column-gap: var(--space-7);
+    padding: var(--space-6) var(--space-7);
+  }
+
+  .poster-stage {
+    grid-column: 2;
+    grid-row: 1;
+    /* As tall as the viewport, but never so wide that the margin columns
+       (date, location, color bar) drop below 10rem. */
+    width: min(
+      calc((100svh - 2 * var(--space-6)) * var(--frame-w) / var(--frame-h)),
+      calc(100vw - 4 * var(--space-7) - 20rem)
+    );
+  }
+
+  .poster-print {
+    display: contents;
+  }
+
+  .regmarks {
+    display: block;
+    position: absolute; /* out of the grid flow */
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .reg {
+    position: absolute;
+  }
+
+  .reg:nth-child(1) {
+    top: var(--space-6);
+    left: var(--space-6);
+  }
+
+  .reg:nth-child(2) {
+    top: var(--space-6);
+    right: calc(var(--space-6) + 6rem); /* clear of the Menu button */
+  }
+
+  .reg:nth-child(3) {
+    bottom: var(--space-6);
+    left: var(--space-6);
+  }
+
+  .reg:nth-child(4) {
+    bottom: var(--space-6);
+    right: var(--space-6);
+  }
+
+  .print--date,
+  .print--location {
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .print--date {
+    grid-column: 1;
+    justify-self: end;
+    text-align: right;
+  }
+
+  .print--location {
+    grid-column: 3;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .print__value {
+    font-size: var(--text-h2);
+  }
+
+  /* Vertical small print down the left margin, as on her moodboard pins. */
+  .print--class {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    justify-self: end;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: var(--text-small);
+  }
+
+  /* Only the poster's color bar moves into the right margin; the credits bar stays a row. */
+  .poster-print .colorbar {
+    grid-area: auto;
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    justify-self: start;
+    margin-top: var(--space-8);
+  }
+
+  .poster-print .colorbar__legend {
+    margin-inline: 0;
+  }
+
+  .poster-print .colorbar__items {
+    flex-direction: column;
+  }
+
+  .print--xray {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    justify-self: start;
+  }
+}
