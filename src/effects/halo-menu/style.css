@@ -1,0 +1,69 @@
+/* halo-menu: the ring's canvas in its mount, and, while the ring is live
+   (<html data-fx-halo-menu~="ring">), the list as a strip of small screens
+   under it. The list stays visible, focusable and clickable: it is the menu,
+   the ring is its picture. Without the ring (static, lite, no WebGL) none of
+   this applies and the list is the grid of screens from chrome.css. */
+
+.halo-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  pointer-events: auto;
+  /* Sideways drags turn the ring; pinch-zoom is never disabled (SPEC §6). */
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+}
+
+.halo-ring:active {
+  cursor: grabbing;
+}
+
+/* Room for the ring above the strip: most of a phone's screen, a fixed
+   stage in the desktop card. index.ts sizes the canvas to it. */
+html[data-fx-halo-menu~='ring'] .menu {
+  --halo-ring-h: calc(100svh - 15rem);
+}
+
+@media (min-width: 48rem) {
+  html[data-fx-halo-menu~='ring'] .menu {
+    --halo-ring-h: min(28rem, 100svh - 16rem);
+  }
+}
+
+html[data-fx-halo-menu~='ring'] .menu__list {
+  /* One row, however many sections sections.json lists. */
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--halo-ring-h);
+}
+
+/* Each link: a small screen like the section tags, number over name. */
+html[data-fx-halo-menu~='ring'] .menu__screen {
+  aspect-ratio: auto;
+  align-content: center;
+  gap: 0;
+  min-height: calc(var(--tap) + var(--space-4));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  font-size: var(--text-caption);
+  --line-frame: 3px;
+}
+
+html[data-fx-halo-menu~='ring'] .menu__no {
+  font-size: var(--text-lead);
+}
+
+/* The screen at the front of the ring: her accent frame, like hover. */
+html[data-fx-halo-menu~='ring'] .menu__screen[data-halo-front] .rough-frame {
+  stroke: var(--accent);
+}
+
+@media (min-width: 48rem) {
+  html[data-fx-halo-menu~='ring'] .menu__screen {
+    padding-inline: var(--space-4);
+    font-size: var(--text-small);
+  }
+}
