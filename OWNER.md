@@ -46,8 +46,10 @@ From PR #6 (xray, c3-window, halo-menu):
 - **SPEC §6:** prefetch Three.js on intent (pointer or focus on a menu trigger), not when idle, since idle prefetch contradicts SPEC §9 step 14.
 - **`roughFrame`:** the X-ray toggle copies the generator from `scripts/vite/c3-html.ts`. Move it into one module that both import.
 - **`vite.config.ts`:** raise `build.chunkSizeWarningLimit` to about 600 for the lazy ring chunk (139 KB gzip).
-- **Cross-effect:** hide or disable the X-ray toggle and hint while c3-window masks the chest; `.halo-hit` is tappable inside the letters at arrival; c3-window's inked edge could share a core boil filter.
-- **Your call:** the C3 letters crop at the poster's edges, not the viewport's, because `tests/e2e/smoke.spec.ts` "tall screens…" measures the transformed box. If you want the letters to overflow the whole screen, that test changes.
+- **Cross-effect:** `.halo-hit` is tappable inside the letters at arrival; c3-window's inked edge could share a core boil filter. (The X-ray toggle now waits while the ink letters cover the chest: done in PR #7.)
+
+From PR #7 (arrival polish):
+- **`poster.css`:** give `.print--xray` its own cell in the wide layout (left margin, centre). xray's own CSS moves it there today, because the shared cell is the color bar's and they overlapped on laptop screens.
 
 ## Decided
 
@@ -56,3 +58,4 @@ From PR #6 (xray, c3-window, halo-menu):
 - **2026-10-20:** Project screens are portrait (9:16): three across on phones, six across from tablet width up.
 - **2026-10-20:** Her drafts can be public, and her work can be used freely on the site (Ethan has her go-ahead). Placeholders cut from them can ship.
 - **2026-10-20:** Steps 1–7 are built and merged (scaffold; line-boil, paper-grain; xray, c3-window, halo-menu).
+- **2026-10-20:** C3 arrival (Ethan, from mockups): her C3 arrives solid in ink, whole and nearly as wide as the poster; the scroll drains the ink to show the poster through the letters, then opens the window. Letters no longer crop at the poster's edges (PR #7).
