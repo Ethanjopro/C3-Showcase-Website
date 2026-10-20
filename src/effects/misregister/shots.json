@@ -1,1 +1,4 @@
-[]
+[
+  { "name": "mid-scroll", "query": "?only=misregister&misregister=2" },
+  { "name": "mid-scroll-teal", "query": "?only=misregister&misregister=2", "steps": [{ "scrollTo": ".poster-print" }], "viewports": [390] }
+]
