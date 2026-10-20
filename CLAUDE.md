@@ -4,7 +4,8 @@ Website for the C3 Showcase (a Creative Computing class showcase). The look come
 
 ## Sources of truth
 - `reference/drafts/`: her poster drafts (early; final layered art comes later).
-- `reference/INSPIRATION.md`: palette, motifs, reference sites, effect map. Read it before planning any feature.
+- `reference/moodboard/`: 16 pins from her Pinterest board (other artists' work), summarized in INSPIRATION.md section 1b. Ideas only: never trace, crop or ship them. Nothing in `reference/` is bundled or deployed.
+- `reference/INSPIRATION.md`: palette, motifs, her moodboard, reference sites, effect map. Read it before planning any feature.
 - `SPEC.md` and `PLAN.md`: once written, they define scope and order.
 - IMPORTANT: palette, hand lettering, motifs and the rough line quality come from her drafts. No skill, library or template default overrides them. Never copy art, layout or copy from the reference sites.
 

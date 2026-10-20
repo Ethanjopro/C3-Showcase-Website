@@ -29,6 +29,46 @@ Status key:
 
 ---
 
+## 1b. Her moodboard (her Pinterest board, 16 pins)
+
+The pins are saved in `reference/moodboard/`; the numbers below match the filenames. They are other artists' work that she collected. Borrow ideas from them, but never trace, crop or ship them. Nothing in `reference/` gets bundled or deployed.
+
+What the board says, strongest first:
+
+1. **Body meets machine** (01, 04, 05, 08, 11)
+   - Split faces where one half is mechanical, an exposed eye lens, doll joints and gears, mechanical wings.
+   - 04 is the closest match to her poster: a figure wired to CRT monitors that show chest X-rays, with cables everywhere.
+   - → Confirms the X-ray lens, the eye screen, the cables and the halo of screens. Her wings could become mechanical plates (11).
+2. **Two inks on paper, one hot accent** (02, 03, 06, 09, 12, 13, 14)
+   - Red or coral on black and cream; teal with cream and orange-red (02 is almost exactly her chosen colorway); blue or magenta on white.
+   - → Keep every colorway to two inks plus paper. Use the accent as flat, solid blocks, not gradients.
+3. **Type as part of the image** (03, 06, 07, 09, 12, 13, 15, 16)
+   - Huge cropped wordmarks behind or through the figure; letterforms used as windows onto the art (15); vertical type running down an edge (03, 12); hand-lettered or brush titles (02, 09, 13); all set against tiny justified captions.
+   - → Her hand-lettered "C3 Showcase" stays the hero. The info layer (date, location, projects) should read like poster small print.
+   - → Direction for ui-ux-pro-max's type pairing: a high-contrast or slab serif for big words, and a small grotesk or mono for captions, both subordinate to her lettering.
+4. **Flat blocks and frames over the figure** (03, 06, 14, 15, 16)
+   - A flat red rectangle covering half a face, vertical bands framing a figure, frosted panels.
+   - → Reveals should look like printed panels that slide or mask, not soft glows.
+5. **Print texture** (06, 09, 10, 13)
+   - Riso grain, halftone dots, slight color misregistration.
+   - → Paper grain plus a small misregistration offset between the two inks; halftone for the X-ray and the screens.
+6. **Editorial marks** (03, 06, 07, 16)
+   - Registration crosshairs, thin rules, small "+" marks, starbursts and sparkles, index numbers, technical circle diagrams (07).
+   - → Use these as UI furniture: section numbers, dividers, cursor states, loading marks.
+
+Effect ideas the board adds. Weigh these in SPEC.md and PLAN.md; they aren't commitments:
+- **Letterform windows:** a giant "C3" works as a mask over the art and opens up on scroll (15, 07).
+- **Ink misregistration:** the two ink layers drift a pixel or two apart on hover or scroll, then snap back (09, 13).
+- **Panel wipes:** section transitions as flat colored blocks sliding across the page (03, 06).
+- **Mechanical wings:** the wings assemble from plates (11).
+
+Avoid:
+- Photo-based figures (03, 16 are photographs): take their layout only.
+- Glossy 3D rendering (05): take the idea, not the render style.
+- Watermarked or commission pieces (12): layout reference only.
+
+---
+
 ## 2. References
 
 ### Benchmarks for "technically impressive"
