@@ -122,8 +122,10 @@ footer {
   pointer-events: none;
 }
 
+/* Riso grain sits on top of everything printed (paper-grain, PLAN step 3),
+   under the fixed chrome. pointer-events: none from .fx-layer. */
 .fx-layer--grain {
-  z-index: var(--z-paper);
+  z-index: var(--z-grain);
 }
 
 .fx-layer--wipe {

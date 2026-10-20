@@ -24,9 +24,14 @@ export function initMenu() {
 
   dialog.querySelector('[data-menu-close]')?.addEventListener('click', () => dialog.close());
 
-  // A click on the backdrop (outside the dialog's box) closes it too.
+  // A click on the backdrop closes it too. Test the point, not the target: the
+  // dialog's own padding is also `e.target === dialog`, and on phones the
+  // dialog is the whole screen.
   dialog.addEventListener('click', (e) => {
-    if (e.target === dialog) dialog.close();
+    if (e.target !== dialog || (e.clientX === 0 && e.clientY === 0)) return; // keyboard "clicks" have no point
+    const r = dialog.getBoundingClientRect();
+    const outside = e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+    if (outside) dialog.close();
   });
 
   // Where to go once the dialog has closed. Navigation waits for `close`, because

@@ -86,6 +86,20 @@ export function hatch(seed: number): string {
   return `<svg class="hatch" viewBox="0 0 100 30" aria-hidden="true" focusable="false"><path d="${lines.join('')}"/></svg>`;
 }
 
+/** A printer's registration mark (circle and cross), drawn in her wobbly line. */
+export function regMark(seed: number): string {
+  const r = rng(seed);
+  const j = (a: number) => (r() - 0.5) * a;
+  const pts: string[] = [];
+  for (let i = 0; i <= 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    const rr = 11 + j(1.2);
+    pts.push(`${n(16 + Math.cos(a) * rr)} ${n(16 + Math.sin(a) * rr)}`);
+  }
+  const cross = `M${n(1 + j(1))} ${n(16 + j(1))}L${n(31 + j(1))} ${n(16 + j(1))}M${n(16 + j(1))} ${n(1 + j(1))}L${n(16 + j(1))} ${n(31 + j(1))}`;
+  return `<svg class="reg" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M${pts.join('L')}Z${cross}"/></svg>`;
+}
+
 /** Her red scribble circle, the one she drew around the chosen colorway. */
 function scribbleCircle(seed: number): string {
   const r = rng(seed);
@@ -222,6 +236,7 @@ export function render(html: string, root: string): string {
   });
   out = out.replace(/<c3-frame seed="(\d+)"><\/c3-frame>/g, (_, s: string) => roughFrame(Number(s)));
   out = out.replace(/<c3-hatch seed="(\d+)"><\/c3-hatch>/g, (_, s: string) => hatch(Number(s)));
+  out = out.replace(/<c3-reg seed="(\d+)"><\/c3-reg>/g, (_, s: string) => regMark(Number(s)));
   out = out.replace(/<c3-colorbar group="(\w+)"><\/c3-colorbar>/g, (_, g: string) => colorbar(g, data));
   out = out.replace(/<c3-menu-items><\/c3-menu-items>/g, () => menuItems(data));
   out = out.replace(/<c3-screens><\/c3-screens>/g, () => screens(data));

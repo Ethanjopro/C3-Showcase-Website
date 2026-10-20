@@ -7,7 +7,7 @@
 //   pointer.type       'mouse' | 'touch' | 'pen'
 //   pointer.down       a button or finger is down
 //   pointer.fine       the device has a hover-capable fine pointer
-//   local(el)          position relative to el's box, 0-1 (smoothed: true for sx/sy)
+//   local(el, smoothed?, out?)  position relative to el's box, 0-1
 
 import { add as addTick } from './ticker';
 
@@ -112,14 +112,24 @@ if (typeof window !== 'undefined') {
   window.addEventListener('pointercancel', up, opts);
 }
 
-/** Pointer position relative to `el`'s box: 0-1 inside, beyond that outside. */
-export function local(el: Element, smoothed = false): { x: number; y: number; inside: boolean } {
+export interface LocalPoint {
+  x: number;
+  y: number;
+  inside: boolean;
+}
+
+/**
+ * Pointer position relative to `el`'s box: 0-1 inside, beyond that outside.
+ * Pass `out` from a frame loop to reuse one object instead of allocating.
+ */
+export function local(el: Element, smoothed = false, out: LocalPoint = { x: 0, y: 0, inside: false }): LocalPoint {
   const r = el.getBoundingClientRect();
   const px = smoothed ? pointer.sx : pointer.x;
   const py = smoothed ? pointer.sy : pointer.y;
-  const x = r.width ? (px - r.left) / r.width : 0;
-  const y = r.height ? (py - r.top) / r.height : 0;
-  return { x, y, inside: pointer.seen && x >= 0 && x <= 1 && y >= 0 && y <= 1 };
+  out.x = r.width ? (px - r.left) / r.width : 0;
+  out.y = r.height ? (py - r.top) / r.height : 0;
+  out.inside = pointer.seen && out.x >= 0 && out.x <= 1 && out.y >= 0 && out.y <= 1;
+  return out;
 }
 
 const subscribe = (set: Set<Listener>) => (fn: Listener) => {

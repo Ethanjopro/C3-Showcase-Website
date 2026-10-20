@@ -296,7 +296,7 @@ Verify:
 
 Build:
 - Use `raster.noiseTile` to make four grain tiles once.
-- The fixed full-viewport mount behind all content cycles them at 8 fps with a multiply blend.
+- The fixed full-viewport mount (above the content, below the chrome, `pointer-events: none`) cycles them at 8 fps with a multiply blend.
 - Grain opacity stays at or below 4 % behind text blocks, so contrast holds.
 - Under `static`: one tile, still.
 

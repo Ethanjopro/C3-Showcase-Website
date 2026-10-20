@@ -42,7 +42,7 @@
   font-size: var(--text-lead);
   font-weight: 700;
   line-height: 1;
-  color: var(--ink);
+  color: var(--text);
 }
 
 /* --- 02 Info --------------------------------------------------------------- */
@@ -67,7 +67,7 @@
   font-size: var(--text-display);
   font-weight: 700;
   line-height: var(--leading-tight);
-  color: var(--ink);
+  color: var(--text);
   overflow-wrap: anywhere;
 }
 
@@ -149,7 +149,7 @@
   font-size: var(--text-h3);
   font-weight: 700;
   line-height: var(--leading-snug);
-  color: var(--ink);
+  color: var(--text);
 }
 
 /* --- 04 Credits ---------------------------------------------------------- */
@@ -176,4 +176,18 @@
 
 .credits .colorbar__items {
   justify-content: flex-start;
+}
+
+@media (min-width: 64rem) {
+  .credits {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3) var(--space-6);
+  }
+
+  .credits .colorbar {
+    justify-self: auto;
+    margin-top: 0;
+  }
 }

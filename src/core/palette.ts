@@ -42,24 +42,32 @@ function apply(name: Colorway) {
   emit('colorway', { name, previous });
 }
 
-/** Switches colorway, through the registered transition when there is one. */
+/**
+ * Switches colorway, through the registered transition when there is one.
+ * Never rejects: a transition that throws is logged and the swap still
+ * happens, so one broken effect can't take the color bar down with it.
+ */
 export function request(name: Colorway): Promise<void> {
   if (!isColorway(name)) return Promise.resolve();
-  pending = pending.then(async () => {
+  const run = async () => {
     if (name === current) return;
-    if (!transition) return apply(name);
     let applied = false;
     const from = current;
     try {
-      await transition(() => {
-        applied = true;
-        apply(name);
-      }, name, from);
+      if (transition) {
+        await transition(() => {
+          applied = true;
+          apply(name);
+        }, name, from);
+      }
+    } catch (err) {
+      console.error('[c3] colorway transition failed; switching without it', err);
     } finally {
-      if (!applied) apply(name); // a transition that forgets to apply still switches
+      if (!applied) apply(name); // no transition, or one that failed or forgot to apply
     }
-  });
-  return pending;
+  };
+  pending = pending.catch(() => {}).then(run);
+  return pending.catch(() => {});
 }
 
 /** The palette effect registers its wipe here; pass null to go back to instant swaps. */

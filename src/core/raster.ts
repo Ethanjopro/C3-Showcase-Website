@@ -70,14 +70,26 @@ export function halftone(source: CanvasImageSource, width: number, height: numbe
   return out;
 }
 
+// A reseedable mulberry32 for roughStroke, so frame loops don't allocate a
+// closure per stroke.
+let strokeState = 0;
+function strokeRand(): number {
+  strokeState = (strokeState + 0x6d2b79f5) >>> 0;
+  let t = strokeState;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
 /**
  * Draws a polyline the way she draws: two slightly different passes with a
  * wobbling width. Same seed, same line; change the seed 8-12 times a second
- * to boil it. Uses the context's current strokeStyle.
+ * to boil it. Uses the context's current strokeStyle. Allocation-free.
  */
 export function roughStroke(ctx: CanvasRenderingContext2D, points: readonly Point[], seed: number, width: number): void {
   if (points.length < 2) return;
-  const rand = rng(seed);
+  strokeState = seed >>> 0;
+  const rand = strokeRand;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   for (let pass = 0; pass < 2; pass++) {

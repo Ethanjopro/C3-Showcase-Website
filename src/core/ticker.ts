@@ -114,6 +114,9 @@ export function createTicker(driver: Driver, frozenAt: number | null = null) {
 // --- Offscreen tracking: one shared IntersectionObserver -----------------------
 
 const watchers = new Map<Element, Set<(on: boolean) => void>>();
+// Last known state per element: the observer reports an element once, so a
+// later subscriber to an element already watched learns its state from here.
+const onscreen = new Map<Element, boolean>();
 let io: IntersectionObserver | null = null;
 
 function observeOnscreen(el: Element, cb: (on: boolean) => void): () => void {
@@ -123,7 +126,10 @@ function observeOnscreen(el: Element, cb: (on: boolean) => void): () => void {
   }
   io ??= new IntersectionObserver(
     (entries) => {
-      for (const e of entries) watchers.get(e.target)?.forEach((fn) => fn(e.isIntersecting));
+      for (const e of entries) {
+        onscreen.set(e.target, e.isIntersecting);
+        watchers.get(e.target)?.forEach((fn) => fn(e.isIntersecting));
+      }
     },
     { rootMargin: '10% 0px' },
   );
@@ -134,10 +140,13 @@ function observeOnscreen(el: Element, cb: (on: boolean) => void): () => void {
     io.observe(el);
   }
   set.add(cb);
+  const known = onscreen.get(el);
+  if (known !== undefined) cb(known);
   return () => {
     set.delete(cb);
     if (!set.size) {
       watchers.delete(el);
+      onscreen.delete(el);
       io?.unobserve(el);
     }
   };

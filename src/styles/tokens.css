@@ -112,6 +112,7 @@
   /* Layers. */
   --z-paper: 0;
   --z-content: 1;
+  --z-grain: 30;              /* above content, pointer-events none; keep it faint over text */
   --z-chrome: 40;
   --z-dialog: 100;
   --z-wipe: 200;

@@ -103,6 +103,21 @@ test('menu: a section link closes the menu and lands on the section', async ({ p
   await expect(page.locator('#projects')).toBeInViewport();
 });
 
+test('menu: tapping blank menu paper keeps it open; the backdrop closes it', async ({ page }, testInfo) => {
+  await open(page);
+  await page.locator('[data-menu-open=""]').click();
+  const dialog = page.locator('dialog#menu');
+  await expect(dialog).toBeVisible();
+  const box = (await dialog.boundingBox())!;
+  // Blank paper inside the dialog, below the screens.
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height - 8);
+  await expect(dialog).toBeVisible();
+  if (testInfo.project.name === 'desktop') {
+    await page.mouse.click(8, 8); // the backdrop, outside the dialog's box
+    await expect(dialog).toBeHidden();
+  }
+});
+
 test('color bar: switches colorway, and a reload keeps it', async ({ page }) => {
   await open(page);
   await page.locator('label[for="cw-poster-black-red"]').click();

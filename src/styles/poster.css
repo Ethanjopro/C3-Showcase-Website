@@ -1,6 +1,7 @@
 /* Section 01: her poster, its small print and the color bar. */
 
 .poster-section {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
@@ -107,7 +108,7 @@
   font-size: var(--text-h3);
   font-weight: 700;
   line-height: 1;
-  color: var(--ink);
+  color: var(--text);
 }
 
 .print--date {
@@ -223,6 +224,22 @@
   outline-offset: 0;
 }
 
+/* Registration marks in the corners of the sheet: wide screens only, where the
+   margins have room for them (SPEC §2). */
+.regmarks {
+  display: none;
+}
+
+.reg {
+  width: 2rem;
+  height: 2rem;
+  overflow: visible;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+
 /* --- Wide screens: poster centered, small print in the margins ------------- */
 
 @media (min-width: 64rem) {
@@ -241,6 +258,37 @@
 
   .poster-print {
     display: contents;
+  }
+
+  .regmarks {
+    display: block;
+    position: absolute; /* out of the grid flow */
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .reg {
+    position: absolute;
+  }
+
+  .reg:nth-child(1) {
+    top: var(--space-6);
+    left: var(--space-6);
+  }
+
+  .reg:nth-child(2) {
+    top: var(--space-6);
+    right: calc(var(--space-6) + 6rem); /* clear of the Menu button */
+  }
+
+  .reg:nth-child(3) {
+    bottom: var(--space-6);
+    left: var(--space-6);
+  }
+
+  .reg:nth-child(4) {
+    bottom: var(--space-6);
+    right: var(--space-6);
   }
 
   .print--date,
@@ -276,7 +324,9 @@
     font-size: var(--text-small);
   }
 
-  .colorbar {
+  /* Only the poster's color bar moves into the right margin; the credits bar stays a row. */
+  .poster-print .colorbar {
+    grid-area: auto;
     grid-column: 3;
     grid-row: 1;
     align-self: start;
@@ -284,11 +334,11 @@
     margin-top: var(--space-8);
   }
 
-  .colorbar__legend {
+  .poster-print .colorbar__legend {
     margin-inline: 0;
   }
 
-  .colorbar__items {
+  .poster-print .colorbar__items {
     flex-direction: column;
   }
 

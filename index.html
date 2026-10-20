@@ -5,6 +5,7 @@
     <c3-art slot>            one poster layer from src/art/manifest.json
     <c3-frame seed>          her rough frame line, around the parent box
     <c3-hatch seed>          her stacked hatching strokes
+    <c3-reg seed>            a registration mark (circle and cross) in her line
     <c3-colorbar group>      the colorway radio group
     <c3-menu-items>          one screen per section, for the menu
     <c3-screens>             the project teaser screens
@@ -47,6 +48,9 @@
     <main id="main">
       <section id="poster" class="poster-section" aria-labelledby="poster-title">
         <h1 id="poster-title" class="visually-hidden">{{ event.name }}</h1>
+        <div class="regmarks" aria-hidden="true">
+          <c3-reg seed="61"></c3-reg><c3-reg seed="62"></c3-reg><c3-reg seed="63"></c3-reg><c3-reg seed="64"></c3-reg>
+        </div>
 
         <div class="poster-stage" data-prehide="c3-window" style="{{ art.frameVars }}">
           <div class="poster" role="img" aria-label="{{ site.posterAlt }}">

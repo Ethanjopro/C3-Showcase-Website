@@ -89,13 +89,13 @@
   font-size: var(--text-h2);
   font-weight: 700;
   line-height: 1;
-  color: var(--ink);
+  color: var(--text);
 }
 
-.menu__screen:hover .menu__no,
-.menu__screen:focus-visible .menu__no {
-  color: var(--accent);
-  -webkit-text-stroke: 1px var(--ink);
+/* Hover and focus redraw the screen's frame in the accent; text stays --text. */
+.menu__screen:hover .rough-frame,
+.menu__screen:focus-visible .rough-frame {
+  stroke: var(--accent);
 }
 
 .menu__ring {

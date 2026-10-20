@@ -1,5 +1,30 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTicker, type Driver } from '../../src/core/ticker';
+
+// A stand-in IntersectionObserver the test controls: report(el, on) delivers an entry.
+const observers: { cb: IntersectionObserverCallback; els: Set<Element> }[] = [];
+function report(el: Element, isIntersecting: boolean) {
+  for (const o of observers) if (o.els.has(el)) o.cb([{ target: el, isIntersecting } as IntersectionObserverEntry], {} as IntersectionObserver);
+}
+const RealIO = globalThis.IntersectionObserver;
+beforeAll(() => {
+  globalThis.IntersectionObserver = class {
+    els = new Set<Element>();
+    constructor(cb: IntersectionObserverCallback) {
+      observers.push({ cb, els: this.els });
+    }
+    observe(el: Element) {
+      this.els.add(el);
+    }
+    unobserve(el: Element) {
+      this.els.delete(el);
+    }
+    disconnect() {}
+  } as unknown as typeof IntersectionObserver;
+});
+afterAll(() => {
+  globalThis.IntersectionObserver = RealIO;
+});
 
 /** A driver the test advances by hand. */
 function manualDriver() {
@@ -90,5 +115,33 @@ describe('ticker', () => {
     m.tick(60_000); // back after a minute: no jump
     m.tick(60_016);
     expect(dts).toEqual([0, 16, 0, 16]);
+  });
+
+  it('skips callbacks whose element is offscreen', () => {
+    const m = manualDriver();
+    const t = createTicker(m.driver);
+    const el = {} as Element;
+    const calls: number[] = [];
+    t.add((time) => calls.push(time), { el });
+    m.tick(0); // not reported yet: treated as offscreen
+    report(el, true);
+    m.tick(16);
+    report(el, false);
+    m.tick(32);
+    expect(calls).toEqual([16]);
+  });
+
+  it('tells a second subscriber to an already-watched element that it is onscreen', () => {
+    const m = manualDriver();
+    const t = createTicker(m.driver);
+    const el = {} as Element;
+    const first: number[] = [];
+    const second: number[] = [];
+    t.add((time) => first.push(time), { el });
+    report(el, true);
+    t.add((time) => second.push(time), { el }); // the observer won't report el again
+    m.tick(16);
+    expect(first).toEqual([16]);
+    expect(second).toEqual([16]);
   });
 });
