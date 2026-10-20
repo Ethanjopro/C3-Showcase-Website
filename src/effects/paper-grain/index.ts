@@ -22,7 +22,8 @@
 
 import type { EffectOptions } from '../../core/effect';
 import { noiseTile } from '../../core/raster';
-import { ticker } from '../../core/ticker';
+import { frozenAt, idle } from '../../core/clock';
+import { number } from '../../core/palette';
 import './style.css';
 
 const TILES = 4;
@@ -43,11 +44,6 @@ const DEFAULT_FPS = 8;
 let wrap: HTMLElement | null = null;
 let urls: string[] = [];
 let generation = 0;
-
-function tokenFps(): number {
-  const v = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fps-grain'));
-  return Number.isFinite(v) && v > 0 ? v : DEFAULT_FPS;
-}
 
 /**
  * One tile of riso tooth, built from two noiseTiles:
@@ -82,11 +78,6 @@ function tile(seed: number, px: number, dpr: number): HTMLCanvasElement {
   ctx.putImageData(img, 0, 0);
   return canvas;
 }
-
-const idle = () =>
-  new Promise<void>((resolve) =>
-    typeof requestIdleCallback === 'function' ? requestIdleCallback(() => resolve(), { timeout: 300 }) : setTimeout(resolve, 16),
-  );
 
 /**
  * Moving: the four tiles packed 2x2 into one super-tile, so a single layer
@@ -148,11 +139,10 @@ export async function init(root: HTMLElement, opts: EffectOptions): Promise<void
     const style = document.createElement('style');
     style.textContent = keyframes();
     wrap.append(style);
-    field.style.animation = `c3-grain-shift ${(TILES * 1000) / tokenFps()}ms step-end infinite`;
+    field.style.animation = `c3-grain-shift ${(TILES * 1000) / number('fps-grain', DEFAULT_FPS)}ms step-end infinite`;
     // ?freeze=<ms>: hold the tile that time shows, so screenshots are deterministic.
-    const frozen = ticker.frozenAt;
-    if (frozen !== null) {
-      field.style.animationDelay = `${-frozen}ms`;
+    if (frozenAt !== null) {
+      field.style.animationDelay = `${-frozenAt}ms`;
       field.style.animationPlayState = 'paused';
     }
   }

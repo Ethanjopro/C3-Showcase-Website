@@ -7,7 +7,7 @@ Her scratchy grey paper with a riso grain that shifts at 8 fps.
 - **Owns:** this folder. Nothing else (PLAN "Rules for parallel sessions").
 - **Mount:** `.fx-layer--grain`, the fixed full-viewport layer above the content and below the chrome (`--z-grain`, `pointer-events: none`, from base.css).
 - **Writes:** only inside the mount, plus `data-state` (`moving` or `still`) on the mount, which tests read.
-- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/raster` (`noiseTile`) and `core/ticker` (for `?freeze`).
+- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/raster` (`noiseTile`), `core/clock` (`frozenAt`, `idle`) and `core/palette` (`number`). No GSAP.
 - **Screenshots:** `npm run shots -- paper-grain` writes `.shots/paper-grain-{t0,t125}@{390,1440}.png` and `paper-grain-info-t0@390.png`.
 - **Tests:** `paper-grain.spec.ts` covers:
   - it shows, sits between the content and the chrome, and never takes a tap
@@ -24,7 +24,7 @@ Her scratchy grey paper with a riso grain that shifts at 8 fps.
 2. **Multiply, without a blend mode.** Black at alpha *a*, composited normally, gives exactly the same result as multiplying the paper by (1 − *a*). The grain is a 4 % multiply without paying for `mix-blend-mode`, which would add a full-screen backdrop pass on every scroll frame.
 3. **One layer.** The four tiles are packed into a 2×2 super-tile, repeated on a single field one tile larger than the viewport.
 4. **Cycle.** A `step-end` CSS `transform` shifts the field by one tile: across, down, then both. Every point of the screen cycles through all four tiles at `--fps-grain` (8). This is compositor-only, so no JavaScript runs per step. Hidden tabs stop it by themselves.
-5. **Clock.** `?freeze=<ms>` pauses the animation at `-<ms>`, the same as the ticker's freeze.
+5. **Clock.** `?freeze=<ms>` (`core/clock`'s `frozenAt`) pauses the animation at `-<ms>`, the same as the ticker's freeze.
 
 | Quality | Grain |
 |---|---|

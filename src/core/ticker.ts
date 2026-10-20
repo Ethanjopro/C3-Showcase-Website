@@ -13,6 +13,8 @@
 
 import { gsap } from 'gsap';
 import { reportFrame } from './motion';
+import { frozenAt } from './clock';
+import { observeOnscreen } from './onscreen';
 
 export type TickFn = (t: number, dt: number) => void;
 
@@ -111,54 +113,7 @@ export function createTicker(driver: Driver, frozenAt: number | null = null) {
   };
 }
 
-// --- Offscreen tracking: one shared IntersectionObserver -----------------------
-
-const watchers = new Map<Element, Set<(on: boolean) => void>>();
-// Last known state per element: the observer reports an element once, so a
-// later subscriber to an element already watched learns its state from here.
-const onscreen = new Map<Element, boolean>();
-let io: IntersectionObserver | null = null;
-
-function observeOnscreen(el: Element, cb: (on: boolean) => void): () => void {
-  if (typeof IntersectionObserver === 'undefined') {
-    cb(true);
-    return () => {};
-  }
-  io ??= new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        onscreen.set(e.target, e.isIntersecting);
-        watchers.get(e.target)?.forEach((fn) => fn(e.isIntersecting));
-      }
-    },
-    { rootMargin: '10% 0px' },
-  );
-  let set = watchers.get(el);
-  if (!set) {
-    set = new Set();
-    watchers.set(el, set);
-    io.observe(el);
-  }
-  set.add(cb);
-  const known = onscreen.get(el);
-  if (known !== undefined) cb(known);
-  return () => {
-    set.delete(cb);
-    if (!set.size) {
-      watchers.delete(el);
-      onscreen.delete(el);
-      io?.unobserve(el);
-    }
-  };
-}
-
 // --- The site's ticker ----------------------------------------------------------
-
-function readFreeze(): number | null {
-  if (typeof location === 'undefined') return null;
-  const v = new URLSearchParams(location.search).get('freeze');
-  return v !== null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
-}
 
 const gsapDriver: Driver = (() => {
   let cb: ((now: number) => void) | null = null;
@@ -175,7 +130,7 @@ const gsapDriver: Driver = (() => {
   };
 })();
 
-export const ticker = createTicker(gsapDriver, readFreeze());
+export const ticker = createTicker(gsapDriver, frozenAt);
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => ticker.setPaused(document.hidden));

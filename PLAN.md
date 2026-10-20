@@ -61,6 +61,7 @@ Step 1 installs every dependency this plan needs, so no effect step touches `pac
 | `.poster-stage` | c3-window | Mask or clip, scale, pin |
 | `.layer` (one per slot) | misregister | `transform` |
 | `.layer__boil` | line-boil | `filter` |
+| `.layer::before`, `.layer::after` | line-boil | Its boil frames: `content`, box, mask, `background-color`, `opacity` |
 | `.layer__art` and the SVG paths inside it | sketch-in | Stroke dash, clip, opacity |
 | `[data-fx="<name>"]` mounts | That effect | Anything inside the mount, plus `data-state` on the mount, which tests read |
 | An effect's own slot layer | The effect that replaces it: cables (`cables` slot), xray (`ribcage` slot) | Hide or show, through its `data-fx-<name>` attribute only |
@@ -115,11 +116,13 @@ This is the contract every effect codes against. Effects import only from here. 
 
 | Module | API |
 |---|---|
-| `ticker.ts` | `add(fn: (t, dt) => void, opts?: { fps?: number; el?: Element }) → off()`. <br>- One `requestAnimationFrame` loop for the whole site. <br>- `fps` steps the callback; hand-drawn effects use 8–12. <br>- `el` skips the callback while that element is offscreen. <br>- The loop pauses when the tab is hidden. <br>- `?freeze=<ms>` pins the clock for deterministic screenshots. |
+| `ticker.ts` | `add(fn: (t, dt) => void, opts?: { fps?: number; el?: Element }) → off()`. <br>- One `requestAnimationFrame` loop for the whole site. <br>- `fps` steps the callback; hand-drawn effects use 8–12. <br>- `el` skips the callback while that element is offscreen. <br>- The loop pauses when the tab is hidden. <br>- `?freeze=<ms>` pins the clock for deterministic screenshots (read from `clock.ts`). |
+| `clock.ts` | `frozenAt` (`?freeze`, or null) and `idle(timeout?)`. No GSAP, so load-time effects that animate in CSS can honor the freeze without loading the ticker. |
+| `onscreen.ts` | `observeOnscreen(el, cb) → off()`: the one shared IntersectionObserver (margin `10% 0px`). The ticker's `el` option uses it; compositor-driven effects use it directly. |
 | `motion.ts` | `quality(): 'full' \| 'lite' \| 'static'` and `onChange(cb)`. <br>- `static` means reduced motion. <br>- `lite` means Save-Data, `deviceMemory ≤ 2`, or sustained dropped frames against the device's own cadence (a 30 Hz cap is not slow). |
 | `pointer.ts` | Shared pointer state: <br>- position, in client space and relative to an element (`local(el)` returns 0–1) <br>- a smoothed position and velocity <br>- `type` (`mouse`, `touch` or `pen`) and `down` <br>- `fine`, true for a hover-capable fine pointer <br>All listeners are passive. |
 | `scroll.ts` | `y` and `velocity`. <br>- `progress(el, cb, { start, end, pin })` returns `kill()` and uses GSAP ScrollTrigger internally. <br>- `onEnter(el, cb, { once })` returns `off()`. <br>Native scroll only. |
-| `palette.ts` | `current`, `list`, `request(name)`, `setTransition(fn)`, `color(token)`, `onChange(cb)`. <br>- With no transition registered, `request` applies the change instantly. <br>- `color()` reads the resolved CSS value, for use in canvas and WebGL. <br>- The choice persists in `localStorage`. |
+| `palette.ts` | `current`, `list`, `request(name)`, `setTransition(fn)`, `color(token)`, `number(token, fallback)`, `onChange(cb)`. <br>- `number()` reads a numeric token such as `--fps-boil`. <br>- With no transition registered, `request` applies the change instantly. <br>- `color()` reads the resolved CSS value, for use in canvas and WebGL. <br>- The choice persists in `localStorage`. |
 | `art.ts` | `slot(name)` returns the manifest entry with its URL resolved. `image(name)` returns a decoded image. `rect(name)` returns geometry relative to the poster. |
 | `content.ts` | Typed access to `src/content/*.json`. |
 | `flags.ts` | `enabled(name)`, from `src/config/features.json` plus the `?off=a,b` and `?only=a,b` overrides. |
@@ -283,6 +286,7 @@ Build:
   - Displacement is about 0.25 % of the poster width.
 - Under `lite`: lineart only, at 8 fps. Under `static`: no filter.
 - If a step costs more than 2 ms in a 4× CPU-throttled trace at 390 px, fall back to pre-rendered frames cycled the same way.
+- **As built:** the filter swap cost 4.8 ms per step, so line-boil uses the fallback. It pre-renders two redrawings per layer as `.layer::before/::after` masks and cycles them with a compositor-only CSS animation. See `src/effects/line-boil/README.md`.
 
 Verify:
 - Shot states `t0` and `t100` (`?freeze=0` and `?freeze=100`): the line-art box differs between them.
@@ -363,6 +367,7 @@ Build:
 - **Draw.** Draw the lineart paths with `stroke-dashoffset`, top to bottom, stepped at 12 fps.
 - **Fill.** The fill floods in as a stepped wipe of 6–8 frames, followed by the title. Total time is at most 2.4 s.
 - **Skip.** Any tap, scroll or key jumps straight to the end state.
+- **Line-boil handshake.** While drawing, set the token `drawing` on `<html data-fx-sketch-in>` and remove it at the end state. line-boil holds on her live drawing while the token is there, because its pre-rendered frames show finished art. It also holds during `html.fx-pending-sketch-in`.
 
 Verify:
 - Shots at `?freeze=` 0, 600, 1200 and 2400 show progressive drawing.
