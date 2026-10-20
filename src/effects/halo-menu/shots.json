@@ -1,1 +1,6 @@
-[]
+[
+  { "name": "open", "query": "?only=halo-menu", "steps": [{ "click": "[data-menu-open=\"\"]" }, { "wait": 2500 }] },
+  { "name": "open-reduced", "query": "?only=halo-menu", "steps": [{ "click": "[data-menu-open=\"\"]" }, { "wait": 300 }], "viewports": [390], "reducedMotion": true },
+  { "name": "swiped", "query": "?only=halo-menu", "steps": [{ "click": "[data-menu-open=\"\"]" }, { "wait": 2000 }, { "swipe": { "from": [0.8, 0.4], "to": [0.35, 0.41] } }, { "wait": 1500 }], "viewports": [390] },
+  { "name": "from-halo", "query": "?only=halo-menu", "steps": [{ "click": ".halo-hit" }, { "wait": 2500 }], "viewports": [1440] }
+]
