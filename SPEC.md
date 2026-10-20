@@ -1,6 +1,6 @@
 # C3 Showcase site: spec
 
-Written 2026-10-20. Sources: `CLAUDE.md`, `reference/INSPIRATION.md` (including 1b, her moodboard), the three drafts in `reference/drafts/`, and an interview with the site owner. `PLAN.md` turns this spec into build steps.
+Written 2026-10-20. Sources: `CLAUDE.md`, `reference/INSPIRATION.md` (including 1b, her moodboard), the drafts in `reference/drafts/` (the newest, `figure-lineart-*`, added 2026-10-20 with the composition still open; see `OWNER.md` #9), and an interview with the site owner. `PLAN.md` turns this spec into build steps.
 
 Order of authority: her drafts first, then this spec, then any skill, library or template default.
 
@@ -42,7 +42,7 @@ One page with four sections, top to bottom.
 |---|---|---|---|---|
 | 01 | Poster `#poster` | Her poster: paper, wings, coral fill, line art, eye screen, halo of screens, cables, and the hand-lettered title. Small print: "Date 0.0.0", "Location 0.0.0", "Creative Computing". Also the color bar (palette) and the X-ray hint. | The poster fills the width, with the small print around it, all within the first 844 px. | The poster is full viewport height and centered. Vertical small print runs down one edge, with registration marks in the margins. |
 | 02 | Info `#info` | When, where, RSVP button, follow link, and a two-line "about". | One column in the poster's small-print style: index number, thin rule, one big word, small caption. | Two or three editorial columns built from the same parts. |
-| 03 | Projects `#projects` | Teaser: CRT screens showing static, plus the line "revealed at the show". | A 2-column grid of screens. | One row of screens. |
+| 03 | Projects `#projects` | Teaser: portrait, phone-shaped CRT screens showing static (most projects are phone apps), plus the line "revealed at the show". | Three across. | One row of six. |
 | 04 | Credits `#credits` | Poster art credit (hers), site credit, the color bar again, follow link, back to top. | Stacked. | One line of small print. |
 
 These persist across the page:
@@ -80,7 +80,7 @@ The tiers:
 | 8 | `misregister` | A | The ink and coral layers slip 1–2 px apart on a fast scroll or flick, then snap back, like a two-color print. | Scroll velocity | Scroll and pointer velocity | Off |
 | 9 | `panel-wipe` | A | Each section enters once from behind a flat ink or coral block that slides off. | (none) | (none) | Off; content is simply there |
 | 10 | `cables` | B | The cables hanging from the halo swing with scroll, part when a finger or cursor passes through, then settle. | Drag through them | Move the cursor through them | Her static cable drawing |
-| 11 | `crt-screens` | C | The eye screen and project screens get scanlines, a slight RGB split and stepped static. | (none) | (none) | One still frame |
+| 11 | `crt-screens` | C | The eye screen and the portrait project screens get scanlines, a slight RGB split and stepped static. | (none) | (none) | One still frame |
 
 **Cut order if the schedule slips:**
 1. `crt-screens` is cut.
@@ -250,10 +250,12 @@ To replace art, replace the files and edit the JSON. No code changes.
 
 ## 8. Open inputs
 
+The live status of these, and every other question for the owner, is in `OWNER.md`.
+
 | Input | Needed by | Until then |
 |---|---|---|
 | **Pages on a private repo.** This requires GitHub Pro, which is free with the GitHub Student Developer Pack. Don't make the repo public instead: `reference/moodboard/` holds other artists' work, and some pins carry explicit no-copying notices. | PLAN step 1 deploy (24-hour preview) | The preview is shared as `.shots/` screenshots |
-| Her OK to show her early drafts, as placeholders, on a public URL | 24-hour preview | The preview stays as screenshots |
+| ~~Her OK to show her early drafts, as placeholders, on a public URL~~ Given 2026-10-20 | (done) | (done) |
 | Date and location | Launch | "0.0.0" |
 | RSVP URL | Launch | The text "RSVP opens soon"; no RSVP chip |
 | Follow link: platform and URL | Launch | Hidden |

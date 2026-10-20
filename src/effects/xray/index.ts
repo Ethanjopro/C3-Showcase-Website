@@ -104,6 +104,8 @@ let pointerGone = false;
 let revealed = false;
 let scanStart = Number.NEGATIVE_INFINITY;
 const here: LocalPoint = { x: 0, y: 0, inside: false };
+/** What the last frame drew, so a still lens isn't redrawn 60 times a second. */
+const drawn = { alpha: Number.NaN, x: Number.NaN, y: Number.NaN, step: Number.NaN };
 const ring: [number, number][] = Array.from({ length: RING_POINTS + 1 }, () => [0, 0]);
 
 let attr = '';
@@ -278,12 +280,23 @@ function frame(t: number) {
     segments.shift();
     if (stroke) stroke.first--;
   }
-  draw(t);
+  // A lens resting still over the chest changes nothing until its ring's
+  // next boil step: skip the redraw. Healing strokes and scans always draw.
+  const step = quality === 'full' ? Math.floor((t * BOIL_FPS) / 1000) : 0;
+  const still = !segments.length && !scanning(t) && lensAlpha === drawn.alpha && here.x === drawn.x && here.y === drawn.y && step === drawn.step;
+  if (!still) {
+    draw(t);
+    drawn.alpha = lensAlpha;
+    drawn.x = here.x;
+    drawn.y = here.y;
+    drawn.step = step;
+  }
   setAttr();
   if (!want && lensAlpha === 0 && !segments.length && !stroke && !scanning(t)) stop();
 }
 
 function start() {
+  drawn.alpha = Number.NaN; // something changed: the next frame draws
   if (offTick || !poster) return;
   lastFade = performance.now();
   offTick = addTick(frame, { el: poster });
@@ -304,7 +317,8 @@ function nearChest(p: LocalPoint): boolean {
 
 function onDown(_p: typeof pointer, e: PointerEvent) {
   // Touch and pen scribble (an Apple Pencil has no hover, so no lens); a mouse has the lens.
-  if (e.pointerType === 'mouse' || stroke || !poster) return;
+  // A pen that can hover (pointer.fine) has the lens, so it doesn't scribble too.
+  if (e.pointerType === 'mouse' || (e.pointerType === 'pen' && pointer.fine) || stroke || !poster) return;
   const p = local(poster, false, { x: 0, y: 0, inside: false });
   // A scribble may start anywhere on the poster; only its marks near the chest paint.
   if (!p.inside) return;

@@ -44,4 +44,5 @@ Website for the C3 Showcase (a Creative Computing class showcase). The look come
 ## Workflow
 - Use plan mode for anything that touches more than one effect or `src/core/`.
 - Parallel sessions work only inside their own `src/effects/<name>/` unless the task says otherwise.
+- Questions or decisions for the owner, and shared changes a session couldn't make, go in `OWNER.md` (and the PR description). Any session may edit `OWNER.md`.
 - When compacting, keep: the list of modified files, which effects are done, and open review findings.

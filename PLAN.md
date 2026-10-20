@@ -479,7 +479,7 @@ Verify:
 **Owns:** `src/effects/crt-screens/`. **Priority:** 11 (tier C).
 
 Build:
-- **Targets.** The `[data-crt]` mounts on the eye screen and on the project screens.
+- **Targets.** The `[data-crt]` mounts on the eye screen and on the project screens. The project screens are portrait (9:16, set in `src/styles/panels.css`), so size noise and scanlines to each mount, never to a fixed aspect.
 - **Look.** CSS scanlines, plus a 1 px RGB split on the eye screen.
 - **Static.** Noise tiles from `raster.noiseTile` cycle at 10 fps.
 - **Teaser line.** The teaser screens show the "revealed at the show" line from `projects.json`, which this step reads but doesn't edit.

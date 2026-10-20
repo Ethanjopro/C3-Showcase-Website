@@ -106,8 +106,11 @@ test('phone: sideways strokes across the chest paint the X-ray, and it heals', a
   expect(await page.evaluate(() => window.scrollY), 'sideways strokes never scroll').toBe(0);
   const painted = await shown(page);
   expect(painted.share).toBeGreaterThan(0.1);
-  await page.waitForTimeout(4400);
-  expect((await shown(page)).share, 'healed after 4 s').toBe(0);
+  // Heals 4 s after each stroke's last segment; under a loaded runner the
+  // drags themselves take a while, so poll rather than wait a fixed time.
+  await page.waitForTimeout(3000);
+  expect((await shown(page)).share, 'still healing at 3 s').toBeGreaterThan(0);
+  await expect.poll(async () => (await shown(page)).share, { message: 'healed', timeout: 6000 }).toBe(0);
   expect(errors).toEqual([]);
 });
 
@@ -164,4 +167,25 @@ test('without the effect, the poster keeps her panel and no toggle shows', async
   await open(page, '/?off=xray');
   expect(await ribcageVisible(page)).toBe(true);
   await expect(page.locator('.print--xray')).toBeHidden();
+});
+
+test('wide screens: the toggle and hint overlap no other small print at laptop sizes', async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'wide layouts');
+  for (const viewport of [{ width: 1280, height: 720 }, { width: 1366, height: 768 }, { width: 1536, height: 864 }, { width: 1920, height: 1080 }]) {
+    const context = await browser.newContext({ viewport });
+    const page = await context.newPage();
+    await open(page, '/?only=xray');
+    const clashes = await page.evaluate(() => {
+      const mine = [...document.querySelectorAll('.xray-toggle, .xray-hint')];
+      const others = [...document.querySelectorAll('.print--date, .print--location, .print--class, .colorbar--poster, .regmarks .reg, .poster-stage')];
+      const hit = (a: Element, b: Element) => {
+        const r = a.getBoundingClientRect();
+        const s = b.getBoundingClientRect();
+        return r.left < s.right && r.right > s.left && r.top < s.bottom && r.bottom > s.top;
+      };
+      return mine.flatMap((m) => others.filter((o) => hit(m, o)).map((o) => `${m.className} x ${o.className}`));
+    });
+    expect(clashes, `${viewport.width}x${viewport.height}`).toEqual([]);
+    await context.close();
+  }
 });
