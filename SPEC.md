@@ -255,7 +255,7 @@ The live status of these, and every other question for the owner, is in `OWNER.m
 | Input | Needed by | Until then |
 |---|---|---|
 | **Pages on a private repo.** This requires GitHub Pro, which is free with the GitHub Student Developer Pack. Don't make the repo public instead: `reference/moodboard/` holds other artists' work, and some pins carry explicit no-copying notices. | PLAN step 1 deploy (24-hour preview) | The preview is shared as `.shots/` screenshots |
-| Her OK to show her early drafts, as placeholders, on a public URL | 24-hour preview | The preview stays as screenshots |
+| ~~Her OK to show her early drafts, as placeholders, on a public URL~~ Given 2026-10-20 | (done) | (done) |
 | Date and location | Launch | "0.0.0" |
 | RSVP URL | Launch | The text "RSVP opens soon"; no RSVP chip |
 | Follow link: platform and URL | Launch | Hidden |

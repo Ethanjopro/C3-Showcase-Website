@@ -22,7 +22,6 @@ Everything waiting on Ethan or the artist, in one place.
 
 | # | Question | Needed by | Until then |
 |---|---|---|---|
-| 7 | May her early drafts appear on the public site as placeholders? Pages sites are public even from a private repo. | Now (the preview is already built from them) | — |
 | 8 | What name or handle goes in her credit line? | Any time | "Poster art: 0.0.0" |
 | 9 | Is the composition settled: where the halo, its screens, the ribcage panel and the cables sit, and how many screens and cables there are? | Before `cables` (batch 4) | Built from the current drafts |
 | 10 | Final art layers, one file per slot, per the SPEC §5 handoff list | 2026-10-30 | Placeholders cut from her drafts |
@@ -50,4 +49,5 @@ From PR #6 (xray, c3-window, halo-menu):
 - **2026-10-20:** ui-ux-pro-max removed. SPEC.md is the design system, and frontend-design covers what it leaves open.
 - **2026-10-20:** Line quality follows her final art, not the rough drafts.
 - **2026-10-20:** Project screens are portrait (9:16): three across on phones, six across from tablet width up.
+- **2026-10-20:** Her drafts can be public, and her work can be used freely on the site (Ethan has her go-ahead). Placeholders cut from them can ship.
 - **2026-10-20:** Steps 1–7 are built and merged (scaffold; line-boil, paper-grain; xray, c3-window, halo-menu).
