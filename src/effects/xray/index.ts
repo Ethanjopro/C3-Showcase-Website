@@ -108,7 +108,7 @@ let revealed = false;
 let scanStart = Number.NEGATIVE_INFINITY;
 const here: LocalPoint = { x: 0, y: 0, inside: false };
 /** What the last frame drew, so a still lens isn't redrawn 60 times a second. */
-const drawn = { alpha: Number.NaN, x: Number.NaN, y: Number.NaN, step: Number.NaN };
+const drawn = { alpha: Number.NaN, x: Number.NaN, y: Number.NaN, step: Number.NaN, segments: 0 };
 const ring: [number, number][] = Array.from({ length: RING_POINTS + 1 }, () => [0, 0]);
 
 let attr = '';
@@ -284,15 +284,19 @@ function frame(t: number) {
     if (stroke) stroke.first--;
   }
   // A lens resting still over the chest changes nothing until its ring's
-  // next boil step: skip the redraw. Healing strokes and scans always draw.
+  // next boil step: skip the redraw. Healing strokes and scans always draw,
+  // and so does the frame after the last stroke heals, which clears its
+  // faint remains (the last drawn alpha can still round to a visible pixel).
   const step = quality === 'full' ? Math.floor((t * BOIL_FPS) / 1000) : 0;
-  const still = !segments.length && !scanning(t) && lensAlpha === drawn.alpha && here.x === drawn.x && here.y === drawn.y && step === drawn.step;
+  const still =
+    !segments.length && !drawn.segments && !scanning(t) && lensAlpha === drawn.alpha && here.x === drawn.x && here.y === drawn.y && step === drawn.step;
   if (!still) {
     draw(t);
     drawn.alpha = lensAlpha;
     drawn.x = here.x;
     drawn.y = here.y;
     drawn.step = step;
+    drawn.segments = segments.length;
   }
   setAttr();
   if (!want && lensAlpha === 0 && !segments.length && !stroke && !scanning(t)) stop();

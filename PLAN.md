@@ -371,7 +371,7 @@ Build:
 - **Draw.** Draw the lineart paths with `stroke-dashoffset`, top to bottom, stepped at 12 fps.
 - **Fill.** The fill floods in as a stepped wipe of 6–8 frames, followed by the title. Total time is at most 2.4 s.
 - **Skip.** Any tap, scroll or key jumps straight to the end state.
-- **Inside the letters (OWNER #7, option c).** With c3-window on, hold the start state until c3-window's mount `data-state` leaves `closed` (the ink starts to drain), then play, so the drawing happens inside the letters. While the window is pinned, scrolling it doesn't skip; a tap or a non-scrolling key does. If c3-window settles without a state, play at once.
+- **Inside the letters (OWNER #7, option c).** With c3-window on, hold the start state until c3-window's mount `data-state` leaves `closed` (the ink starts to drain), then play, so the drawing happens inside the letters. While the window is pinned, scrolling it doesn't skip; a tap or a non-scrolling key does. If c3-window settles without a state, play at once. While it draws, c3-window's inked edge holds still, like line-boil (`html[data-fx-sketch-in~='drawing']`).
 - **Line-boil handshake.** While drawing, set the token `drawing` on `<html data-fx-sketch-in>` and remove it at the end state. line-boil holds on her live drawing while the token is there, because its pre-rendered frames show finished art. It also holds during `html.fx-pending-sketch-in`.
 
 Verify:

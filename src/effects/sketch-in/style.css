@@ -1,6 +1,7 @@
 /* sketch-in: the eye screen's CRT glass (scanlines, static) waits with the
    rest of the art, so it never floats over a screen that isn't drawn yet.
    Keyed off sketch-in's own <html data-fx-sketch-in> (writer table). */
+html[data-fx-sketch-in~='waiting'] .layer--eyescreen .layer__crt,
 html[data-fx-sketch-in~='drawing'] .layer--eyescreen .layer__crt {
   visibility: hidden;
 }

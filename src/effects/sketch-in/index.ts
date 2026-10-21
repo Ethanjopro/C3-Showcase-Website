@@ -29,9 +29,10 @@
 //      every animation at that time, so screenshots are deterministic.
 //
 // Outside its mount the effect writes:
-//   <html data-fx-sketch-in>   "drawing" while it waits or plays (line-boil
-//                              holds on her live drawing; style.css hides the
-//                              eye screen's CRT glass), "done" after
+//   <html data-fx-sketch-in>   "waiting" under c3-window's ink, "drawing"
+//                              while it plays (line-boil and c3-window's
+//                              inked edge hold still), "done" after. Both
+//                              hide the eye screen's CRT glass (style.css).
 //   .layer__art and the SVG inside it (writer table: stroke dash, clip,
 //   opacity): pathLength, the dash, the reveal stroke and clip, and a wrapper
 //   <g> that carries the clip. All of it is removed at the end state, leaving
@@ -286,6 +287,7 @@ function listenForSkip(pinned: () => boolean) {
 /** Starts every animation on one 12 fps grid, and finishes when they all have. */
 function play(pinned: () => boolean) {
   if (!playing) return;
+  html().setAttribute(ATTR, 'drawing');
   if (mount) mount.dataset.state = 'drawing';
   // One start time for all of them, so every step lands on the same 12 fps grid.
   const t0 = document.timeline.currentTime;
@@ -320,6 +322,10 @@ function waitForWindow(win: HTMLElement) {
     play(pinned);
   };
   anims.forEach((a) => a.pause());
+  // Nothing of the poster shows under the ink, so line-boil needn't hold yet,
+  // and c3-window's inked edge keeps boiling at arrival; both hold (the
+  // "drawing" token) from the frame the drain starts.
+  html().setAttribute(ATTR, 'waiting');
   if (mount) mount.dataset.state = 'waiting';
   const watcher = new MutationObserver(check);
   watcher.observe(win, { attributes: true, attributeFilter: ['data-state'] });

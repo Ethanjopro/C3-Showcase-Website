@@ -51,7 +51,7 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
 5. **Links to a section.** On a visit to `/#info`, ScrollTrigger measuring the page cuts the browser's smooth scroll to the section short, and the pin spacer moves the section down anyway. Once the pin exists, the effect scrolls to the URL's section, unless the visitor is already past it.
 6. **Re-measuring.** The geometry is measured again on resize and once the web fonts are ready, because the small print it keeps clear of can reflow when they swap in.
 7. **Arrival speed.** `main.ts` reveals the prehidden stage once `init` settles. The mask is applied synchronously from the DOM, and GSAP loads afterwards, so the poster never waits on it.
-8. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters. sketch-in reads this mount's `data-state`: it waits under the ink while it's `closed`, and starts drawing when it leaves it (OWNER #7).
+8. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters. sketch-in reads this mount's `data-state`: it waits under the ink while it's `closed`, and starts drawing when it leaves it (OWNER #7). While it draws (`<html data-fx-sketch-in~='drawing'>`), `style.css` pauses the inked edge's boil, as line-boil holds, so the drawing is the only line moving.
 
 | Quality | What runs |
 |---|---|

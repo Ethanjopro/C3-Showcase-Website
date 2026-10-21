@@ -136,7 +136,7 @@ test('with c3-window: waits under the ink, ignores taps and keys there, and star
   await open(page, '/');
   await pinReady(page);
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'waiting');
-  await expect(page.locator('html')).toHaveAttribute(ATTR, 'drawing'); // line-boil holds meanwhile
+  await expect(page.locator('html')).toHaveAttribute(ATTR, 'waiting'); // nothing shows under the ink: line-boil needn't hold yet
   await expect(page.locator('.layer--lineart .layer__art')).toBeVisible(); // the prehide is lifted; the animations hold the start
   if (testInfo.project.name === 'phone') await page.touchscreen.tap(200, 400);
   else await page.keyboard.press('Shift');
@@ -146,6 +146,9 @@ test('with c3-window: waits under the ink, ignores taps and keys there, and star
   await scrollTo(page, 40);
   await expect(page.locator('[data-fx="c3-window"]')).toHaveAttribute('data-state', 'opening');
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'drawing');
+  await expect(page.locator('html')).toHaveAttribute(ATTR, 'drawing');
+  // Her inked edge holds still while her line is drawn (at most two things step on one screen).
+  expect(await page.locator('.c3-window__boil').first().evaluate((el) => getComputedStyle(el).animationPlayState)).toBe('paused');
   await scrollTo(page, 80);
   await page.waitForTimeout(200);
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'drawing');
