@@ -9,6 +9,7 @@ Through a hole in her drawing: her ribcage panel in halftone ink, like an X-ray 
   - `.layer--xray [data-fx="xray"]`: the canvas, between her ribcage slot and the eye screen. The eye screen, cables, halo and title stay on top.
   - `[data-fx="xray"][data-part="toggle"]` in the poster's small print: the X-ray toggle and its hint. Built from JS; without JS the mount is empty and hidden (`.print--xray:empty`).
     - While c3-window's solid ink letters cover the poster (`<html data-fx-c3-window~='ink'>`), there is no chest to X-ray, so the toggle and hint are `visibility: hidden`: they keep their space, so nothing shifts, and they leave the tab order.
+    - While c3-window's letters still frame the poster (`~='window'`, the whole pin), the desktop lens stays off: scrolling is that moment's gesture, and the lens would run over parts the letters hide.
     - On wide screens `poster.css` gives this mount its own cell, the middle of the left margin, level with her chest (the right margin's middle is the color bar's; the two overlapped at 1280×720 to 1536×864). This folder's CSS only stacks the toggle over its hint there. A test checks it clears the other small print at four laptop sizes.
 - **Writes outside its mounts:** only `<html data-fx-xray>`, written only when its tokens change. Its own CSS keys off it. It never hides her `ribcage` slot (the writer table would allow it): the film is an opaque sheet the size of the rect, so wherever it shows it covers her panel.
 

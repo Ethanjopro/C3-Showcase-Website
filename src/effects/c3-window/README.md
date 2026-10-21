@@ -12,7 +12,7 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
 - **Writes outside its mount:**
   - `.poster-stage`: inline `mask`, `clip-path` and `transform` only (writer table: mask or clip, scale).
   - Inside its mount: `svg.c3-window__ink`, her letters' inked edge.
-  - `<html data-fx-c3-window>`: `window ink` while the solid ink covers the letters (xray holds back its toggle then), `window` while the window opens, `open` after. `style.css` keys off `window` to give the stage `will-change: transform`.
+  - `<html data-fx-c3-window>`: `window ink` while the solid ink covers the letters (xray holds back its toggle then), `window` while the window opens, `open` after, plus `edge` while her inked edge shows (until it has faded, 30 % into the zoom). `style.css` keys off `window` to give the stage `will-change: transform`, and pauses the edge's boil without `edge`. line-boil holds while `edge` is there, and xray keeps its lens off while `window` is, so her line boils in one place at a time and the scroll is the only gesture during the pin (SPEC §6, §3).
   - The pin, on `#poster` (see "Pin target" below).
 - **Contract:** `init(root, { quality })` and `destroy()`. Imports `core/art` statically. `core/scroll` (GSAP and ScrollTrigger) is a dynamic import that loads after the closed window is on screen.
 - **Screenshots:** `npm run shots -- c3-window` writes:

@@ -131,15 +131,15 @@ const scrollTo = (page: Page, px: number) => page.evaluate((y) => window.scrollT
 /** c3-window's pin is ready (its ScrollTrigger exists). */
 const pinReady = (page: Page) => expect(page.locator('[data-fx="c3-window"]')).toHaveAttribute('data-ready', '', { timeout: 5000 });
 
-test('with c3-window: waits under the ink, ignores taps and keys there, and starts drawing when the ink drains', async ({ page }, testInfo) => {
+test('with c3-window: waits under the ink, and starts drawing when the ink drains', async ({ page }) => {
   const errors = trackErrors(page);
   await open(page, '/');
   await pinReady(page);
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'waiting');
   await expect(page.locator('html')).toHaveAttribute(ATTR, 'waiting'); // nothing shows under the ink: line-boil needn't hold yet
   await expect(page.locator('.layer--lineart .layer__art')).toBeVisible(); // the prehide is lifted; the animations hold the start
-  if (testInfo.project.name === 'phone') await page.touchscreen.tap(200, 400);
-  else await page.keyboard.press('Shift');
+  // A wheel (desktop) or a scrolling key is the drain's own gesture: still waiting.
+  await page.keyboard.press('ArrowRight');
   await page.waitForTimeout(300);
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'waiting');
   // A little scroll starts the drain: the drawing starts, and that scroll doesn't skip it.
@@ -156,6 +156,16 @@ test('with c3-window: waits under the ink, ignores taps and keys there, and star
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'done', { timeout: 3000 });
   expect(await clean(page)).toBe(true);
   expect(errors).toEqual([]);
+});
+
+test('with c3-window: a tap or a key while it waits finishes it (SPEC §3: any input)', async ({ page }, testInfo) => {
+  await open(page, '/');
+  await pinReady(page);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'waiting');
+  if (testInfo.project.name === 'phone') await page.touchscreen.tap(200, 400);
+  else await page.keyboard.press('Tab');
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'done');
+  await expect(page.locator('html')).toHaveAttribute(ATTR, 'done');
 });
 
 test('with c3-window: a tap or a key while it draws in the pin finishes it', async ({ page }, testInfo) => {

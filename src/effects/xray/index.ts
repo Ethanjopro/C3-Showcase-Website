@@ -174,9 +174,16 @@ function scanShown(t: number): number {
 
 const scanning = (t: number) => quality !== 'static' && frozenAt === null && (t - scanStart) * SCAN_FPS < SCAN_STEPS * 1000;
 
-/** Is the lens wanted: a hover-capable pointer, over the poster, still in the window? */
+/**
+ * c3-window's letters still frame the poster (its "window" token, read-only):
+ * the scroll is the moment's gesture, and the lens would run over parts the
+ * letters hide (SPEC §3: one signature per moment).
+ */
+const windowed = () => (document.documentElement.getAttribute('data-fx-c3-window') ?? '').split(' ').includes('window');
+
+/** Is the lens wanted: a hover-capable pointer, over the poster, still in the window, with the C3 window open? */
 function lensWanted(): boolean {
-  if (quality === 'static' || !poster || !pointer.fine || pointer.type === 'touch' || pointerGone) return false;
+  if (quality === 'static' || !poster || !pointer.fine || pointer.type === 'touch' || pointerGone || windowed()) return false;
   return local(poster, true, here).inside;
 }
 

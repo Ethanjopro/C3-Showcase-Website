@@ -7,8 +7,9 @@
 //      behind her solid-ink C3, so the intro waits, hidden, until the scroll
 //      starts draining the ink (c3-window's mount leaves data-state "closed"),
 //      and then draws inside the letters. Scrolling the pin drives the window,
-//      so it never skips the intro: only a tap or a non-scrolling key does,
-//      until the window is open and the usual skips return.
+//      so it never skips the intro: only a tap or a non-scrolling key does
+//      (while it waits, too), until the window is open and the usual skips
+//      return.
 //
 //   1. Hidden start. The boot script's `fx-pending-sketch-in` hides the line
 //      art, fill and title before first paint (base.css). init() puts them in
@@ -294,7 +295,7 @@ function play(pinned: () => boolean) {
   if (t0 !== null) anims.forEach((a) => (a.startTime = t0));
   else anims.forEach((a) => a.play());
   if (document.hidden) anims.forEach((a) => (a.pause(), held.add(a)));
-  listenForSkip(pinned);
+  if (!off) listenForSkip(pinned);
   const all = anims;
   Promise.all(all.map((a) => a.finished)).then(
     () => all === anims && finish(),
@@ -312,7 +313,7 @@ function play(pinned: () => boolean) {
 function waitForWindow(win: HTMLElement) {
   const pinned = () => {
     const s = windowState(win);
-    return s === 'closed' || s === 'opening';
+    return s === 'closed' || s === 'opening' || (s === undefined && html().classList.contains('fx-pending-c3-window'));
   };
   const check = () => {
     const s = windowState(win);
@@ -322,6 +323,10 @@ function waitForWindow(win: HTMLElement) {
     play(pinned);
   };
   anims.forEach((a) => a.pause());
+  // A tap or a key that doesn't scroll ends it even now (SPEC §3: any input
+  // finishes it): a visitor who opens the menu or picks a colorway first has
+  // moved on. Scrolling is how the ink drains, so it never does.
+  listenForSkip(pinned);
   // Nothing of the poster shows under the ink, so line-boil needn't hold yet,
   // and c3-window's inked edge keeps boiling at arrival; both hold (the
   // "drawing" token) from the frame the drain starts.

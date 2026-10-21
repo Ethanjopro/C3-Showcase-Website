@@ -193,6 +193,11 @@ function rules(layers: Map<SlotName, Frames>, cycleMs: number): string {
   // is the boot script's hidden start (base.css); "drawing" is the handshake
   // sketch-in sets on its own <html data-fx-sketch-in> while it animates.
   css.push(`${parts(`html.fx-pending-sketch-in`)},${parts(`html[data-fx-sketch-in~='drawing']`)}{animation:none}`);
+  // While c3-window's inked edge shows (its "edge" token), that edge is her
+  // boiling line; the poster's own line holds, so only one line steps at a
+  // time (SPEC §6: at most two things step on one screen, paper-grain is the
+  // other). Under the solid ink this also skips work nobody can see.
+  css.push(`${parts(`html[data-fx-c3-window~='edge']`)}{animation:none}`);
   return css.join('\n');
 }
 

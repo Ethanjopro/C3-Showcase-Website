@@ -9,7 +9,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  scroll-padding-top: var(--space-4);
+  /* Sections land clear of the fixed Menu button (top: --space-4, --tap tall). */
+  scroll-padding-top: calc(var(--space-4) + var(--tap) + var(--space-2));
 }
 
 @media (prefers-reduced-motion: no-preference) {

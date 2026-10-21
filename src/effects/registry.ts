@@ -24,6 +24,8 @@ export interface EffectEntry {
   when: LoadTrigger;
   /** For `visible`: elements to watch instead of the mount's box. */
   watch?: string;
+  /** Its `lite` is its `full`: a drop to lite mid-visit doesn't restart it. */
+  liteIsFull?: true;
   load: () => Promise<EffectModule>;
 }
 
@@ -33,14 +35,14 @@ export const effects: EffectEntry[] = [
   { name: 'line-boil', mount: mount('line-boil'), when: 'load', load: () => import('./line-boil/index') },
   { name: 'paper-grain', mount: mount('paper-grain'), when: 'idle', load: () => import('./paper-grain/index') },
   { name: 'xray', mount: mount('xray'), when: 'idle', load: () => import('./xray/index') },
-  { name: 'c3-window', mount: mount('c3-window'), when: 'load', load: () => import('./c3-window/index') },
+  { name: 'c3-window', mount: mount('c3-window'), when: 'load', liteIsFull: true, load: () => import('./c3-window/index') },
   { name: 'sketch-in', mount: mount('sketch-in'), when: 'load', load: () => import('./sketch-in/index') },
   { name: 'halo-menu', mount: mount('halo-menu'), when: 'idle', load: () => import('./halo-menu/index') },
   { name: 'palette', mount: mount('palette'), when: 'idle', load: () => import('./palette/index') },
   { name: 'misregister', mount: mount('misregister'), when: 'idle', load: () => import('./misregister/index') },
-  { name: 'panel-wipe', mount: mount('panel-wipe'), when: 'idle', load: () => import('./panel-wipe/index') },
+  { name: 'panel-wipe', mount: mount('panel-wipe'), when: 'idle', liteIsFull: true, load: () => import('./panel-wipe/index') },
   { name: 'cables', mount: mount('cables'), when: 'visible', load: () => import('./cables/index') },
-  { name: 'crt-screens', mount: mount('crt-screens'), when: 'visible', watch: '[data-crt]', load: () => import('./crt-screens/index') },
+  { name: 'crt-screens', mount: mount('crt-screens'), when: 'visible', watch: '[data-crt]', liteIsFull: true, load: () => import('./crt-screens/index') },
 ];
 
 /** Effects whose start state is hidden before first paint. */

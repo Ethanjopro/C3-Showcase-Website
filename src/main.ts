@@ -12,7 +12,7 @@ import { initColorbar } from './ui/colorbar';
 import { initRsvpChip } from './ui/rsvp-chip';
 
 const html = document.documentElement;
-const running = new Map<EffectEntry['name'], { mod: EffectModule; root: HTMLElement }>();
+const running = new Map<EffectEntry['name'], { mod: EffectModule; root: HTMLElement; q: Quality }>();
 
 function reveal(name: string) {
   html.classList.remove(`fx-pending-${name}`);
@@ -30,7 +30,7 @@ async function start(entry: EffectEntry, root: HTMLElement, q: Quality) {
       q = quality();
       await mod.init(root, { quality: q });
     }
-    running.set(entry.name, { mod, root });
+    running.set(entry.name, { mod, root, q });
   } catch (err) {
     console.error(`[c3] effect "${entry.name}" failed and was skipped`, err);
     try {
@@ -101,20 +101,37 @@ function boot() {
   void Promise.all(pending).then(() => (html.dataset.booted = ''));
 
   // Reduced motion switched on, or the device proved slow: restart running
-  // effects at the new quality level.
+  // effects at the new quality level. A drop to lite waits while the menu is
+  // open: restarting halo-menu would swap the ring for the grid under the
+  // visitor's finger (and the ring's own frames are what trip the slow
+  // check). Reduced motion applies at once.
+  const menu = document.querySelector<HTMLDialogElement>('dialog#menu');
+  let held = false;
   onChange((q) => {
-    for (const [name, { mod, root }] of running) {
-      const entry = effects.find((e) => e.name === name);
-      if (!entry) continue;
-      try {
-        mod.destroy();
-      } catch (err) {
-        console.error(`[c3] effect "${name}" failed to stop`, err);
-      }
-      running.delete(name);
-      void start(entry, root, q);
-    }
+    held = q !== 'static' && Boolean(menu?.open);
+    if (!held) restart(q);
   });
+  menu?.addEventListener('close', () => {
+    if (!held) return;
+    held = false;
+    restart(quality());
+  });
+}
+
+function restart(q: Quality) {
+  for (const [name, { mod, root, q: was }] of running) {
+    const entry = effects.find((e) => e.name === name);
+    if (!entry || was === q) continue;
+    // Its lite is its full: nothing would change but a restart mid-scroll.
+    if (entry.liteIsFull && was !== 'static' && q !== 'static') continue;
+    try {
+      mod.destroy();
+    } catch (err) {
+      console.error(`[c3] effect "${name}" failed to stop`, err);
+    }
+    running.delete(name);
+    void start(entry, root, q);
+  }
 }
 
 boot();
