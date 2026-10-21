@@ -44,6 +44,18 @@ html[data-fx-c3-window~='window'] .poster-stage {
   animation: c3-window-boil 300ms step-end infinite;
 }
 
+/* Faded out, the edge stops stepping. */
+html:not([data-fx-c3-window~='edge']) .c3-window__boil {
+  animation-play-state: paused;
+}
+
+/* While sketch-in draws her line inside the letters, the edge holds still,
+   as line-boil does (the PLAN step 6 handshake): the drawing is the motion
+   then, and at most two things step on one screen (SPEC §6). */
+html[data-fx-sketch-in~='drawing'] .c3-window__boil {
+  animation-play-state: paused;
+}
+
 @keyframes c3-window-boil {
   0% {
     transform: translate(0, 0);

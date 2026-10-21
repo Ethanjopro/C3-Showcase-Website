@@ -5,5 +5,6 @@
   { "name": "t1800", "query": "?only=sketch-in&freeze=1800", "viewports": [390] },
   { "name": "t2400", "query": "?only=sketch-in&freeze=2400" },
   { "name": "lite-t900", "query": "?only=sketch-in&quality=lite&freeze=900", "viewports": [390] },
-  { "name": "all-t600", "query": "?off=c3-window&freeze=600", "viewports": [390] }
+  { "name": "all-t600", "query": "?off=c3-window&freeze=600", "viewports": [390] },
+  { "name": "in-letters-t1200", "query": "?c3=0.25&freeze=1200" }
 ]

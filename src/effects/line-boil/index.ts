@@ -26,6 +26,7 @@ import { frame, image, slot, type SlotName } from '../../core/art';
 import { frozenAt, idle } from '../../core/clock';
 import { observeOnscreen } from '../../core/onscreen';
 import { number } from '../../core/palette';
+import { blobUrl } from '../../core/raster';
 import { AMPLITUDE, FRAMES, redraw, SEEDS, WAVELENGTH } from './displace';
 import './style.css';
 
@@ -77,12 +78,6 @@ async function source(name: SlotName, width: number, height: number): Promise<HT
   } finally {
     URL.revokeObjectURL(url);
   }
-}
-
-function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('line-boil: toBlob failed'))), 'image/png'),
-  );
 }
 
 /** One layer's two re-drawings, cropped to the art: mask URLs and the crop as fractions of the poster. */
@@ -154,9 +149,12 @@ async function renderLayer(name: SlotName, width: number, height: number, alive:
         job.rows(y, Math.min(crop.h, y + rowsPerSlice));
       }
       ctx.putImageData(pixels, 0, 0);
-      const blob = await toBlob(canvas);
-      if (!alive()) return null;
-      out.push(URL.createObjectURL(blob));
+      const url = await blobUrl(canvas);
+      if (!alive()) {
+        URL.revokeObjectURL(url);
+        return null;
+      }
+      out.push(url);
     }
   } finally {
     if (out.length < SEEDS.length) out.forEach((u) => URL.revokeObjectURL(u));
@@ -195,6 +193,11 @@ function rules(layers: Map<SlotName, Frames>, cycleMs: number): string {
   // is the boot script's hidden start (base.css); "drawing" is the handshake
   // sketch-in sets on its own <html data-fx-sketch-in> while it animates.
   css.push(`${parts(`html.fx-pending-sketch-in`)},${parts(`html[data-fx-sketch-in~='drawing']`)}{animation:none}`);
+  // While c3-window's inked edge shows (its "edge" token), that edge is her
+  // boiling line; the poster's own line holds, so only one line steps at a
+  // time (SPEC §6: at most two things step on one screen, paper-grain is the
+  // other). Under the solid ink this also skips work nobody can see.
+  css.push(`${parts(`html[data-fx-c3-window~='edge']`)}{animation:none}`);
   return css.join('\n');
 }
 

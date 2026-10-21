@@ -12,7 +12,7 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
 - **Writes outside its mount:**
   - `.poster-stage`: inline `mask`, `clip-path` and `transform` only (writer table: mask or clip, scale).
   - Inside its mount: `svg.c3-window__ink`, her letters' inked edge.
-  - `<html data-fx-c3-window>`: `window ink` while the solid ink covers the letters (xray holds back its toggle then), `window` while the window opens, `open` after. `style.css` keys off `window` to give the stage `will-change: transform`.
+  - `<html data-fx-c3-window>`: `window ink` while the solid ink covers the letters (xray holds back its toggle then), `window` while the window opens, `open` after, plus `edge` while her inked edge shows (until it has faded, 30 % into the zoom). `style.css` keys off `window` to give the stage `will-change: transform`, and pauses the edge's boil without `edge`. line-boil holds while `edge` is there, and xray keeps its lens off while `window` is, so her line boils in one place at a time and the scroll is the only gesture during the pin (SPEC §6, §3).
   - The pin, on `#poster` (see "Pin target" below).
 - **Contract:** `init(root, { quality })` and `destroy()`. Imports `core/art` statically. `core/scroll` (GSAP and ScrollTrigger) is a dynamic import that loads after the closed window is on screen.
 - **Screenshots:** `npm run shots -- c3-window` writes:
@@ -51,7 +51,7 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
 5. **Links to a section.** On a visit to `/#info`, ScrollTrigger measuring the page cuts the browser's smooth scroll to the section short, and the pin spacer moves the section down anyway. Once the pin exists, the effect scrolls to the URL's section, unless the visitor is already past it.
 6. **Re-measuring.** The geometry is measured again on resize and once the web fonts are ready, because the small print it keeps clear of can reflow when they swap in.
 7. **Arrival speed.** `main.ts` reveals the prehidden stage once `init` settles. The mask is applied synchronously from the DOM, and GSAP loads afterwards, so the poster never waits on it.
-8. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters.
+8. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters. sketch-in reads this mount's `data-state`: it waits under the ink while it's `closed`, and starts drawing when it leaves it (OWNER #7). While it draws (`<html data-fx-sketch-in~='drawing'>`), `style.css` pauses the inked edge's boil, as line-boil holds, so the drawing is the only line moving.
 
 | Quality | What runs |
 |---|---|
@@ -73,7 +73,7 @@ PLAN's writer table gives c3-window the pin on `.poster-stage`. Pinning the stag
 - **With pin spacing**, the spacer pushes the small print down by the pin distance, out of the first screen. That breaks SPEC §9.1 (date and location in the first 390×844 viewport).
 - **Without pin spacing**, the small print and the next sections scroll up under the pinned poster.
 
-The section holds the stage and its small print, and fits one screen. So the effect pins the section, from this folder, through `core/scroll`. **Proposed writer-table change:** "`#poster` (section) | c3-window | pin".
+The section holds the stage and its small print, and fits one screen. So the effect pins the section, from this folder, through `core/scroll`. The writer table now says so: "`#poster` (section) | c3-window | pin".
 
 ## Numbers
 

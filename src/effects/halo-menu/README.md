@@ -15,7 +15,7 @@ The menu becomes her halo: a ring of boxy screens strung on a cable loop, one sc
   - `<html data-fx-halo-menu>`: `grid` or `ring`. It turns `ring` the moment the menu opens at full quality with WebGL, while the chunk is still loading, so the links never jump under a finger. It drops back to `grid` only if the ring fails. While it's `ring`, `style.css` turns the list into a strip of small screens under the ring and gives `.menu` a `--halo-ring-h` for the space above it.
   - `data-halo-front` on the link of the screen at the front, so its strip screen takes the accent frame too.
 
-  Both are proposed for the writer table in the PR. `menu.ts`, the dialog and its `<nav>` are untouched.
+  Both are in PLAN's writer table. `menu.ts`, the dialog and its `<nav>` are untouched.
 - **Contract:** `init(root, { quality })` and `destroy()`.
   - `index.ts` loads at idle. It's 1.2 KB gzip and imports only `core/bus`.
   - `ring.ts` holds Three.js and is a separate `import()`. It uses `core/ticker`, `core/palette`, `core/art`, `core/content`, `core/bus`, `core/clock` and `core/raster`.
@@ -73,7 +73,7 @@ Arrow keys work in every mode.
 
 ## Prefetch: on intent, not at idle
 
-SPEC §6 says Three.js is "prefetched when the browser is idle". SPEC §9.14 and PLAN step 7 check that no Three.js chunk is requested before the menu opens [auto]. Any prefetch is a request, so the two can't both hold. This effect follows the testable one: it fetches on intent (pointer over, touch on, or focus on a menu trigger). That's usually 100–300 ms before the click, and visitors who never use the menu, most phones from the QR code, never download it. **Proposed SPEC §6 wording:** "prefetched on intent (pointer or focus on a menu trigger)".
+SPEC §6 first said Three.js is "prefetched when the browser is idle", but SPEC §9.14 and PLAN step 7 check that no Three.js chunk is requested before the menu opens [auto]. Any prefetch is a request, so the two couldn't both hold. This effect follows the testable one, and SPEC §6 now says the same: it fetches on intent (pointer over, touch on, or focus on a menu trigger). That's usually 100–300 ms before the click, and visitors who never use the menu, most phones from the QR code, never download it.
 
 ## Numbers
 

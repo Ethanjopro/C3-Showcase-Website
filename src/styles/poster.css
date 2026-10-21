@@ -76,6 +76,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* While c3-window's solid ink letters cover the poster the halo can't be seen,
+   so it can't be tapped either. */
+html[data-fx-c3-window~='ink'] .halo-hit {
+  pointer-events: none;
+}
+
 /* --- Small print ------------------------------------------------------------ */
 
 .poster-print {
@@ -346,10 +352,16 @@
     flex-direction: column;
   }
 
+  /* The X-ray toggle gets its own cell: the left margin's middle, level with
+     her chest (the class line is at its top, the date at its bottom). The
+     right margin's middle is the color bar's, and on laptop heights
+     (720-864 px) the two would overlap. */
   .print--xray {
-    grid-column: 3;
+    grid-column: 1;
     grid-row: 1;
     align-self: center;
-    justify-self: start;
+    justify-self: end;
+    max-width: 10rem;
+    text-align: right;
   }
 }

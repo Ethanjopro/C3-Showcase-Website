@@ -33,6 +33,7 @@ import { frozenAt } from '../../core/clock';
 import { number } from '../../core/palette';
 import { observeOnscreen } from '../../core/onscreen';
 import { slot, slotNames, type Rect, type SlotName } from '../../core/art';
+import { blobUrl } from '../../core/raster';
 import { STEPS, TILE, keyframes, offsets, staticTile } from './static';
 import { chunk } from './words';
 import './style.css';
@@ -133,14 +134,12 @@ export async function init(mount: HTMLElement, opts: EffectOptions): Promise<voi
   const dpr = Math.min(2, window.devicePixelRatio || 1);
 
   const tile = staticTile(dpr);
-  const blobUrl = await new Promise<string>((resolve, reject) =>
-    tile.toBlob((b) => (b ? resolve(URL.createObjectURL(b)) : reject(new Error('crt-screens: toBlob failed'))), 'image/png'),
-  );
+  const tileUrl = await blobUrl(tile);
   if (gen !== generation) {
-    URL.revokeObjectURL(blobUrl);
+    URL.revokeObjectURL(tileUrl);
     return;
   }
-  url = blobUrl;
+  url = tileUrl;
   root = mount;
 
   const fps = number('fps-crt', DEFAULT_FPS);
@@ -148,7 +147,7 @@ export async function init(mount: HTMLElement, opts: EffectOptions): Promise<voi
   style = document.createElement('style');
   style.textContent =
     keyframes(walk) +
-    `.crt{--crt-tile:${TILE}px;--crt-mask:url("${blobUrl}");--crt-step:${1000 / fps}ms;--crt-steps:${STEPS};--crt-frozen:${frozenAt ?? 0}ms}`;
+    `.crt{--crt-tile:${TILE}px;--crt-mask:url("${tileUrl}");--crt-step:${1000 / fps}ms;--crt-steps:${STEPS};--crt-frozen:${frozenAt ?? 0}ms}`;
   mount.append(style);
 
   const all = targets();

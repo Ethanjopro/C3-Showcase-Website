@@ -74,13 +74,13 @@ The tiers:
 | 2 | `paper-grain` | A | Her scratchy grey paper with a riso grain that shifts at 8 fps. | (none) | (none) | Still grain |
 | 3 | `xray` | B | Through a hole in the drawing: her ribcage and heart in halftone ink. | Scribble sideways across the chest to paint the reveal, which heals over about 4 s. Vertical swipes still scroll. | A round lens follows the cursor. An "X-ray" toggle button covers keyboard users. | Toggle only, instant |
 | 4 | `c3-window` | B | On arrival, a giant cropped "C3" in her lettering, with the poster visible only through the letters. Scrolling opens the window onto the full poster. | Native scroll drives it, with at most one screen of pinned scroll. | Same as touch | Starts open, no pin |
-| 5 | `sketch-in` | A | On the first visit of a session, her line art draws itself in at 12 fps and the coral fill floods in. Lasts at most 2.4 s; any input finishes it at once. | Tap or scroll skips | Key or scroll skips | Not played |
+| 5 | `sketch-in` | A | On the first visit of a session, her line art draws itself in at 12 fps and the coral fill floods in. Lasts at most 2.4 s; any input finishes it at once. With `c3-window` on, it waits under the solid-ink letters and draws inside them as the scroll drains the ink. | Tap or scroll skips; scrolling the C3 pin doesn't | Key or scroll skips; scrolling the C3 pin (wheel, scroll keys) doesn't | Not played |
 | 6 | `halo-menu` | B | Menu opens a ring of boxy CRT screens strung on a cable (Three.js). Each screen is a section; the Projects screen shows static. | Swipe to turn the ring, tap the front screen to go. Tapping the halo in the poster also opens the menu. | Drag or arrow keys turn it, Enter goes, Esc closes. | A plain grid of screens with the same links |
 | 7 | `palette` | B | A printer's color bar of her six colorways. Picking one slides a flat block of the new ink across the page, and everything, art included, comes out recolored. The choice persists. | Tap a swatch | Radio group, arrow keys | Instant swap |
 | 8 | `misregister` | A | The ink and coral layers slip 1–2 px apart on a fast scroll or flick, then snap back, like a two-color print. | Scroll velocity | Scroll and pointer velocity | Off |
 | 9 | `panel-wipe` | A | Each section enters once from behind a flat ink or coral block that slides off. | (none) | (none) | Off; content is simply there |
 | 10 | `cables` | B | The cables hanging from the halo swing with scroll, part when a finger or cursor passes through, then settle. | Drag through them | Move the cursor through them | Her static cable drawing |
-| 11 | `crt-screens` | C | The eye screen and the portrait project screens get scanlines, a slight RGB split and stepped static. | (none) | (none) | One still frame |
+| 11 | `crt-screens` | C | The eye screen and the portrait project screens get scanlines, a slight two-ink split and stepped static. | (none) | (none) | One still frame |
 
 **Cut order if the schedule slips:**
 1. `crt-screens` is cut.
@@ -201,7 +201,7 @@ To replace art, replace the files and edit the JSON. No code changes.
 **Performance (phone first)**
 - First paint needs no JavaScript.
 - Initial JS is at most 100 KB gzip (GSAP, ScrollTrigger and our code).
-- Three.js loads only for the menu, is prefetched when the browser is idle, and stays at most 170 KB gzip.
+- Three.js loads only for the menu, is prefetched on intent (pointer or focus on a menu trigger), and stays at most 170 KB gzip.
 - First-screen art is at most 300 KB. The whole first load, excluding Three.js, is at most 700 KB.
 - Lighthouse mobile: LCP ≤ 2.5 s, CLS ≤ 0.01, TBT ≤ 200 ms. Judge these locally; the cloud VM renders in software.
 - Scrolling holds 60 fps.

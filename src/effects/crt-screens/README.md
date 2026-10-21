@@ -6,7 +6,7 @@ Her screens get scanlines, a slight two-ink split and stepped static. The projec
 
 - **Owns:** this folder. Nothing else (PLAN "Rules for parallel sessions"). Reads `projects.json` (`mode`, `teaser`, `screens`) through `core/content` and doesn't edit it.
 - **Mount:** the hidden `[data-fx="crt-screens"]` mount at the top of `<body>` holds the keyframes `<style>` and `data-state` (`moving` or `still`), which tests read. The effect draws one `.crt` inside every `[data-crt]` element. The registry loads it when any of them first scrolls into view.
-- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/raster` (`noiseTile`, `rng`), `core/onscreen`, `core/clock` (`frozenAt`), `core/palette` (`number`), `core/art` (`slot`, `slotNames`) and `core/content`. No GSAP, no ticker: the static steps on the compositor.
+- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/raster` (`noiseTile`, `rng`, `blobUrl`, `steppedKeyframes`), `core/onscreen`, `core/clock` (`frozenAt`), `core/palette` (`number`), `core/art` (`slot`, `slotNames`) and `core/content`. No GSAP, no ticker: the static steps on the compositor.
 - **Screenshots:** `npm run shots -- crt-screens` writes `.shots/crt-screens-{projects-t0,projects-t100,projects-mauve,projects-reduced,eye}@….png`.
 - **Tests:** `crt-screens.spec.ts` covers:
   - every target gets static, and the project screens spell `projects.teaser`
@@ -38,7 +38,7 @@ Her screens get scanlines, a slight two-ink split and stepped static. The projec
    - Once fonts load, `--fit` shrinks every word together if the longest still overflows. New copy with wide letters can't be clipped.
    - The words never move: the readable layer animates only its entry wipe (CLAUDE.md).
    - The screens are `aria-hidden`; the readable `.teaser` paragraph below them stays the source of truth.
-6. **Two steppers per screen** (SPEC §6). The poster already steps line-boil and paper-grain, so poster screens hold one frame of static (`POSTER_STEPS`). OWNER.md #17 asks whether the eye may step as well; it's one constant.
+6. **Two steppers per screen** (SPEC §6). The poster already steps line-boil and paper-grain, so poster screens hold one frame of static (`POSTER_STEPS`). The owner decided the eye stays still (OWNER.md #17, 2026-10-21); stepping it would be one constant.
 7. **Clock.** `?freeze=<ms>` pauses every animation at the frame that time shows, like the ticker. Offscreen screens pause (`core/onscreen`). Hidden tabs stop CSS animations by themselves.
 8. **Pixel ratio.** The tile is drawn at device resolution. If the window moves to a screen with a different pixel ratio, or the page is zoomed, the effect rebuilds it.
 9. **Recolor.** Every color is a token (`--ink`, `--accent`, `--on-ink`), so a colorway swap needs no redraw and no bus listener.
@@ -63,14 +63,14 @@ The spec asserts both stay under 10 %, over a full loop, in teal-coral and mauve
 
 | Knob | Where | Default | Effect |
 |---|---|---|---|
-| `--fps-crt` | `src/styles/tokens.css` (proposed in OWNER.md; until it lands, `number()` falls back to 10) | 10 | Steps per second |
+| `--fps-crt` | `src/styles/tokens.css` | 10 | Steps per second |
 | `SPECK_MAX` | `static.ts` | 0.24 | Brightest speck. Above about 0.28, a speck on teal crosses the 0.1 flash threshold. |
 | `COVERAGE` | `static.ts` | 0.42 | Share of grain cells that light up |
 | `GRAIN_PX` | `static.ts` | 2.25 | Grain size in CSS px. Below about 2, scanlines turn the specks into generic hatching. |
 | `RAGGED` | `static.ts` | 0.25 | Share of a grain's pixels knocked out (edge roughness) |
 | `TILE`, `STEPS` | `static.ts` | 96, 12 | Tile edge, and frames in the loop |
 | `PHASE` | `index.ts` | 5 | Steps between screens' starting frames (coprime with `STEPS`) |
-| `POSTER_STEPS` | `index.ts` | `false` | Whether poster screens step too. The owner's call (OWNER.md #17). |
+| `POSTER_STEPS` | `index.ts` | `false` | Whether poster screens step too. Off, by the owner's call (OWNER.md #17). |
 | `MIN_STEP` | `static.ts` | 8 | Least distance in px between nearby frames of the walk |
 | Scanline weight | `style.css` `.crt--poster::after` | ink at 70 %, 1 px in 4 | Poster screens only |
 | Split strength | `style.css` `.crt__split--b` | 60 % | The light fringe |

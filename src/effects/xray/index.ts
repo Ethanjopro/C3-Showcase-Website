@@ -36,7 +36,8 @@ import { local, onPointerDown, onPointerMove, onPointerUp, pointer, type LocalPo
 import { color } from '../../core/palette';
 import { on } from '../../core/bus';
 import { frozenAt } from '../../core/clock';
-import { halftone, rng, roughStroke } from '../../core/raster';
+import { halftone, roughStroke } from '../../core/raster';
+import { roughFrame } from '../../core/rough-frame';
 import copy from '../../content/xray.json';
 import './style.css';
 
@@ -64,6 +65,8 @@ const RING_POINTS = 28;
 const RESIZE_DEBOUNCE_MS = 200;
 /** A touch stroke paints once it has moved this far sideways, and more sideways than vertically. */
 const SIDEWAYS_PX = 10;
+/** The toggle's frame: her frame line, one bolder pass and no echo (it sits on small print). */
+const TOGGLE_FRAME = [3];
 
 interface Segment {
   x0: number;
@@ -105,7 +108,7 @@ let revealed = false;
 let scanStart = Number.NEGATIVE_INFINITY;
 const here: LocalPoint = { x: 0, y: 0, inside: false };
 /** What the last frame drew, so a still lens isn't redrawn 60 times a second. */
-const drawn = { alpha: Number.NaN, x: Number.NaN, y: Number.NaN, step: Number.NaN };
+const drawn = { alpha: Number.NaN, x: Number.NaN, y: Number.NaN, step: Number.NaN, busy: false };
 const ring: [number, number][] = Array.from({ length: RING_POINTS + 1 }, () => [0, 0]);
 
 let attr = '';
@@ -171,9 +174,16 @@ function scanShown(t: number): number {
 
 const scanning = (t: number) => quality !== 'static' && frozenAt === null && (t - scanStart) * SCAN_FPS < SCAN_STEPS * 1000;
 
-/** Is the lens wanted: a hover-capable pointer, over the poster, still in the window? */
+/**
+ * c3-window's letters still frame the poster (its "window" token, read-only):
+ * the scroll is the moment's gesture, and the lens would run over parts the
+ * letters hide (SPEC §3: one signature per moment).
+ */
+const windowed = () => document.documentElement.matches("[data-fx-c3-window~='window']");
+
+/** Is the lens wanted: a hover-capable pointer, over the poster, still in the window, with the C3 window open? */
 function lensWanted(): boolean {
-  if (quality === 'static' || !poster || !pointer.fine || pointer.type === 'touch' || pointerGone) return false;
+  if (quality === 'static' || !poster || !pointer.fine || pointer.type === 'touch' || pointerGone || windowed()) return false;
   return local(poster, true, here).inside;
 }
 
@@ -281,15 +291,20 @@ function frame(t: number) {
     if (stroke) stroke.first--;
   }
   // A lens resting still over the chest changes nothing until its ring's
-  // next boil step: skip the redraw. Healing strokes and scans always draw.
+  // next boil step: skip the redraw. Healing strokes and scans always draw,
+  // and so does the frame after they end: it lands their final state (the
+  // last stroke's faint remains cleared, the scan's last step), which the
+  // last frame drawn while they ran may not show.
   const step = quality === 'full' ? Math.floor((t * BOIL_FPS) / 1000) : 0;
-  const still = !segments.length && !scanning(t) && lensAlpha === drawn.alpha && here.x === drawn.x && here.y === drawn.y && step === drawn.step;
+  const busy = segments.length > 0 || scanning(t);
+  const still = !busy && !drawn.busy && lensAlpha === drawn.alpha && here.x === drawn.x && here.y === drawn.y && step === drawn.step;
   if (!still) {
     draw(t);
     drawn.alpha = lensAlpha;
     drawn.x = here.x;
     drawn.y = here.y;
     drawn.step = step;
+    drawn.busy = busy;
   }
   setAttr();
   if (!want && lensAlpha === 0 && !segments.length && !stroke && !scanning(t)) stop();
@@ -319,6 +334,8 @@ function onDown(_p: typeof pointer, e: PointerEvent) {
   // Touch and pen scribble (an Apple Pencil has no hover, so no lens); a mouse has the lens.
   // A pen that can hover (pointer.fine) has the lens, so it doesn't scribble too.
   if (e.pointerType === 'mouse' || (e.pointerType === 'pen' && pointer.fine) || stroke || !poster) return;
+  // Not while c3-window's letters still frame the poster, as for the lens.
+  if (windowed()) return;
   const p = local(poster, false, { x: 0, y: 0, inside: false });
   // A scribble may start anywhere on the poster; only its marks near the chest paint.
   if (!p.inside) return;
@@ -405,7 +422,7 @@ function buildToggle(host: HTMLElement): HTMLButtonElement {
   button.type = 'button';
   button.className = 'xray-toggle';
   button.setAttribute('aria-pressed', 'false');
-  button.innerHTML = `<span class="xray-toggle__film" aria-hidden="true"></span><span class="xray-toggle__label"></span>${roughFrameSvg(29)}`;
+  button.innerHTML = `<span class="xray-toggle__film" aria-hidden="true"></span><span class="xray-toggle__label"></span>${roughFrame(29, TOGGLE_FRAME)}`;
   button.querySelector('.xray-toggle__label')!.textContent = copy.toggle;
   const hint = document.createElement('span');
   hint.className = 'xray-hint';
@@ -414,18 +431,6 @@ function buildToggle(host: HTMLElement): HTMLButtonElement {
   hint.textContent = quality === 'static' ? copy.hint.static : pointer.fine ? copy.hint.pointer : copy.hint.touch;
   host.append(button, hint);
   return button;
-}
-
-/** Her rough frame line (same drawing as the build's c3-frame), for the toggle. */
-function roughFrameSvg(seed: number): string {
-  const r = rng(seed);
-  const j = (a: number) => (r() - 0.5) * a;
-  const n = (v: number) => +v.toFixed(2);
-  const side = (x0: number, y0: number, x1: number, y1: number) =>
-    `M${n(x0 + j(1))} ${n(y0 + j(1))}Q${n((x0 + x1) / 2 + j(1.6))} ${n((y0 + y1) / 2 + j(1.6))} ${n(x1 + j(1))} ${n(y1 + j(1))}`;
-  const pass = (o: number) =>
-    [side(-o, 0.4, 100 + o, 0.2), side(99.7, -o, 99.5, 100 + o), side(100 + o, 99.6, -o, 99.8), side(0.3, 100 + o, 0.5, -o)].join('');
-  return `<svg class="rough-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${pass(3)}"/></svg>`;
 }
 
 export async function init(root: HTMLElement, opts: EffectOptions): Promise<void> {

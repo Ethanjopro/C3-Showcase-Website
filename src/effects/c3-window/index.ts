@@ -288,14 +288,16 @@ function apply(p: number) {
     setState(state, 'open');
     return;
   }
-  // "ink" while her solid letters cover the poster: there is nothing to X-ray
-  // yet, and xray keys off it to hold back its toggle.
-  setState(state, p < DRAIN ? 'window ink' : 'window');
   const { w, h, s0, k0, k1, zx, zy } = geo;
   const f = w / frame.width;
   // First the ink drains, then the letters open: z is the zoom's own progress.
   const drained = Math.min(1, p / DRAIN);
   const z = Math.max(0, (p - ZOOM_FROM) / (1 - ZOOM_FROM));
+  // "ink" while her solid letters cover the poster: there is nothing to X-ray
+  // yet, and xray keys off it to hold back its toggle. "edge" while her inked
+  // edge shows: it boils then, and line-boil holds, so her line boils in one
+  // place at a time (SPEC §6: at most two things step on one screen).
+  setState(state, `window${p < DRAIN ? ' ink' : ''}${z < OUTLINE_FADE ? ' edge' : ''}`);
   // Log-space: each step of scroll zooms by the same factor, so the dive feels even.
   const k = k0 * (k1 / k0) ** z;
   const s = s0 ** (1 - z);

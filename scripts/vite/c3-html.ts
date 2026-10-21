@@ -8,6 +8,8 @@ import type { Plugin, ViteDevServer } from 'vite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { rng } from '../../src/core/raster.ts';
+import { roughFrame } from '../../src/core/rough-frame.ts';
 
 interface Rect {
   x: number;
@@ -42,38 +44,8 @@ function lookup(data: Data, key: string): unknown {
 
 const truthy = (v: unknown) => v !== undefined && v !== null && v !== '' && v !== false;
 
-/** mulberry32, same as src/core/raster.ts, so marks are stable across builds. */
-function rng(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 const n = (v: number) => +v.toFixed(2);
 const pct = (v: number) => `${n(v * 100)}%`;
-
-/**
- * Her poster frame: four separate strokes that wobble and overshoot the
- * corners, drawn twice. Stretches to any box (viewBox 0-100, no aspect lock);
- * strokes keep their width through vector-effect: non-scaling-stroke.
- */
-export function roughFrame(seed: number): string {
-  const r = rng(seed);
-  const j = (a: number) => (r() - 0.5) * a;
-  const side = (x0: number, y0: number, x1: number, y1: number) =>
-    `M${n(x0 + j(1))} ${n(y0 + j(1))}Q${n((x0 + x1) / 2 + j(1.6))} ${n((y0 + y1) / 2 + j(1.6))} ${n(x1 + j(1))} ${n(y1 + j(1))}`;
-  const pass = (o: number) =>
-    [side(-o, 0.4, 100 + o, 0.2), side(99.7, -o, 99.5, 100 + o), side(100 + o, 99.6, -o, 99.8), side(0.3, 100 + o, 0.5, -o)].join('');
-  return (
-    `<svg class="rough-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">` +
-    `<path d="${pass(1.4)}"/><path class="rough-frame__echo" d="${pass(0.6)}"/></svg>`
-  );
-}
 
 /** Her stacked hatching strokes (the ≡ marks beside the figure on her poster). */
 export function hatch(seed: number): string {

@@ -19,7 +19,8 @@ const clean = (page: Page) =>
       return (
         !svg.querySelector('clipPath, [pathLength], [id^="c3-sketch-in"]') &&
         [...svg.children].every((c) => c.tagName === 'path') &&
-        document.getAnimations().length === 0
+        // Its own animations only: c3-window and others run CSS animations of their own.
+        document.getAnimations().every((a) => !(a.effect as KeyframeEffect | null)?.target?.closest?.('.layer__art'))
       );
     }),
   );
@@ -120,4 +121,73 @@ test('a hidden tab pauses the drawing; coming back resumes it without un-drawing
   await setHidden(false);
   expect(await drawn(), 'finished paths stay drawn').toBeGreaterThanOrEqual(before);
   await expect(page.locator(mount)).toHaveAttribute('data-state', 'done', { timeout: 3000 });
+});
+
+// OWNER #7 (c): with c3-window on, the intro waits under her solid-ink C3 and
+// draws inside the letters as the scroll drains the ink.
+
+/** Scroll instantly to `px` from the top. */
+const scrollTo = (page: Page, px: number) => page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), px);
+/** c3-window's pin is ready (its ScrollTrigger exists). */
+const pinReady = (page: Page) => expect(page.locator('[data-fx="c3-window"]')).toHaveAttribute('data-ready', '', { timeout: 5000 });
+
+test('with c3-window: waits under the ink, and starts drawing when the ink drains', async ({ page }) => {
+  const errors = trackErrors(page);
+  await open(page, '/');
+  await pinReady(page);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'waiting');
+  await expect(page.locator('html')).toHaveAttribute(ATTR, 'waiting'); // nothing shows under the ink: line-boil needn't hold yet
+  await expect(page.locator('.layer--lineart .layer__art')).toBeVisible(); // the prehide is lifted; the animations hold the start
+  // A wheel (desktop) or a scrolling key is the drain's own gesture: still waiting.
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(300);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'waiting');
+  // A little scroll starts the drain: the drawing starts, and that scroll doesn't skip it.
+  await scrollTo(page, 40);
+  await expect(page.locator('[data-fx="c3-window"]')).toHaveAttribute('data-state', 'opening');
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'drawing');
+  await expect(page.locator('html')).toHaveAttribute(ATTR, 'drawing');
+  // Her inked edge holds still while her line is drawn (at most two things step on one screen).
+  expect(await page.locator('.c3-window__boil').first().evaluate((el) => getComputedStyle(el).animationPlayState)).toBe('paused');
+  await scrollTo(page, 80);
+  await page.waitForTimeout(200);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'drawing');
+  // Left inside the pin, it plays to the end by itself.
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'done', { timeout: 3000 });
+  expect(await clean(page)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('with c3-window: a tap or a key while it waits finishes it (SPEC §3: any input)', async ({ page }, testInfo) => {
+  await open(page, '/');
+  await pinReady(page);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'waiting');
+  if (testInfo.project.name === 'phone') await page.touchscreen.tap(200, 400);
+  else await page.keyboard.press('Tab');
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'done');
+  await expect(page.locator('html')).toHaveAttribute(ATTR, 'done');
+});
+
+test('with c3-window: a tap or a key while it draws in the pin finishes it', async ({ page }, testInfo) => {
+  await open(page, '/');
+  await pinReady(page);
+  await scrollTo(page, 40);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'drawing');
+  if (testInfo.project.name === 'phone') await page.touchscreen.tap(200, 400);
+  else await page.keyboard.press('Shift');
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'done');
+});
+
+test('with c3-window: scrolling on past the open window finishes it', async ({ page }) => {
+  await open(page, '/');
+  await pinReady(page);
+  const pin = await page.evaluate(() => Math.round(window.innerHeight * 0.85));
+  await scrollTo(page, 40);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'drawing');
+  await scrollTo(page, pin + 20);
+  await expect(page.locator('[data-fx="c3-window"]')).toHaveAttribute('data-state', 'open');
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'drawing');
+  await scrollTo(page, pin + 220);
+  await expect(page.locator(mount)).toHaveAttribute('data-state', 'done');
+  expect(await clean(page)).toBe(true);
 });

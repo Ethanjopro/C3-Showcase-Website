@@ -1,5 +1,6 @@
-// Small Canvas 2D helpers shared by effects: noise tiles, halftone, and a
-// rough hand-drawn stroke. Deterministic: the same seed draws the same thing.
+// Small Canvas 2D helpers shared by effects: noise tiles, halftone, a rough
+// hand-drawn stroke, PNG object URLs and stepped keyframes. Deterministic: the
+// same seed draws the same thing.
 
 export type Point = readonly [number, number];
 
@@ -107,4 +108,27 @@ export function roughStroke(ctx: CanvasRenderingContext2D, points: readonly Poin
     ctx.lineTo(xn + (rand() - 0.5) * jitter, yn + (rand() - 0.5) * jitter);
     ctx.stroke();
   }
+}
+
+/** The canvas as a PNG object URL; the caller revokes it when done. */
+export function blobUrl(canvas: HTMLCanvasElement): Promise<string> {
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(URL.createObjectURL(b)) : reject(new Error('raster: toBlob failed'))), 'image/png'),
+  );
+}
+
+/**
+ * A step-end @keyframes rule cycling through `frames` (CSS declarations), for
+ * stepped compositor animations with no JS per step. Frame k holds from k/n of
+ * the cycle, written 0.01 % early so a clock frozen exactly on a step edge
+ * (`?freeze`, negative animation-delay) already shows the new frame; the last
+ * frame holds to 100 %.
+ */
+export function steppedKeyframes(name: string, frames: readonly string[]): string {
+  const n = frames.length;
+  const stops = frames.map((decl, k) => {
+    const at = k === 0 ? '0%' : `${+((k / n) * 100 - 0.01).toFixed(3)}%`;
+    return `${k === n - 1 && k > 0 ? `${at},100%` : at}{${decl}}`;
+  });
+  return `@keyframes ${name}{${stops.join('')}}`;
 }

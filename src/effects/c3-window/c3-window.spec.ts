@@ -138,6 +138,22 @@ test('the clock keeps running inside the letters: line-boil plays during the pin
   await expect(page.locator('html')).toHaveAttribute('data-fx-line-boil', 'on');
 });
 
+test('her line boils in one place at a time: the inked edge while it shows, then the poster (SPEC §6)', async ({ page }) => {
+  await open(page, '/?only=c3-window,line-boil');
+  await expect(page.locator(mount)).toHaveAttribute('data-ready', '');
+  await expect(page.locator('html')).toHaveAttribute('data-fx-line-boil', 'on');
+  const playing = () =>
+    page.evaluate(() => ({
+      edge: getComputedStyle(document.querySelector('.c3-window__boil')!).animationPlayState,
+      line: getComputedStyle(document.querySelector('.layer--lineart > .layer__boil')!).animationName,
+    }));
+  await expect(page.locator('html')).toHaveAttribute('data-fx-c3-window', /edge/);
+  expect(await playing()).toEqual({ edge: 'running', line: 'none' });
+  await scrollTo(page, page.viewportSize()!.height * 0.85 * 0.6);
+  await expect(page.locator('html')).not.toHaveAttribute('data-fx-c3-window', /edge/);
+  await expect.poll(playing).toEqual({ edge: 'paused', line: 'c3-boil-live' });
+});
+
 test('?c3=<progress> scrolls there, for screenshots', async ({ page }) => {
   await ready(page, '&c3=0.5');
   await expect.poll(async () => Number(await page.locator(mount).getAttribute('data-progress'))).toBeCloseTo(0.5, 1);
@@ -201,7 +217,7 @@ test('the X-ray toggle waits while her ink letters cover the chest', async ({ pa
   await open(page, '/?only=c3-window,xray');
   await expect(page.locator(mount)).toHaveAttribute('data-ready', '');
   await expect(page.locator('.xray-toggle')).toBeAttached();
-  await expect(page.locator('html')).toHaveAttribute('data-fx-c3-window', 'window ink');
+  await expect(page.locator('html')).toHaveAttribute('data-fx-c3-window', 'window ink edge');
   await expect(page.locator('.xray-toggle')).toBeHidden();
   await scrollTo(page, page.viewportSize()!.height * 0.85 * 0.5);
   await expect(page.locator('html')).toHaveAttribute('data-fx-c3-window', 'window');
@@ -211,5 +227,7 @@ test('the X-ray toggle waits while her ink letters cover the chest', async ({ pa
 test('a link straight to a section lands on it, after the pin moves the page', async ({ page }) => {
   await page.goto('/?only=c3-window#info');
   await expect(page.locator(mount)).toHaveAttribute('data-ready', '', { timeout: 10_000 });
-  await expect.poll(() => page.locator('#info').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBeLessThan(40);
+  // It lands under the fixed Menu button's clearance (scroll-padding-top, base.css).
+  const pad = await page.evaluate(() => Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop));
+  await expect.poll(() => page.locator('#info').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBeLessThan(pad + 24);
 });

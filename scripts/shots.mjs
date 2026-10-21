@@ -31,6 +31,23 @@ const args = process.argv.slice(2);
 const only = args.filter((a) => !a.startsWith('--'));
 const want = (name) => !only.length || only.includes(name);
 
+/**
+ * Waits until panel-wipe has finished with this section: no block mid-slide,
+ * and the section's own header no longer covered (it starts wiping once in
+ * view). Gives up quietly after 3 s; panel-wipe may be off.
+ */
+async function settled(page, section) {
+  await page
+    .waitForFunction(
+      (id) =>
+        !document.querySelector('[data-fx="panel-wipe"][data-state="wiping"]') &&
+        !document.querySelector(`#${id} [data-fx="panel-wipe"][data-state="covered"]`),
+      section,
+      { timeout: 3000, polling: 50 },
+    )
+    .catch(() => {});
+}
+
 export const VIEWPORTS = {
   1440: { viewport: { width: 1440, height: 900 } },
   390: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
@@ -103,6 +120,9 @@ try {
     const touch = Boolean(ctxOpts.hasTouch);
     for (const reduced of [false, true]) {
       const context = await browser.newContext({ ...ctxOpts, reducedMotion: reduced ? 'reduce' : 'no-preference' });
+      // Section shots show the settled page: sketch-in already played this
+      // session (otherwise the poster shot catches the intro mid-draw).
+      await context.addInitScript(() => sessionStorage.setItem('c3:fx-done:sketch-in', '1'));
       const page = await context.newPage();
       page.on('console', (m) => m.type() === 'error' && errors.push(`${width}${reduced ? ' reduced' : ''}: ${m.text()}`));
       page.on('pageerror', (e) => errors.push(`${width}: ${e.message}`));
@@ -120,13 +140,15 @@ try {
           // Pad the clip: each panel's screen tag straddles its top frame line.
           const el = page.locator(`#${section}`);
           await el.scrollIntoViewIfNeeded();
+          await settled(page, section);
           const box = await el.evaluate((n) => {
             const r = n.getBoundingClientRect();
             return { y: r.top + window.scrollY, height: r.height };
           });
           const pad = 40;
           // Fixed chrome would land mid-section in a full-page clip; it has its own shot (poster).
-          const hide = await page.addStyleTag({ content: '.chrome{visibility:hidden}' });
+          // The skip link too: it parks just above the viewport, which a full-page clip can include.
+          const hide = await page.addStyleTag({ content: '.chrome,.skip-link{visibility:hidden}' });
           await page.screenshot({
             path: file,
             fullPage: true,

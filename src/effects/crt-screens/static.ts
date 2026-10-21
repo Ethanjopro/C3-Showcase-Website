@@ -6,7 +6,7 @@
 // field only needs to be one tile larger than the screen, and a step is a
 // compositor transform (no JS, no repaint).
 
-import { noiseTile, rng } from '../../core/raster';
+import { noiseTile, rng, steppedKeyframes } from '../../core/raster';
 
 /** Tile edge in CSS px. */
 export const TILE = 96;
@@ -84,12 +84,7 @@ export function offsets(): [number, number][] {
   return out;
 }
 
-/** The static's walk as step-end keyframes: frame k holds from k/n of the cycle (just before, so a frozen clock on a step edge shows the new frame). */
+/** The static's walk as step-end keyframes (core/raster: frame k holds from k/n of the cycle). */
 export function keyframes(walk: [number, number][]): string {
-  const n = walk.length;
-  const stops = walk.map(([x, y], k) => {
-    const at = k === 0 ? '0%' : `${((k / n) * 100 - 0.01).toFixed(3)}%`;
-    return `${k === n - 1 ? `${at},100%` : at}{transform:translate(${x}px,${y}px)}`;
-  });
-  return `@keyframes c3-crt-static{${stops.join('')}}`;
+  return steppedKeyframes('c3-crt-static', walk.map(([x, y]) => `transform:translate(${x}px,${y}px)`));
 }
