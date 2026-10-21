@@ -144,7 +144,14 @@ footer {
 html.fx-pending-c3-window [data-prehide~='c3-window'],
 html.fx-pending-sketch-in .layer--lineart .layer__art,
 html.fx-pending-sketch-in .layer--fill .layer__art,
-html.fx-pending-sketch-in .layer--title .layer__art {
+html.fx-pending-sketch-in .layer--title .layer__art,
+/* These arrive with the fill's flood, so the figure isn't drawn in among
+   finished art. The wings stay: they are the LCP element. */
+html.fx-pending-sketch-in .layer--ribcage .layer__art,
+html.fx-pending-sketch-in .layer--eyescreen .layer__art,
+html.fx-pending-sketch-in .layer--eyescreen .layer__crt,
+html.fx-pending-sketch-in .layer--cables .layer__art,
+html.fx-pending-sketch-in .layer--halo .layer__art {
   visibility: hidden;
 }
 

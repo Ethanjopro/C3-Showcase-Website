@@ -17,8 +17,6 @@ Everything waiting on Ethan or the artist, in one place.
 | 4 | **RSVP link** | Launch | "RSVP opens soon", and no RSVP chip |
 | 5 | **Follow link:** which platform, and the URL | Launch | Hidden |
 | 6 | **Effects to switch off:** try `?off=<effect>` on your phone and pick anything that feels like too much | Launch (PLAN step 13) | Everything on |
-| 7 | **sketch-in is hidden by the new C3 arrival.** Since PR #7 the poster arrives behind her solid-ink C3, so the line art draws itself in unseen, and the scroll that drains the ink also finishes the intro. On a default visit nobody sees it. Pick one: (a) switch `sketch-in` off (`src/config/features.json`); (b) keep it for `?off=c3-window` visits only; (c) let it play inside the letters as the ink drains (a cross-effect change: sketch-in would wait for c3-window's `data-state` and not skip on the pin's scroll). Compare `?off=c3-window` and the default on your phone. | Launch (PLAN step 13) | Both on; the intro plays unseen (2.3 s, once per session) |
-| 17 | **Ticking on the poster:** SPEC §6 allows at most two effects ticking on one screen, and the arrival screen already steps line-boil and paper-grain. So crt-screens keeps the eye screen's static still (it keeps its scanlines and two-ink split), and only the project screens' static steps. All three run on the compositor, with no JS per step. Should the eye's static step too? | Launch (PLAN step 13) | Eye still. Stepping it is one constant (`POSTER_STEPS` in `src/effects/crt-screens/index.ts`). |
 
 ## Open: ask her (on hold: Ethan will ask when he's ready)
 
@@ -43,31 +41,6 @@ Changes effect sessions proposed but couldn't make, because they touch shared fi
 Optional, once her composition settles (OWNER #9):
 - **Re-cut placeholders from her newest drafts.** Point `scripts/art/placeholders.mjs` at `figure-lineart-with-halo.webp` for `lineart` and `wings`, and take `halo` as the difference between the with-halo and no-halo versions. Re-measure the halo `screens` rects. Her cleaner line makes the preview look much closer to final.
 
-From PR #6 (xray, c3-window, halo-menu):
-- **PLAN writer table:** add `#poster` (section) | c3-window | pin; let `html[data-fx-halo-menu~='ring']` restyle `.menu`, `.menu__list` and `.menu__screen`; halo-menu sets `data-halo-front` on the menu links.
-- **SPEC §6:** prefetch Three.js on intent (pointer or focus on a menu trigger), not when idle, since idle prefetch contradicts SPEC §9 step 14.
-- **`roughFrame`:** the X-ray toggle copies the generator from `scripts/vite/c3-html.ts`. Move it into one module that both import.
-- **`vite.config.ts`:** raise `build.chunkSizeWarningLimit` to about 600 for the lazy ring chunk (139 KB gzip).
-- **Cross-effect:** `.halo-hit` is tappable inside the letters at arrival; c3-window's inked edge could share a core boil filter. (The X-ray toggle now waits while the ink letters cover the chest: done in PR #7.)
-
-From PR #8 (sketch-in, palette, misregister, panel-wipe):
-- **`core/palette`:** a `duration(token, fallback)` helper that understands `s` and `ms`. `number()` drops units and the CSS minifier writes `600ms` as `.6s`, so `number('dur-palette', 600)` returns 0.6. palette and panel-wipe each carry a local copy; delete both once it lands.
-- **`core/palette.request()`:** "latest pick wins" and a 350 ms minimum between visible colorway changes (SPEC §6 flash safety). The palette effect does this itself today, which relies on core running queued picks in the same task and on reading the color bar's `change` events; under reduced motion (no transition) nothing limits it.
-- **`src/ui/colorbar.ts`:** don't move the checked radio back to an intermediate colorway while an arrow key is held.
-- **`scripts/shots.mjs`:** section shots are no longer deterministic. Set `sessionStorage['c3:fx-done:sketch-in']='1'` before unfrozen section shots (the poster otherwise catches the intro mid-flood), and wait for no `[data-fx="panel-wipe"][data-state="wiping"]` (or use `?off=panel-wipe`) before each section shot.
-- **`src/styles/base.css` prehide:** the halo, wings, cables, ribcage and eye screen show before the figure draws in. If wings join the prehide, LCP moves (today it's the wings layer); re-check it.
-- **PLAN step 6:** sketch-in's 4–6 ms per step (4× throttle, software raster) is over SPEC §6's 2 ms; take one GPU trace locally (step 13). If it's still over, rasterize the line art once and draw the reveal on a canvas.
-
-From PR #9 (crt-screens, PLAN step 12):
-- **`tokens.css`:** add `--fps-crt: 10` next to the other rates. crt-screens reads it with `number('fps-crt', 10)`, so it's 10 either way until then.
-- **SPEC §3 row 11 and PLAN step 12:** change "RGB split" to "two-ink split". A red/green/blue split would bring off-palette colors into every colorway, so the eye screen splits in `--accent` and `--on-ink` instead.
-- **`vitest.config.ts`:** also collect `src/effects/*/*.test.ts`, so effects can own unit tests. Until then, PLAN step 12's luminance check runs in `crt-screens.spec.ts`, on real rendered frames.
-- **`src/core/raster.ts`:** a `blobUrl(canvas)` helper and a `steppedKeyframes(name, frames)` helper. paper-grain, line-boil and crt-screens each wrap `toBlob` themselves, and paper-grain and crt-screens each write step-end keyframes with their own edge rule (24.99 % vs −0.01 %).
-- **`scripts/shots.mjs`:** a subset run (`npm run shots -- projects`) captures the skip link, focused, at the top of `projects@390`. A full run doesn't.
-
-From PR #7 (arrival polish):
-- **`poster.css`:** give `.print--xray` its own cell in the wide layout (left margin, centre). xray's own CSS moves it there today, because the shared cell is the color bar's and they overlapped on laptop screens.
-
 ## Decided
 
 - **2026-10-20:** ui-ux-pro-max removed. SPEC.md is the design system, and frontend-design covers what it leaves open.
@@ -77,3 +50,21 @@ From PR #7 (arrival polish):
 - **2026-10-20:** Steps 1–7 are built and merged (scaffold; line-boil, paper-grain; xray, c3-window, halo-menu).
 - **2026-10-20:** Steps 6, 8, 9 and 10 are built (sketch-in, palette, misregister, panel-wipe; PR #8).
 - **2026-10-20:** C3 arrival (Ethan, from mockups): her C3 arrives solid in ink, whole and nearly as wide as the poster; the scroll drains the ink to show the poster through the letters, then opens the window. Letters no longer crop at the poster's edges (PR #7).
+- **2026-10-21:** OWNER #7 (Ethan): option (c). sketch-in waits under her solid-ink C3 and draws inside the letters as the scroll drains the ink, reading c3-window's mount `data-state`. Scrolling the pin no longer skips it; a tap or a non-scrolling key does, and so does scrolling on once the window is open. SPEC §3 row 5 and PLAN step 6 updated.
+- **2026-10-21:** OWNER #17 (Ethan): the eye screen's static stays still (`POSTER_STEPS` stays `false`); only the project screens' static steps.
+- **2026-10-21:** Shared changes queue landed (PRs #6–#9 proposals):
+  - PLAN writer table: `#poster` pin (c3-window), halo-menu's `.menu*` restyle and `data-halo-front`, and the read-only cross-effect read of a mount's `data-state`.
+  - SPEC §6 and PLAN step 7: Three.js is prefetched on intent, not at idle.
+  - `src/core/rough-frame.ts`: one `roughFrame()` for the build and the X-ray toggle (the toggle keeps its single bold pass). `scripts/vite/c3-html.ts` also takes `rng` from `core/raster`.
+  - `vite.config.ts`: `chunkSizeWarningLimit: 600` for the lazy ring chunk.
+  - `.halo-hit` takes no taps while the ink letters cover the poster (`poster.css`). A shared boil filter for c3-window's inked edge: not done, because there's no filter to share (line-boil uses pre-rendered frames, c3-window a 3-step CSS transform), and both already step at 10 fps.
+  - `core/palette`: `duration(token, fallback)` (reads `ms` and `s`); `request()` changes colorway at most once per 350 ms on every path, reduced motion included, latest pick wins, and a pick that waited skips the wipe. The palette effect and panel-wipe dropped their local copies.
+  - `src/ui/colorbar.ts`: a held arrow key no longer snaps the radio back to an intermediate colorway.
+  - `core/raster`: `blobUrl(canvas)` and `steppedKeyframes(name, frames)`, used by paper-grain, line-boil and crt-screens.
+  - `tokens.css`: `--fps-crt: 10`.
+  - SPEC §3 row 11 and PLAN step 12: "two-ink split".
+  - `vitest.config.ts` also collects `src/effects/*/*.test.ts`.
+  - `scripts/shots.mjs`: section shots mark sketch-in done, wait for panel-wipe to settle, and hide the skip link with the chrome.
+  - `base.css` prehide: the ribcage panel, eye screen (and its CRT glass), cables and halo now wait for sketch-in too, and arrive with the fill's flood. The wings stay out of the prehide, so LCP doesn't move.
+  - `poster.css`: `.print--xray` has its own cell in the wide layout (left margin, centre); xray's CSS no longer moves it.
+  - sketch-in's GPU trace moved to PLAN step 13's checklist (it now overlaps the C3 pin).

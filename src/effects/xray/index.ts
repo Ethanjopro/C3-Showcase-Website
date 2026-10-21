@@ -36,7 +36,8 @@ import { local, onPointerDown, onPointerMove, onPointerUp, pointer, type LocalPo
 import { color } from '../../core/palette';
 import { on } from '../../core/bus';
 import { frozenAt } from '../../core/clock';
-import { halftone, rng, roughStroke } from '../../core/raster';
+import { halftone, roughStroke } from '../../core/raster';
+import { roughFrame } from '../../core/rough-frame';
 import copy from '../../content/xray.json';
 import './style.css';
 
@@ -64,6 +65,8 @@ const RING_POINTS = 28;
 const RESIZE_DEBOUNCE_MS = 200;
 /** A touch stroke paints once it has moved this far sideways, and more sideways than vertically. */
 const SIDEWAYS_PX = 10;
+/** The toggle's frame: her frame line, one bolder pass and no echo (it sits on small print). */
+const TOGGLE_FRAME = [3];
 
 interface Segment {
   x0: number;
@@ -405,7 +408,7 @@ function buildToggle(host: HTMLElement): HTMLButtonElement {
   button.type = 'button';
   button.className = 'xray-toggle';
   button.setAttribute('aria-pressed', 'false');
-  button.innerHTML = `<span class="xray-toggle__film" aria-hidden="true"></span><span class="xray-toggle__label"></span>${roughFrameSvg(29)}`;
+  button.innerHTML = `<span class="xray-toggle__film" aria-hidden="true"></span><span class="xray-toggle__label"></span>${roughFrame(29, TOGGLE_FRAME)}`;
   button.querySelector('.xray-toggle__label')!.textContent = copy.toggle;
   const hint = document.createElement('span');
   hint.className = 'xray-hint';
@@ -414,18 +417,6 @@ function buildToggle(host: HTMLElement): HTMLButtonElement {
   hint.textContent = quality === 'static' ? copy.hint.static : pointer.fine ? copy.hint.pointer : copy.hint.touch;
   host.append(button, hint);
   return button;
-}
-
-/** Her rough frame line (same drawing as the build's c3-frame), for the toggle. */
-function roughFrameSvg(seed: number): string {
-  const r = rng(seed);
-  const j = (a: number) => (r() - 0.5) * a;
-  const n = (v: number) => +v.toFixed(2);
-  const side = (x0: number, y0: number, x1: number, y1: number) =>
-    `M${n(x0 + j(1))} ${n(y0 + j(1))}Q${n((x0 + x1) / 2 + j(1.6))} ${n((y0 + y1) / 2 + j(1.6))} ${n(x1 + j(1))} ${n(y1 + j(1))}`;
-  const pass = (o: number) =>
-    [side(-o, 0.4, 100 + o, 0.2), side(99.7, -o, 99.5, 100 + o), side(100 + o, 99.6, -o, 99.8), side(0.3, 100 + o, 0.5, -o)].join('');
-  return `<svg class="rough-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${pass(3)}"/></svg>`;
 }
 
 export async function init(root: HTMLElement, opts: EffectOptions): Promise<void> {

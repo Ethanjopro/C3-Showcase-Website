@@ -21,6 +21,7 @@
 
 import type { EffectOptions } from '../../core/effect';
 import { frozenAt } from '../../core/clock';
+import { duration } from '../../core/palette';
 import { onEnter } from '../../core/scroll';
 import './style.css';
 
@@ -32,17 +33,6 @@ let offs: (() => void)[] = [];
 let wraps: HTMLElement[] = [];
 let anims: Animation[] = [];
 let mounts: HTMLElement[] = [];
-
-/**
- * A time token in ms. core/palette's number() drops the unit, and the CSS
- * minifier writes 500ms as .5s (proposed shared fix in the PR).
- */
-function duration(style: CSSStyleDeclaration, token: string, fallback: number): number {
-  const raw = style.getPropertyValue(`--${token}`).trim();
-  const v = Number.parseFloat(raw);
-  if (!Number.isFinite(v) || v <= 0) return fallback;
-  return /ms$/.test(raw) ? v : /s$/.test(raw) ? v * 1000 : v;
-}
 
 /**
  * Headers whose entrance is over: wiped, on screen at init, or already
@@ -60,9 +50,8 @@ function ahead(el: Element): boolean {
 export function init(root: HTMLElement, opts: EffectOptions): void {
   destroy();
   if (opts.quality === 'static' || typeof Element.prototype.animate !== 'function') return;
-  const style = getComputedStyle(document.documentElement);
-  const ms = duration(style, 'dur-wipe', DEFAULT_MS);
-  const easing = style.getPropertyValue('--ease-in-out').trim() || DEFAULT_EASE;
+  const ms = duration('dur-wipe', DEFAULT_MS);
+  const easing = getComputedStyle(document.documentElement).getPropertyValue('--ease-in-out').trim() || DEFAULT_EASE;
 
   // The root mount and the extra ones (data-part), in page order.
   mounts = [root, ...document.querySelectorAll<HTMLElement>('[data-fx="panel-wipe"][data-part]')];

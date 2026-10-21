@@ -7,7 +7,7 @@ Each section header enters once from behind a flat block, accent or ink by turns
 - **Owns:** this folder. Nothing else (PLAN "Rules for parallel sessions").
 - **Mounts:** one `[data-fx="panel-wipe"]` in each section header (Info is the root; Projects and Credits carry `data-part`). Each carries `data-state`: `covered`, `wiping` or `done`. Inside it, while covered or wiping: `.panel-wipe > .panel-wipe__block`.
 - **Writes outside the mounts:** nothing.
-- **Contract:** `init(root, { quality })` and `destroy()`. Imports `core/scroll` (`onEnter`) and `core/clock` (`frozenAt`). It loads at `idle`; the blocks move with the Web Animations API.
+- **Contract:** `init(root, { quality })` and `destroy()`. Imports `core/scroll` (`onEnter`), `core/palette` (`duration`) and `core/clock` (`frozenAt`). It loads at `idle`; the blocks move with the Web Animations API.
 - **Screenshots:** `npm run shots -- panel-wipe` writes `.shots/panel-wipe-info-covered@390.png` (`?freeze=0`: the block over the header), `panel-wipe-info-mid-wipe@{390,1440}.png` (220 ms in), `panel-wipe-info-end@{390,1440}.png` and `panel-wipe-info-reduced@390.png` (headings, no blocks).
 - **Tests:** `panel-wipe.spec.ts`: headers below the fold start covered, accent/ink/accent; each wipes once on entering and its block is removed; the heading stays in the accessibility tree and the block is absolute and moves by transform; CLS ≤ 0.01 and no sideways scroll while scrolling through every section; focus from the menu finishes the wipe; a header already on screen at load gets no block; reduced motion is off.
 

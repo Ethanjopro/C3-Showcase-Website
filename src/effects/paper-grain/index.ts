@@ -21,7 +21,7 @@
 //   static  one still tile
 
 import type { EffectOptions } from '../../core/effect';
-import { noiseTile } from '../../core/raster';
+import { blobUrl, noiseTile, steppedKeyframes } from '../../core/raster';
 import { frozenAt, idle } from '../../core/clock';
 import { number } from '../../core/palette';
 import './style.css';
@@ -95,9 +95,7 @@ async function superTile(px: number, dpr: number, moving: boolean, alive: () => 
     if (!alive()) return null;
     ctx.drawImage(tile(seed, px, dpr), (i % 2) * px, Math.floor(i / 2) * px);
   }
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(URL.createObjectURL(b)) : reject(new Error('paper-grain: toBlob failed'))), 'image/png'),
-  );
+  return blobUrl(canvas);
 }
 
 /**
@@ -107,10 +105,8 @@ async function superTile(px: number, dpr: number, moving: boolean, alive: () => 
  */
 function keyframes(): string {
   const t = `${-TILE}px`;
-  return (
-    `@keyframes c3-grain-shift{0%{transform:translate(0,0)}24.99%{transform:translate(${t},0)}` +
-    `49.99%{transform:translate(0,${t})}74.99%,100%{transform:translate(${t},${t})}}`
-  );
+  const shifts = ['0,0', `${t},0`, `0,${t}`, `${t},${t}`];
+  return steppedKeyframes('c3-grain-shift', shifts.map((xy) => `transform:translate(${xy})`));
 }
 
 export async function init(root: HTMLElement, opts: EffectOptions): Promise<void> {

@@ -7,7 +7,7 @@ Her scratchy grey paper with a riso grain that shifts at 8 fps.
 - **Owns:** this folder. Nothing else (PLAN "Rules for parallel sessions").
 - **Mount:** `.fx-layer--grain`, the fixed full-viewport layer above the content and below the chrome (`--z-grain`, `pointer-events: none`, from base.css).
 - **Writes:** only inside the mount, plus `data-state` (`moving` or `still`) on the mount, which tests read.
-- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/raster` (`noiseTile`), `core/clock` (`frozenAt`, `idle`) and `core/palette` (`number`). No GSAP.
+- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/raster` (`noiseTile`, `blobUrl`, `steppedKeyframes`), `core/clock` (`frozenAt`, `idle`) and `core/palette` (`number`). No GSAP.
 - **Screenshots:** `npm run shots -- paper-grain` writes `.shots/paper-grain-{t0,t125}@{390,1440}.png` and `paper-grain-info-t0@390.png`.
 - **Tests:** `paper-grain.spec.ts` covers:
   - it shows, sits between the content and the chrome, and never takes a tap

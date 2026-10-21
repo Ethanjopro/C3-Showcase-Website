@@ -11,7 +11,7 @@ Every hand-drawn layer jitters like pencil animation, stepping at 10 fps.
   - CSS keyed off that attribute animates `filter` on `.layer__boil`, which is the property PLAN gives this effect.
   - The same CSS generates `.layer--<slot>::before` and `::after` on the boiling layers: `content`, position and size, `mask-image`, `background-color` (the slot's tint token) and an `opacity` animation. PLAN's writer table assigns these pseudo-elements to line-boil.
   - It reads two things from other owners: `html.fx-pending-sketch-in` (the boot script's prehide) and `html[data-fx-sketch-in~='drawing']` (the handshake in PLAN step 6). While either is set, the cycle holds on her live drawing.
-- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/art`, `core/clock` (`frozenAt`, `idle`), `core/onscreen` and `core/palette` (`number`). No GSAP.
+- **Contract:** `init(root, { quality })` and `destroy()`, from `src/core/effect.ts`. Imports `core/art`, `core/clock` (`frozenAt`, `idle`), `core/onscreen`, `core/palette` (`number`) and `core/raster` (`blobUrl`). No GSAP.
 - **Screenshots:** `npm run shots -- line-boil` writes `.shots/line-boil-{t0,t50,t100,t200}@{390,1440}.png` and `line-boil-lite-t150@390.png`.
 - **Tests:** `line-boil.spec.ts`. It covers: stepping (t0 = t50 = t300, t0 ≠ t100 ≠ t200); which layers boil at full and lite quality; reduced motion; colorway tint; pausing offscreen; mask sizes.
 

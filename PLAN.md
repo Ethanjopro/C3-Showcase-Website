@@ -37,7 +37,7 @@ If a step runs late, use SPEC §3's cut order: `crt-screens`, then `cables`, the
 ## Rules for parallel sessions
 
 **What an effect step owns.** Exactly two things:
-- `src/effects/<name>/`: `index.ts`, any modules, `style.css`, `README.md`, `shots.json`, and `<name>.spec.ts`.
+- `src/effects/<name>/`: `index.ts`, any modules, `style.css`, `README.md`, `shots.json`, `<name>.spec.ts` (Playwright), and any `*.test.ts` (vitest unit tests).
 - `src/content/<name>.json`, if the effect has copy.
 
 **Everything else is shared.** Step 1 owns the shared files; after that, only a sequential session in plan mode changes them:
@@ -58,12 +58,15 @@ Step 1 installs every dependency this plan needs, so no effect step touches `pac
 |---|---|---|
 | `<html data-colorway>` | `core/palette.ts` only. The palette effect calls it. | The colorway attribute |
 | `<html data-fx-<name>>` | That effect | Its own on/off attribute. Its CSS may key off this attribute. |
-| `.poster-stage` | c3-window | Mask or clip, scale, pin |
+| `.poster-stage` | c3-window | Mask or clip, scale |
+| `#poster` (section) | c3-window | Pin |
 | `.layer` (one per slot) | misregister | `transform` |
 | `.layer__boil` | line-boil | `filter` |
 | `.layer::before`, `.layer::after` | line-boil | Its boil frames: `content`, box, mask, `background-color`, `opacity` |
 | `.layer__art` and the SVG paths inside it | sketch-in | Stroke dash, clip, opacity |
-| `[data-fx="<name>"]` mounts | That effect | Anything inside the mount, plus `data-state` on the mount, which tests read |
+| `[data-fx="<name>"]` mounts | That effect | Anything inside the mount, plus `data-state` on the mount, which tests read. Another effect may read it, never write it: sketch-in waits on c3-window's (`closed`, `opening`, `open`). |
+| `.menu`, `.menu__list`, `.menu__screen` (restyle only) | halo-menu | Layout and look, through CSS keyed off `html[data-fx-halo-menu~='ring']` |
+| `data-halo-front` on the menu links | halo-menu | Marks the link of the screen at the front of the ring |
 | An effect's own slot layer | The effect that replaces it: cables (`cables` slot), xray (`ribcage` slot) | Hide or show, through its `data-fx-<name>` attribute only |
 
 ---
@@ -122,12 +125,13 @@ This is the contract every effect codes against. Effects import only from here. 
 | `motion.ts` | `quality(): 'full' \| 'lite' \| 'static'` and `onChange(cb)`. <br>- `static` means reduced motion. <br>- `lite` means Save-Data, `deviceMemory ≤ 2`, or sustained dropped frames against the device's own cadence (a 30 Hz cap is not slow). |
 | `pointer.ts` | Shared pointer state: <br>- position, in client space and relative to an element (`local(el)` returns 0–1) <br>- a smoothed position and velocity <br>- `type` (`mouse`, `touch` or `pen`) and `down` <br>- `fine`, true for a hover-capable fine pointer <br>All listeners are passive. |
 | `scroll.ts` | `y` and `velocity`. <br>- `progress(el, cb, { start, end, pin })` returns `kill()` and uses GSAP ScrollTrigger internally. <br>- `onEnter(el, cb, { once })` returns `off()`. <br>Native scroll only. |
-| `palette.ts` | `current`, `list`, `request(name)`, `setTransition(fn)`, `color(token)`, `number(token, fallback)`, `onChange(cb)`. <br>- `number()` reads a numeric token such as `--fps-boil`. <br>- With no transition registered, `request` applies the change instantly. <br>- `color()` reads the resolved CSS value, for use in canvas and WebGL. <br>- The choice persists in `localStorage`. |
+| `palette.ts` | `current`, `list`, `request(name)`, `setTransition(fn)`, `color(token)`, `number(token, fallback)`, `duration(token, fallback)`, `onChange(cb)`. <br>- `number()` reads a unitless token such as `--fps-boil`; `duration()` reads a time token such as `--dur-wipe` in ms (`500ms` or `.5s`). <br>- With no transition registered, `request` applies the change instantly. <br>- Flash safety: `request` changes colorway at most once per `GAP` (350 ms); picks made faster collapse to the newest, and one that had to wait skips the transition. <br>- `color()` reads the resolved CSS value, for use in canvas and WebGL. <br>- The choice persists in `localStorage`. |
 | `art.ts` | `slot(name)` returns the manifest entry with its URL resolved. `image(name)` returns a decoded image. `rect(name)` returns geometry relative to the poster. |
 | `content.ts` | Typed access to `src/content/*.json`. |
 | `flags.ts` | `enabled(name)`, from `src/config/features.json` plus the `?off=a,b` and `?only=a,b` overrides. |
 | `bus.ts` | Typed events that let effects talk without importing each other: `colorway`, `navigate`, `menu:open`, `menu:close`. |
-| `raster.ts` | `noiseTile(size, seed)`, `halftone(image, cell)`, `roughStroke(ctx, points, seed, width)`. |
+| `raster.ts` | `noiseTile(size, seed)`, `halftone(image, cell)`, `roughStroke(ctx, points, seed, width)`, `blobUrl(canvas)` (a PNG object URL), `steppedKeyframes(name, frames)` (step-end `@keyframes`, each frame starting 0.01 % early so a frozen clock on a step edge shows the new frame). |
+| `rough-frame.ts` | `roughFrame(seed, passes?)`: her poster frame line as an SVG string. The build (`scripts/vite/c3-html.ts`) and run-time effects (the X-ray toggle) draw it from the same code. |
 
 **Effect contract:**
 - `init(root: HTMLElement, opts: { quality }): void | Promise<void>`.
@@ -367,13 +371,15 @@ Build:
 - **Draw.** Draw the lineart paths with `stroke-dashoffset`, top to bottom, stepped at 12 fps.
 - **Fill.** The fill floods in as a stepped wipe of 6–8 frames, followed by the title. Total time is at most 2.4 s.
 - **Skip.** Any tap, scroll or key jumps straight to the end state.
+- **Inside the letters (OWNER #7, option c).** With c3-window on, hold the start state until c3-window's mount `data-state` leaves `closed` (the ink starts to drain), then play, so the drawing happens inside the letters. While the window is pinned, scrolling it doesn't skip; a tap or a non-scrolling key does. If c3-window settles without a state, play at once.
 - **Line-boil handshake.** While drawing, set the token `drawing` on `<html data-fx-sketch-in>` and remove it at the end state. line-boil holds on her live drawing while the token is there, because its pre-rendered frames show finished art. It also holds during `html.fx-pending-sketch-in`.
 
 Verify:
 - Shots at `?freeze=` 0, 600, 1200 and 2400 show progressive drawing.
 - Two frozen times inside one 83 ms step produce identical shots.
 - End-to-end:
-  - A scroll during the intro completes it.
+  - A scroll during the intro completes it (with c3-window off, or once the window is open).
+  - With c3-window on: it waits under the ink, starts when the drain starts, and scrolling the pin doesn't skip it.
   - The reduced-motion and JS-disabled shots show the finished poster at time 0.
   - A second visit in the same session skips the intro.
 
@@ -383,7 +389,7 @@ Verify:
 
 Build:
 - **Enhance, don't replace.** The step 1 `<dialog>` and its `<nav>` list keep working on their own. The effect only adds the 3D ring inside its mount in the dialog.
-- **Loading.** Lazy-load Three.js on first open, and prefetch it on idle.
+- **Loading.** Lazy-load Three.js on first open, and prefetch it on intent (pointer or focus on a menu trigger), never at idle (SPEC §6, §9 step 14).
 - **Scene.** A ring of boxy screens strung on a cable loop, with flat token colors (`MeshBasicMaterial`) and no gloss or lighting.
   - Box edges step subtly at 10 fps, matched to her final line weight, with no more wobble than line-boil.
   - Labels come from `sections.json`, rendered to canvas textures.
@@ -480,7 +486,7 @@ Verify:
 
 Build:
 - **Targets.** The `[data-crt]` mounts on the eye screen and on the project screens. The project screens are portrait (9:16, set in `src/styles/panels.css`), so size noise and scanlines to each mount, never to a fixed aspect.
-- **Look.** CSS scanlines, plus a 1 px RGB split on the eye screen.
+- **Look.** CSS scanlines, plus a 1 px two-ink split (`--accent` and `--on-ink`) on the eye screen. A red/green/blue split would bring off-palette colors into every colorway.
 - **Static.** Noise tiles from `raster.noiseTile` cycle at 10 fps.
 - **Teaser line.** The teaser screens show the "revealed at the show" line from `projects.json`, which this step reads but doesn't edit.
 - **Flash safety.** Frame-to-frame change in mean luminance stays under 10 % of the screen area, so nothing counts as a flash.
@@ -488,7 +494,7 @@ Build:
 
 Verify:
 - Shots of `projects@390` and of the eye screen at a crop.
-- Unit test: luminance delta between noise frames is under 10 %.
+- Luminance check: the delta between noise frames is under 10 % (in `crt-screens.spec.ts`, on rendered frames; an effect may also own unit tests as `src/effects/<name>/*.test.ts`).
 - The reduced-motion shots at 0 and 500 ms are identical.
 
 ---
@@ -511,6 +517,7 @@ Sequential. **Mode:** plan mode. **Owns:** shared files, for final fixes only.
 5. **Acceptance:**
    - Run the full SPEC §9 check.
    - Run Lighthouse locally on a phone profile.
+   - Take one 4×-throttled performance trace on a GPU machine while scrolling the C3 pin as sketch-in draws inside the letters (they now overlap). Software raster in the cloud measured 4–6 ms per sketch-in step, over SPEC §6's 2 ms. If it drops frames, rasterize the line art once and draw the reveal on a canvas (sketch-in README).
    - Run design-reviewer on the whole site, then `/code-review` on `main`. Fix every Must-fix finding.
 6. **QR:** a test print of the poster's QR code opens the Pages URL with both the iOS and Android cameras.
 7. **Feel polish** (optional): use a local desktop session with live preview (`setup/PROMPTS.md` §5) to tune boil amplitude, wipe timing and rope damping by eye.

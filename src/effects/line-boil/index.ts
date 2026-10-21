@@ -26,6 +26,7 @@ import { frame, image, slot, type SlotName } from '../../core/art';
 import { frozenAt, idle } from '../../core/clock';
 import { observeOnscreen } from '../../core/onscreen';
 import { number } from '../../core/palette';
+import { blobUrl } from '../../core/raster';
 import { AMPLITUDE, FRAMES, redraw, SEEDS, WAVELENGTH } from './displace';
 import './style.css';
 
@@ -77,12 +78,6 @@ async function source(name: SlotName, width: number, height: number): Promise<HT
   } finally {
     URL.revokeObjectURL(url);
   }
-}
-
-function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('line-boil: toBlob failed'))), 'image/png'),
-  );
 }
 
 /** One layer's two re-drawings, cropped to the art: mask URLs and the crop as fractions of the poster. */
@@ -154,9 +149,12 @@ async function renderLayer(name: SlotName, width: number, height: number, alive:
         job.rows(y, Math.min(crop.h, y + rowsPerSlice));
       }
       ctx.putImageData(pixels, 0, 0);
-      const blob = await toBlob(canvas);
-      if (!alive()) return null;
-      out.push(URL.createObjectURL(blob));
+      const url = await blobUrl(canvas);
+      if (!alive()) {
+        URL.revokeObjectURL(url);
+        return null;
+      }
+      out.push(url);
     }
   } finally {
     if (out.length < SEEDS.length) out.forEach((u) => URL.revokeObjectURL(u));

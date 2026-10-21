@@ -51,7 +51,7 @@ On arrival, a giant cropped "C3" in her lettering, solid in ink as she drew it. 
 5. **Links to a section.** On a visit to `/#info`, ScrollTrigger measuring the page cuts the browser's smooth scroll to the section short, and the pin spacer moves the section down anyway. Once the pin exists, the effect scrolls to the URL's section, unless the visitor is already past it.
 6. **Re-measuring.** The geometry is measured again on resize and once the web fonts are ready, because the small print it keeps clear of can reflow when they swap in.
 7. **Arrival speed.** `main.ts` reveals the prehidden stage once `init` settles. The mask is applied synchronously from the DOM, and GSAP loads afterwards, so the poster never waits on it.
-8. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters.
+8. **Clock.** Nothing pauses the ticker during the pin, so line-boil, sketch-in and xray keep playing inside the letters. sketch-in reads this mount's `data-state`: it waits under the ink while it's `closed`, and starts drawing when it leaves it (OWNER #7).
 
 | Quality | What runs |
 |---|---|
@@ -73,7 +73,7 @@ PLAN's writer table gives c3-window the pin on `.poster-stage`. Pinning the stag
 - **With pin spacing**, the spacer pushes the small print down by the pin distance, out of the first screen. That breaks SPEC §9.1 (date and location in the first 390×844 viewport).
 - **Without pin spacing**, the small print and the next sections scroll up under the pinned poster.
 
-The section holds the stage and its small print, and fits one screen. So the effect pins the section, from this folder, through `core/scroll`. **Proposed writer-table change:** "`#poster` (section) | c3-window | pin".
+The section holds the stage and its small print, and fits one screen. So the effect pins the section, from this folder, through `core/scroll`. The writer table now says so: "`#poster` (section) | c3-window | pin".
 
 ## Numbers
 

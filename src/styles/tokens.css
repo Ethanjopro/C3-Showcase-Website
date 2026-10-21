@@ -122,6 +122,7 @@
   --fps-boil: 10;
   --fps-grain: 8;
   --fps-sketch: 12;
+  --fps-crt: 10;
   --dur-quick: 150ms;
   --dur-wipe: 500ms;
   --dur-palette: 600ms;

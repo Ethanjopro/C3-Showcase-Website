@@ -9,7 +9,7 @@ Through a hole in her drawing: her ribcage panel in halftone ink, like an X-ray 
   - `.layer--xray [data-fx="xray"]`: the canvas, between her ribcage slot and the eye screen. The eye screen, cables, halo and title stay on top.
   - `[data-fx="xray"][data-part="toggle"]` in the poster's small print: the X-ray toggle and its hint. Built from JS; without JS the mount is empty and hidden (`.print--xray:empty`).
     - While c3-window's solid ink letters cover the poster (`<html data-fx-c3-window~='ink'>`), there is no chest to X-ray, so the toggle and hint are `visibility: hidden`: they keep their space, so nothing shifts, and they leave the tab order.
-    - On wide screens its CSS moves this mount from the right margin's cell, which it shared with the color bar (they overlapped at 1280×720 to 1536×864), to the middle of the left margin, level with her chest. A test checks it clears the other small print at four laptop sizes. **Proposed shared change:** set this placement in `poster.css` itself.
+    - On wide screens `poster.css` gives this mount its own cell, the middle of the left margin, level with her chest (the right margin's middle is the color bar's; the two overlapped at 1280×720 to 1536×864). This folder's CSS only stacks the toggle over its hint there. A test checks it clears the other small print at four laptop sizes.
 - **Writes outside its mounts:** only `<html data-fx-xray>`, written only when its tokens change. Its own CSS keys off it. It never hides her `ribcage` slot (the writer table would allow it): the film is an opaque sheet the size of the rect, so wherever it shows it covers her panel.
 
   | Token | Set when | CSS |
@@ -20,7 +20,7 @@ Through a hole in her drawing: her ribcage panel in halftone ink, like an X-ray 
   | `lens` | the lens shows | crosshair cursor over the poster |
 
   The mount carries `data-state="ready"` or `"revealed"` for tests.
-- **Contract:** `init(root, { quality })` and `destroy()`. Imports `core/art`, `core/ticker`, `core/pointer`, `core/palette`, `core/bus`, `core/clock` and `core/raster`.
+- **Contract:** `init(root, { quality })` and `destroy()`. Imports `core/art`, `core/ticker`, `core/pointer`, `core/palette`, `core/bus`, `core/clock`, `core/raster` and `core/rough-frame` (the toggle's frame: her frame line in one bold pass, no echo).
 - **Screenshots:** `npm run shots -- xray` writes `.shots/xray-{revealed,painted,revealed-black-red,revealed-reduced}@390.png` and `.shots/xray-lens@1440.png`.
 - **Tests:** `xray.spec.ts` covers:
   - at rest her panel shows; the toggle reveals and hides, is 44 px, works with Enter and Space, and is described by the hint for this device

@@ -9,5 +9,8 @@ export default defineConfig({
   build: {
     target: 'es2022',
     reportCompressedSize: true,
+    // The halo menu's lazy Three.js ring chunk is ~550 KB minified (~140 KB
+    // gzip, inside SPEC §6's 170 KB); it loads only for the menu.
+    chunkSizeWarningLimit: 600,
   },
 });
