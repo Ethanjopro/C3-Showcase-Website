@@ -306,18 +306,21 @@ function play(pinned: () => boolean) {
 /**
  * With c3-window on, hold the start state (nothing drawn) until its ink starts
  * to drain, then play. Init order between the two isn't fixed, so until
- * c3-window writes a state, its prehide class says it's still coming; if it
- * settles without one (no letters, or it failed), play at once: her art must
- * never stay hidden.
+ * c3-window writes a state, its prehide class or a page not yet booted says
+ * it's still coming (the boot script's 4 s timeout drops the class on a slow
+ * load). If it settles without one (no letters, or it failed), play at once:
+ * her art must never stay hidden.
  */
 function waitForWindow(win: HTMLElement) {
+  // main.ts sets data-booted once every load-time effect, c3-window among them, has settled.
+  const coming = () => html().classList.contains('fx-pending-c3-window') || !html().hasAttribute('data-booted');
   const pinned = () => {
     const s = windowState(win);
-    return s === 'closed' || s === 'opening' || (s === undefined && html().classList.contains('fx-pending-c3-window'));
+    return s === 'closed' || s === 'opening' || (s === undefined && coming());
   };
   const check = () => {
     const s = windowState(win);
-    if (s === 'closed' || (s === undefined && html().classList.contains('fx-pending-c3-window'))) return;
+    if (s === 'closed' || (s === undefined && coming())) return;
     unwatch?.();
     unwatch = null;
     play(pinned);
@@ -334,7 +337,7 @@ function waitForWindow(win: HTMLElement) {
   if (mount) mount.dataset.state = 'waiting';
   const watcher = new MutationObserver(check);
   watcher.observe(win, { attributes: true, attributeFilter: ['data-state'] });
-  watcher.observe(html(), { attributes: true, attributeFilter: ['class'] });
+  watcher.observe(html(), { attributes: true, attributeFilter: ['class', 'data-booted'] });
   unwatch = () => watcher.disconnect();
   check();
 }

@@ -107,9 +107,17 @@ test('tapping the front screen dollies in, closes the menu and lands on the sect
 test('opened from the halo, the screens grow out of her halo, then settle into the ring', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'the halo hit area is pointer-only');
   await open(page, '/?only=halo-menu');
+  // The entrance lasts 560 ms, which can fall between two of expect's polls,
+  // so record it as it happens.
+  await page.evaluate((sel) => {
+    const el = document.querySelector<HTMLElement>(sel)!;
+    const w = window as unknown as { grew: boolean };
+    w.grew = false;
+    new MutationObserver(() => (w.grew ||= el.dataset.entrance === 'growing')).observe(el, { attributes: true, attributeFilter: ['data-entrance'] });
+  }, mount);
   await page.locator('.halo-hit').hover(); // intent: the ring chunk starts loading
   await page.locator('.halo-hit').click();
-  await expect(page.locator(mount)).toHaveAttribute('data-entrance', 'growing', { timeout: 15_000 });
+  await expect.poll(() => page.evaluate(() => (window as unknown as { grew: boolean }).grew), { timeout: 15_000 }).toBe(true);
   await expect(page.locator(mount)).not.toHaveAttribute('data-entrance', /.*/, { timeout: 15_000 });
   await expect(page.locator(mount)).toHaveAttribute('data-front', 'poster');
 });

@@ -108,7 +108,7 @@ let revealed = false;
 let scanStart = Number.NEGATIVE_INFINITY;
 const here: LocalPoint = { x: 0, y: 0, inside: false };
 /** What the last frame drew, so a still lens isn't redrawn 60 times a second. */
-const drawn = { alpha: Number.NaN, x: Number.NaN, y: Number.NaN, step: Number.NaN, segments: 0 };
+const drawn = { alpha: Number.NaN, x: Number.NaN, y: Number.NaN, step: Number.NaN, busy: false };
 const ring: [number, number][] = Array.from({ length: RING_POINTS + 1 }, () => [0, 0]);
 
 let attr = '';
@@ -179,7 +179,7 @@ const scanning = (t: number) => quality !== 'static' && frozenAt === null && (t 
  * the scroll is the moment's gesture, and the lens would run over parts the
  * letters hide (SPEC §3: one signature per moment).
  */
-const windowed = () => (document.documentElement.getAttribute('data-fx-c3-window') ?? '').split(' ').includes('window');
+const windowed = () => document.documentElement.matches("[data-fx-c3-window~='window']");
 
 /** Is the lens wanted: a hover-capable pointer, over the poster, still in the window, with the C3 window open? */
 function lensWanted(): boolean {
@@ -292,18 +292,19 @@ function frame(t: number) {
   }
   // A lens resting still over the chest changes nothing until its ring's
   // next boil step: skip the redraw. Healing strokes and scans always draw,
-  // and so does the frame after the last stroke heals, which clears its
-  // faint remains (the last drawn alpha can still round to a visible pixel).
+  // and so does the frame after they end: it lands their final state (the
+  // last stroke's faint remains cleared, the scan's last step), which the
+  // last frame drawn while they ran may not show.
   const step = quality === 'full' ? Math.floor((t * BOIL_FPS) / 1000) : 0;
-  const still =
-    !segments.length && !drawn.segments && !scanning(t) && lensAlpha === drawn.alpha && here.x === drawn.x && here.y === drawn.y && step === drawn.step;
+  const busy = segments.length > 0 || scanning(t);
+  const still = !busy && !drawn.busy && lensAlpha === drawn.alpha && here.x === drawn.x && here.y === drawn.y && step === drawn.step;
   if (!still) {
     draw(t);
     drawn.alpha = lensAlpha;
     drawn.x = here.x;
     drawn.y = here.y;
     drawn.step = step;
-    drawn.segments = segments.length;
+    drawn.busy = busy;
   }
   setAttr();
   if (!want && lensAlpha === 0 && !segments.length && !stroke && !scanning(t)) stop();
@@ -333,6 +334,8 @@ function onDown(_p: typeof pointer, e: PointerEvent) {
   // Touch and pen scribble (an Apple Pencil has no hover, so no lens); a mouse has the lens.
   // A pen that can hover (pointer.fine) has the lens, so it doesn't scribble too.
   if (e.pointerType === 'mouse' || (e.pointerType === 'pen' && pointer.fine) || stroke || !poster) return;
+  // Not while c3-window's letters still frame the poster, as for the lens.
+  if (windowed()) return;
   const p = local(poster, false, { x: 0, y: 0, inside: false });
   // A scribble may start anywhere on the poster; only its marks near the chest paint.
   if (!p.inside) return;

@@ -26,6 +26,8 @@ async function start(entry: EffectEntry, root: HTMLElement, q: Quality) {
     // The quality level may have changed while the chunk loaded or init ran;
     // onChange only restarts effects already running, so catch up here.
     while (quality() !== q) {
+      // Its lite is its full: keep it, as restart() does.
+      if (entry.liteIsFull && q !== 'static' && quality() !== 'static') break;
       mod.destroy();
       q = quality();
       await mod.init(root, { quality: q });

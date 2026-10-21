@@ -17,6 +17,8 @@ Everything waiting on Ethan or the artist, in one place.
 | 4 | **RSVP link** | Launch | "RSVP opens soon", and no RSVP chip |
 | 5 | **Follow link:** which platform, and the URL | Launch | Hidden |
 | 6 | **Effects to switch off:** try `?off=<effect>` on your phone and pick anything that feels like too much | Launch (PLAN step 13) | Everything on |
+| 18 | **One local performance trace.** sketch-in now draws while you scroll the C3 pin (your #7 pick), and the cloud's software rendering measured 4–6 ms per drawing step, against SPEC §6's 2 ms. On your own computer (Chrome DevTools → Performance, 4× CPU slowdown), record a first visit: scroll slowly through the C3 letters while the line art draws. If frames drop, the fix is in the sketch-in README (draw the reveal on a canvas). It's in PLAN step 13's checklist. | Launch (PLAN step 13) | Assumed fine; it runs once per session, for 2.3 s |
+| 19 | **Static on the project screens vs. "the info layer only wipes in".** CLAUDE.md says the readable info layer animates only its entry wipe, but SPEC §3 row 11 and §9 step 9 have the Projects teaser screens show stepping static (as built: 10 fps, low contrast, flash-tested). The code review flagged the conflict. Keep the static stepping (SPEC), or hold it still like the eye screen (a one-line change in crt-screens)? | Launch (PLAN step 13) | Stepping, as SPEC says |
 
 ## Open: ask her (on hold: Ethan will ask when he's ready)
 
@@ -68,3 +70,11 @@ Optional, once her composition settles (OWNER #9):
   - `base.css` prehide: the ribcage panel, eye screen (and its CRT glass), cables and halo now wait for sketch-in too, and arrive with the fill's flood. The wings stay out of the prehide, so LCP doesn't move.
   - `poster.css`: `.print--xray` has its own cell in the wide layout (left margin, centre); xray's CSS no longer moves it.
   - sketch-in's GPU trace moved to PLAN step 13's checklist (it now overlaps the C3 pin).
+- **2026-10-21:** Whole-site check with every effect merged (390 and 1440, design-reviewer and /code-review). Fixed:
+  - Her line boils in one place at a time (SPEC §6: at most two things step on one screen). c3-window adds an `edge` token while her inked edge shows; line-boil holds then, and the edge stops boiling once it has faded. While sketch-in draws inside the letters, the edge holds too, so arrival steps the edge and the grain, the drain steps the drawing and the grain.
+  - The X-ray lens and touch strokes stay off while the C3 window still frames the poster: the scroll is that moment's only gesture.
+  - A slow device's drop to `lite` waits while the menu is open (the ring no longer turns into the grid under your finger), and effects whose `lite` is their `full` (c3-window, panel-wipe, crt-screens) don't restart at all.
+  - A tap or a non-scrolling key ends sketch-in even while it waits under the ink (SPEC §3: any input finishes it).
+  - Sections reached from the menu or a link land clear of the fixed Menu button (`scroll-padding-top`).
+  - The X-ray canvas could keep a faint last frame after a scribble healed, or a scan's last step; it now draws once more after they end.
+  - A flaky halo-menu test (the 560 ms entrance could fall between two polls) now records the entrance as it happens.
