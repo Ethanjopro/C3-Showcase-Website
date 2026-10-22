@@ -1,6 +1,6 @@
 # C3 Showcase: the brief
 
-Written 2026-10-22 for a fresh start. The first version (git tag `v1-archive`) worked, but it read as ten separate effects layered on a rough placeholder, and its documents were so prescriptive they left no room to design. Start the design over. This page and her art are the only guides; anything not fixed here is yours to decide.
+Written 2026-10-22 for a fresh start. The first version (branch `archive/v1`) worked, but it read as ten separate effects layered on a rough placeholder, and its documents were so prescriptive they left no room to design. Start the design over. This page and her art are the only guides; anything not fixed here is yours to decide.
 
 ## The job
 
@@ -53,7 +53,7 @@ Everything else, including fonts (v1 used Grenze and Familjen Grotesk; keep or r
 
 ## What v1 left behind (reuse or delete)
 
-Everything is in tag `v1-archive`:
+Everything is on the branch `archive/v1`:
 - the deploy and CI workflows
 - `npm run shots` (Playwright screenshots at 390 and 1440)
 - an art pipeline that cuts and tints layers (`scripts/art/`)

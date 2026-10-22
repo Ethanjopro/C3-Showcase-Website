@@ -5,7 +5,7 @@ Website for the C3 Showcase, the Creative Computing class showcase. The look com
 ## Read first
 - `BRIEF.md`: the job, what's decided, what's yours to decide, and the quality floor. It's the only planning document.
 - `reference/drafts/` (her art) and `reference/moodboard/` with `reference/INSPIRATION.md` §1b (her Pinterest board, ideas only). Never trace, crop or ship moodboard pins, and nothing in `reference/` ships.
-- `SPEC.md`, `PLAN.md`, `setup/PROMPTS.md` and the old `src/effects/` describe v1 (tag `v1-archive`). They are history, not instructions. Reuse code from them only where it helps.
+- `SPEC.md`, `PLAN.md`, `setup/PROMPTS.md` and the old `src/effects/` describe v1 (branch `archive/v1`). They are history, not instructions. Reuse code from them only where it helps.
 
 ## Working rules
 - Static site, deployed to GitHub Pages from `main` by `.github/workflows/deploy.yml`. Keep `npm run build` writing the site to `dist/`.
