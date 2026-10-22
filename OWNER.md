@@ -28,7 +28,7 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 |---|---|---|---|
 | 8 | What name or handle goes in her credit line? | Any time | "Poster art: 0.0.0" |
 | 9 | **Composition (not settled yet).** Her newest drafts (`figure-lineart-with-halo` / `-no-halo`, 2026-10-20) keep the praying figure, head wings and a ring of 6 screens, but show no cables, no ribcage X-ray panel and no eye screen, and add a small second halo at the chest and a decorated bodice. Ask her: are the cables, ribcage panel and eye screen still coming as separate layers, or are they gone? Is the chest halo part of the design? Will the title and small print be drawn into the frame? | Before `cables`, and before her final art | `cables` on hold; x-ray and eye screen use the older sketch's positions |
-| 10 | Final art layers, one file per slot, per the SPEC §5 handoff list | 2026-10-30 | Placeholders cut from her drafts |
+| 10 | Final art layers, one file per slot, per the SPEC §5 handoff list. For the halo hub (see Decided), also: **each of the six halo screens as its own layer**, the ring on its own, and a filled head-and-hair shape the screens can pass behind. For character motion later, **separate layers for her head, hair, wings, hands and dress**. | 2026-10-30 | Placeholders cut from her drafts |
 | 11 | The project screens are now phone-shaped (most projects are phone apps). Should they look like upright CRTs, as now, or more like old phones or handhelds? | Before launch | Upright CRTs in her frame style. crt-screens merged with this default; a phone look only needs `panels.css` and the frame, not the effect. |
 | 12 | The halo and cables are ink on the site, but red in her sketch (coral would vanish on the coral fill). Which does she want? It's one manifest field. | Any time | Ink |
 | 13 | The poster uses her newest concept (halo and ribcage). The circled poster's figure, with headphones, the device and the ≡ hatching, isn't on it. Is that right? | Before her final art | Newest concept |
@@ -44,6 +44,9 @@ Optional, once her composition settles (OWNER #9):
 - **Re-cut placeholders from her newest drafts.** Point `scripts/art/placeholders.mjs` at `figure-lineart-with-halo.webp` for `lineart` and `wings`, and take `halo` as the difference between the with-halo and no-halo versions. Re-measure the halo `screens` rects. Her cleaner line makes the preview look much closer to final.
 
 ## Decided
+
+- **2026-10-22 (direction, in mockups):** The poster becomes the **hub**: her halo turns slowly around her head and is the only navigation. Each of her six screens is a destination (Info, RSVP, Projects, Colors, X-ray, Credits). Hovering or focusing a screen stops the turn and lifts it; clicking zooms into that screen and goes there. A small "back to her halo" button returns to the hub. This replaces the halo-menu dialog and the Three.js ring. Mockups: the "C3 Showcase site mockups" canvas on claude.ai. Not built yet.
+- **2026-10-22 (later, needs her layers):** subtle motion for her character too (breathing, hair, wings).
 
 - **2026-10-20:** ui-ux-pro-max removed. SPEC.md is the design system, and frontend-design covers what it leaves open.
 - **2026-10-20:** Line quality follows her final art, not the rough drafts.
