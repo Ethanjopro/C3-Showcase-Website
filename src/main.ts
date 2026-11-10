@@ -218,6 +218,9 @@ function renderShots(): void {
 
 // ---------- The X-ray: lens on desktop, band on phone ----------
 const BAND = 176;
+// The halo lives above this line (in her pixels). The X-ray stays below it, so it
+// never covers a camera you're reaching for.
+const HALO_LINE = halo.cy + halo.ry + 50;
 function renderXray(): void {
   const hub = view() === 'hub' && state() === 'open';
   if (desk) {
@@ -228,8 +231,10 @@ function renderXray(): void {
     xrIn.style.transform = `translate3d(${(R - mx).toFixed(1)}px,${(R - my).toFixed(1)}px,0)`;
     lens.style.transform = `translate3d(${(mx * scale - 120).toFixed(1)}px,${(my * scale - 120).toFixed(1)}px,0)`;
     xr.style.boxShadow = '';
-    flag(xr, 'data-on', hub && pointerIn);
-    flag(lens, 'data-on', hub && pointerIn);
+    const on = hub && pointerIn && hover < 0;
+    flag(xr, 'data-on', on);
+    flag(lens, 'data-on', on);
+    flag(card, 'data-lens', on);
     bandLabel.style.display = '';
   } else {
     const bh = BAND / scale;
@@ -258,19 +263,27 @@ function clampToCard(y: number, half: number): number {
   return Math.max(half, Math.min(maxY, y));
 }
 
+/** The phone band's centre for a finger at y: below the halo, inside the card. */
+function bandY(y: number): number {
+  const half = BAND / scale / 2;
+  return Math.max(HALO_LINE + half, clampToCard(y, half));
+}
+
 card.addEventListener('pointermove', (e) => {
   if (e.pointerType === 'touch') return;
   const p = toStage(e);
   if (desk) {
+    // Over her, the lens follows; up among the cameras, it gets out of the way.
     const R = 104 / scale;
-    pointerIn = true;
+    pointerIn = p.y > HALO_LINE + R * 0.35;
     mx = Math.max(R * 0.6, Math.min(SW - R * 0.6, p.x));
-    my = clampToCard(p.y, R * 0.6);
+    my = Math.max(HALO_LINE + R, clampToCard(p.y, R * 0.6));
   } else {
-    // A mouse on the phone layout scans as it moves.
-    scanning = true;
-    my = clampToCard(p.y, BAND / scale / 2);
-    syncHint();
+    // A mouse on the phone layout scans as it moves, below the halo.
+    const was = scanning;
+    scanning = p.y > HALO_LINE;
+    my = bandY(p.y);
+    if (was !== scanning) syncHint();
   }
   renderXray();
 });
@@ -298,7 +311,7 @@ card.addEventListener(
     clearTimeout(holdTimer);
     holdTimer = window.setTimeout(() => {
       scanning = true;
-      my = clampToCard(toStage(touchStart).y, BAND / scale / 2);
+      my = bandY(toStage(touchStart).y);
       syncHint();
       renderXray();
     }, 160);
@@ -312,7 +325,7 @@ card.addEventListener(
     if (!t) return;
     if (scanning) {
       e.preventDefault();
-      my = clampToCard(toStage(t).y, BAND / scale / 2);
+      my = bandY(toStage(t).y);
       renderXray();
     } else if (Math.hypot(t.clientX - touchStart.clientX, t.clientY - touchStart.clientY) > 10) {
       clearTimeout(holdTimer);
@@ -344,6 +357,7 @@ function setHover(i: number): void {
   hover = i;
   renderHalo();
   renderLists();
+  renderXray();
 }
 [cams, feeds, keys].forEach((list) =>
   list.forEach((el, i) => {
