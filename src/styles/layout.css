@@ -270,7 +270,9 @@
     --H: clamp(600px, 100vh - 40px, 960px);
     /* Her painting's width at this height, but never so narrow the doors get
        cramped (her dress is cropped at the bottom instead), nor wider than fits. */
-    --P: min(max(var(--H) * 0.66641, 520px), (100vw - 150px) / 2);
+    --P: min(max(var(--H) * 0.66641, 520px), (100vw - 192px) / 2);
+    /* the empty margin either side of the case */
+    --M: calc((100vw - 2 * var(--P)) / 2);
     --W: calc(var(--P) / 2);
   }
 
@@ -295,7 +297,8 @@
   .bar {
     position: fixed;
     top: 16px;
-    right: 64px;
+    /* inside the right margin, clear of the case */
+    right: max(16px, calc(var(--M) - 92px));
     left: auto;
     display: flex;
     gap: 8px;
@@ -564,8 +567,9 @@
   }
 }
 
-@media (min-width: 1024px) and (max-width: 1240px) {
-  .frame__cap {
+@media (min-width: 1024px) and (max-width: 1340px) {
+  .frame__cap,
+  body::before {
     display: none;
   }
 }

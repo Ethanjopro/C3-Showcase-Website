@@ -9,7 +9,7 @@
 //   textures/*.png       paper grain, static noise             -> src/art/*.webp
 
 import sharp from 'sharp';
-import { copyFile, mkdir, readdir } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -62,7 +62,14 @@ for (const f of (await readdir(path.join(SRC, 'cameras'))).filter((n) => n.endsW
     .toFile(path.join(OUT, `${id}.webp`));
 }
 
-for (const f of await readdir(path.join(SRC, 'lettering'))) await copyFile(path.join(SRC, 'lettering', f), path.join(OUT, f));
+// Her lettering: copied, with a width and height from its viewBox so every browser
+// knows its size (Firefox draws an SVG with only a viewBox at 0 x 0 on a canvas).
+for (const f of await readdir(path.join(SRC, 'lettering'))) {
+  let svg = await readFile(path.join(SRC, 'lettering', f), 'utf8');
+  const vb = svg.match(/<svg[^>]*viewBox="[\d.-]+ [\d.-]+ ([\d.]+) ([\d.]+)"/);
+  if (vb && !/<svg[^>]*\swidth=/.test(svg)) svg = svg.replace('<svg ', `<svg width="${vb[1]}" height="${vb[2]}" `);
+  await writeFile(path.join(OUT, f), svg);
+}
 await sharp(path.join(SRC, 'textures/grain.png')).webp({ lossless: true }).toFile(path.join(OUT, 'grain.webp'));
 await sharp(path.join(SRC, 'textures/static.png')).ensureAlpha().webp({ lossless: true }).toFile(path.join(OUT, 'static.webp'));
 console.log('art: wrote', (await readdir(OUT)).length, 'files to src/art/');

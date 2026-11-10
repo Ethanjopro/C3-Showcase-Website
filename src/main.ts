@@ -81,7 +81,7 @@ function layout(): void {
   xr.style.setProperty('--lfs', (desk ? 11 / scale : 10 / scale).toFixed(1) + 'px');
   const fig = $('.xray__svg');
   if (fig) {
-    const k = Math.max(fig.clientWidth / 616, fig.clientHeight / 640) || 1;
+    const k = Math.min(fig.clientWidth / 560, fig.clientHeight / 680) || 1;
     fig.style.setProperty('--lfs', (11 / k).toFixed(1) + 'px');
   }
   measureShots();
@@ -489,7 +489,7 @@ function closeDoors(): void {
   caseEl.dataset.view = 'hub';
   caseEl.dataset.state = 'sealed';
   remember(false);
-  if (location.hash) history.pushState(null, '', location.pathname + location.search);
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   applyInert();
   renderStatus();
   focusSoon($('.seal'));
@@ -500,10 +500,8 @@ function route(user: boolean): void {
   if (ids.includes(h)) {
     const wasChannel = view() === 'channel';
     const prev = channel();
-    if (state() === 'sealed') {
-      caseEl.dataset.state = 'open';
-      remember(true);
-    }
+    caseEl.dataset.state = 'open';
+    remember(true);
     caseEl.dataset.channel = h;
     caseEl.dataset.view = 'channel';
     setChannelBits(h);

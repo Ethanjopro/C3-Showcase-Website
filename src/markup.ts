@@ -224,7 +224,7 @@ ${maybeLink(c.followUrl, `${esc(c.followLabel)} the showcase →`)}`;
     case 'inside':
       return `<figure class="xray">
 <div class="xray__box">
-<svg class="xray__svg" viewBox="117 402 616 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="An X-ray of her: her drawing inverted, with machine parts drawn inside it: optics for eyes, a core chip, servos at the jaw, bellows for lungs, rib plates, a red pump for a heart, a spine bus and a power cell.">
+<svg class="xray__svg" viewBox="150 378 560 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="An X-ray of her: her drawing inverted, with machine parts drawn inside it: optics for eyes, a core chip, servos at the jaw, bellows for lungs, rib plates, a red pump for a heart, a spine bus and a power cell.">
 <image data-xray x="0" y="0" width="${W}" height="${H}"/>${organs()}</svg>
 <span class="hud" aria-hidden="true"></span><span class="scan scan--dark" aria-hidden="true"></span>
 </div>

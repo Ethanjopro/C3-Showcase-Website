@@ -60,9 +60,12 @@ export async function saveCopy(opts: { name: string; date: string; her: string; 
   t.height = th;
   const tg = t.getContext('2d');
   if (tg) {
-    const s = Math.min(tw / title.naturalWidth, th / title.naturalHeight);
-    const dw = title.naturalWidth * s;
-    const dh = title.naturalHeight * s;
+    // An SVG with only a viewBox can report 0 x 0 (Firefox): fall back to its 4:1 shape.
+    const nw = title.naturalWidth || 1080;
+    const nh = title.naturalHeight || 270;
+    const s = Math.min(tw / nw, th / nh);
+    const dw = nw * s;
+    const dh = nh * s;
     tg.drawImage(title, (tw - dw) / 2, (th - dh) / 2, dw, dh);
     tg.globalCompositeOperation = 'source-in';
     tg.fillStyle = '#24171f';
@@ -70,7 +73,7 @@ export async function saveCopy(opts: { name: string; date: string; her: string; 
     g.drawImage(t, W * 0.12, H * 0.08);
   }
 
-  const seed = seedOf(opts.name);
+  const seed = seedOf(opts.name || 'C3'); // same fallback as the preview
   g.fillStyle = '#c8102e';
   for (const m of marksOf(seed)) g.fillRect(m.x * k, (m.y * H) / 243, m.w * k, 2.5 * k);
 

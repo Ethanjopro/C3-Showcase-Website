@@ -369,7 +369,7 @@ a.rsvp:hover {
 /* Inside: her X-ray, full figure */
 .xray__box {
   position: relative;
-  height: clamp(300px, 92cqw, 520px);
+  height: clamp(320px, 90cqw, 500px);
   overflow: hidden;
   background: #050506;
   box-shadow: 0 0 0 1px var(--drule);
@@ -380,10 +380,6 @@ a.rsvp:hover {
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-.xray .o-labels {
-  font-size: 15px;
 }
 
 .xray .hud {

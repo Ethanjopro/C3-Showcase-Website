@@ -33,10 +33,11 @@ export function caseHtml(): Plugin {
         const w = read(root, 'src/content/title-widths.json').widths as Record<string, number>;
         if (!html.includes('<!--case-->')) throw new Error('index.html is missing <!--case-->');
         return html
-          .replace('<!--case-->', renderCase(c, s, w))
-          .replaceAll('{{title}}', esc(c.title))
-          .replaceAll('{{description}}', esc(c.description))
-          .replaceAll('{{url}}', esc(c.url));
+          // Function replacements, so a "$&" in the content stays literal text.
+          .replace('<!--case-->', () => renderCase(c, s, w))
+          .replaceAll('{{title}}', () => esc(c.title))
+          .replaceAll('{{description}}', () => esc(c.description))
+          .replaceAll('{{url}}', () => esc(c.url));
       },
     },
   };
