@@ -1,0 +1,496 @@
+/* The back of the middle panel: a channel's title card, white on black. Titles
+   are sized at build time to fill their column (src/fit.ts), as --k of the
+   column width. */
+
+.tc {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--dark);
+  color: var(--dtext);
+  box-shadow: inset 0 0 0 1px var(--drule);
+}
+
+.tc .cap {
+  color: var(--dmute);
+}
+
+.tc__top {
+  position: relative;
+  flex: none;
+}
+
+.tc__air {
+  color: var(--dtext) !important;
+}
+
+.tc__phone,
+.tc__feed {
+  display: none;
+}
+
+.tc__scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--drule) transparent;
+}
+
+.tc__foot {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--drule);
+}
+
+.tc__flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-color: var(--dtext);
+  -webkit-mask: url('../art/static.webp') center / 180px 320px;
+  mask: url('../art/static.webp') center / 180px 320px;
+}
+
+.tc__flash[data-on] {
+  animation: flash 320ms linear;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* One channel */
+.ch {
+  display: none;
+  container-type: inline-size;
+}
+
+.case[data-channel='info'] .ch[data-ch='info'],
+.case[data-channel='rsvp'] .ch[data-ch='rsvp'],
+.case[data-channel='projects'] .ch[data-ch='projects'],
+.case[data-channel='inside'] .ch[data-ch='inside'],
+.case[data-channel='source'] .ch[data-ch='source'],
+.case[data-channel='credits'] .ch[data-ch='credits'] {
+  display: block;
+}
+
+.ch__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.06em;
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.005em;
+  outline: none;
+}
+
+.tl {
+  display: block;
+  font-size: calc(var(--k) * 100cqw);
+  white-space: nowrap;
+}
+
+.tl--2 {
+  margin-top: 0.08em;
+}
+
+.ch__rule {
+  display: block;
+  width: 56px;
+  height: 4px;
+  margin-top: 14px;
+  background: var(--red);
+}
+
+.ch__body {
+  margin-top: 26px;
+}
+
+.ch__body > * + * {
+  margin-top: 14px;
+}
+
+.ch__kicker {
+  margin-top: 22px !important;
+}
+
+.ch .body {
+  color: #d7d2d9;
+}
+
+.ch .body--dim {
+  color: #b9b3bd;
+  font-size: 15px;
+}
+
+.ch .lk {
+  color: var(--dtext);
+}
+
+.dateloc--ch {
+  gap: 20px;
+}
+
+.dateloc--ch .cap {
+  color: var(--dmute);
+}
+
+.dateloc--ch .big {
+  font-size: clamp(44px, 11.8cqw, 64px);
+  margin-top: 2px;
+}
+
+/* RSVP */
+.rsvp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 0 18px;
+  background: var(--dtext);
+  color: var(--dark);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.rsvp__word {
+  font-family: var(--mono);
+  font-size: 20px;
+  letter-spacing: 0.1em;
+}
+
+.rsvp > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rsvp .dot {
+  margin: 0 0 0 8px;
+}
+
+a.rsvp:hover {
+  background: #fff;
+}
+
+.rsvp--soon {
+  background: transparent;
+  color: var(--dtext);
+  box-shadow: inset 0 0 0 1px var(--dtext);
+}
+
+.copy {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.copy__form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.copy__label {
+  color: var(--dmute);
+}
+
+.copy__input {
+  margin-top: 6px;
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--dtext);
+  border-radius: 0;
+  background: transparent;
+  color: var(--dtext);
+  font-family: var(--mono);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.copy__input::placeholder {
+  color: var(--dmute);
+}
+
+.copy__save {
+  margin-top: 12px;
+  color: var(--dtext);
+}
+
+.btn--light:hover {
+  background: var(--dtext);
+  color: var(--dark);
+  border-color: var(--dtext);
+}
+
+.copy__card {
+  position: relative;
+  flex: none;
+  width: 112px;
+  aspect-ratio: 112 / 181;
+  overflow: hidden;
+  background: #dcdbde;
+}
+
+.copy__card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: auto;
+}
+
+.copy__title {
+  position: absolute;
+  left: 12%;
+  top: 8%;
+  width: 76%;
+  height: 13%;
+  background-color: #24171f;
+  -webkit-mask: url('../art/title.svg') center / contain no-repeat;
+  mask: url('../art/title.svg') center / contain no-repeat;
+}
+
+.copy__marks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.copy__marks rect {
+  fill: var(--red);
+}
+
+.copy__foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 3px 7px 4px;
+  background: var(--inner);
+  border-top: 1px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.copy__name {
+  font-size: 10px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.copy__no {
+  font-size: 7px;
+  letter-spacing: 0.04em;
+}
+
+/* Projects */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tile__screen {
+  position: relative;
+  display: block;
+  aspect-ratio: 9 / 16;
+  border: 1px solid #5a5460;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--dark-2);
+}
+
+.tile__screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--dtext);
+  opacity: 0.1;
+  -webkit-mask: url('../art/static.webp') center / 180px 320px;
+  mask: url('../art/static.webp') center / 180px 320px;
+}
+
+.tile__no {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tile__dot {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  margin: 0;
+  background: #5a5460;
+}
+
+.tile__dot--on {
+  background: var(--red);
+}
+
+.tile__label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dmute);
+}
+
+/* Inside: her X-ray, full figure */
+.xray__box {
+  position: relative;
+  height: clamp(300px, 92cqw, 520px);
+  overflow: hidden;
+  background: #050506;
+  box-shadow: 0 0 0 1px var(--drule);
+}
+
+.xray__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.xray .o-labels {
+  font-size: 15px;
+}
+
+.xray .hud {
+  inset: 12px;
+}
+
+.xray__cap {
+  margin-top: 8px;
+  color: var(--dmute) !important;
+  font-size: 10px;
+}
+
+/* Source */
+.code {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--drule);
+  background: var(--dark-2);
+  color: #d7d2d9;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+/* Credits */
+.credit {
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  font-size: clamp(26px, 7cqw, 36px);
+  line-height: 0.95;
+  margin-top: 4px !important;
+}
+
+.credit--big {
+  font-size: clamp(44px, 13cqw, 68px);
+}
+
+/* Her parts move, gently, unless motion is reduced */
+.o-pump {
+  animation: pump 0.833s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.o-blades {
+  animation: spin 0.9s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.o-bellows {
+  animation: breathe 5.7s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+}
+
+.o-optic {
+  animation: optic 9s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.o-optic--b {
+  animation-delay: -0.9s;
+  animation-direction: reverse;
+}
+
+@keyframes pump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.14);
+  }
+  24% {
+    transform: scale(1.02);
+  }
+  30% {
+    transform: scale(1.06);
+  }
+  45% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    transform: scaleY(1.05);
+  }
+}
+
+@keyframes optic {
+  0%,
+  100% {
+    transform: rotate(-20deg);
+  }
+  50% {
+    transform: rotate(20deg);
+  }
+}

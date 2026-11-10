@@ -1,0 +1,23 @@
+{
+  "$comment": "Where things sit on her painting, in its own pixels (her.webp is 853 x 1280). Swap her files in art-src/, run `npm run art`, and adjust these numbers if her composition moves; no code changes needed.",
+  "size": [853, 1280],
+  "halo": {
+    "$comment": "The ring the cameras ride: an ellipse above her head. turnSeconds is one full turn.",
+    "cx": 425, "cy": 380, "rx": 215, "ry": 56,
+    "turnSeconds": 40,
+    "startAngle": 15,
+    "cameraScale": 1.15
+  },
+  "cameras": [
+    { "file": "camera-01", "w": 100, "h": 69, "base": 90 },
+    { "file": "camera-02", "w": 112, "h": 65, "base": 150 },
+    { "file": "camera-03", "w": 104, "h": 54, "base": 210 },
+    { "file": "camera-04", "w": 110, "h": 68, "base": 330 },
+    { "file": "camera-05", "w": 102, "h": 69, "base": 270 },
+    { "file": "camera-06", "w": 105, "h": 63, "base": 30 }
+  ],
+  "lettering": { "x": 106, "y": 104, "w": 640, "h": 160 },
+  "face": { "x": 425, "y": 592 },
+  "chest": { "x": 425, "y": 742 },
+  "occluderBelow": 660
+}

@@ -1,0 +1,599 @@
+/* Inside the doors (desktop): the feeds on the left, the subject on the right.
+   Plus the phone's channel keys under her card. */
+
+.wing__in {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background-color: var(--inner);
+  background-image: url('../art/grain.webp');
+  background-size: 256px 256px;
+  box-shadow: inset 0 0 0 1px var(--ink);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.wing__head {
+  position: relative;
+  padding: 30px 24px 0;
+}
+
+.wing__title {
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  font-size: clamp(34px, 15.5cqw, 46px);
+  line-height: 0.92;
+}
+
+.wing__sub {
+  margin-top: 4px;
+  color: var(--mute);
+}
+
+.wing__live {
+  position: absolute;
+  right: 24px;
+  top: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.wing__foot {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 22px;
+  color: var(--mute);
+  line-height: 1.6;
+}
+
+/* Feeds */
+.feeds {
+  display: flex;
+  flex-direction: column;
+}
+
+.feeds__list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 20px 12px 72px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.feeds__list li {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.feed {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 0;
+  padding: 0 10px;
+  border-top: 1px solid var(--rule);
+  text-decoration: none;
+  transition: background-color 140ms linear;
+}
+
+.feed:hover,
+.feed[data-hover] {
+  background-color: var(--inner-2);
+}
+
+.feed[aria-current='page'] {
+  background-color: var(--ink);
+  color: var(--dtext);
+}
+
+.feed .shot {
+  flex: none;
+  width: 40cqw;
+  max-height: calc(100% - 20px);
+  aspect-ratio: 112 / 76;
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.feed[data-live] .shot,
+.feed[aria-current='page'] .shot {
+  box-shadow: 0 0 0 2px var(--red);
+}
+
+.shot__cam {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 1px 4px;
+  background: rgba(23, 21, 26, 0.82);
+  color: var(--dtext);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.shot__dot {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  margin: 0;
+  background: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--inner);
+}
+
+.feed[data-live] .shot__dot,
+.feed[aria-current='page'] .shot__dot {
+  background: var(--red);
+}
+
+.shot[data-obstructed] .shot__dot {
+  background: var(--ext-mute);
+}
+
+.feed__txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.feed__state {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.feed__name {
+  margin-top: 3px;
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  font-size: clamp(22px, 10cqw, 30px);
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.feed__desc {
+  margin-top: 2px;
+  font-size: 15px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Subject */
+.subject__hub,
+.subject__ch {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.subject__ch {
+  display: none;
+  padding: 30px 24px 24px;
+  gap: 14px;
+}
+
+.case[data-view='channel'] .subject__hub {
+  display: none;
+}
+
+.case[data-view='channel'] .subject__ch {
+  display: flex;
+}
+
+.subject__hub > :not(.wing__head) {
+  margin-inline: 24px;
+}
+
+.subject__rec {
+  margin-top: 14px;
+}
+
+.subject__aug {
+  margin-top: 20px;
+}
+
+.subject__augv {
+  font-size: 26px;
+}
+
+.subject__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.subject__stats--2 {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 0;
+  padding-bottom: 0;
+  border: 0;
+}
+
+.subject__stats .cap,
+.subject__ch .cap,
+.dateloc .cap {
+  color: var(--mute);
+}
+
+.subject__ch > .row-between .cap {
+  color: var(--ink);
+}
+
+.stat {
+  margin-top: 2px;
+  font-size: 17px;
+}
+
+.subject__stats--2 .stat {
+  font-size: 19px;
+}
+
+.subject__ekg {
+  margin-top: 16px;
+}
+
+.dateloc {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.subject__dl {
+  margin-top: 20px;
+}
+
+.subject__dl .big {
+  font-size: clamp(34px, 17cqw, 50px);
+  margin-top: 2px;
+}
+
+.subject__ch .subject__dl {
+  margin-top: 4px;
+}
+
+.subject__ch .subject__dl .big {
+  font-size: clamp(32px, 17cqw, 48px);
+}
+
+.label {
+  margin-top: 20px;
+  padding: 13px 14px 12px;
+  background: var(--inner-2);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.label .cap {
+  color: var(--mute);
+}
+
+.label__title {
+  margin-top: 5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.label__meta {
+  margin-top: 2px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--mute);
+}
+
+.radar {
+  margin-top: 16px;
+  padding: 12px;
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.radar__row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.radar__row svg {
+  flex: none;
+}
+
+.radar .cap {
+  color: var(--mute);
+  font-size: 10px;
+}
+
+.radar__orbit {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.radar__head {
+  fill: var(--plum);
+}
+
+.radar__you {
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.radar__cam {
+  fill: var(--ink);
+  stroke: none;
+  stroke-width: 1.2;
+}
+
+.radar__cam[data-live] {
+  fill: var(--red);
+}
+
+.radar__cam[data-obstructed] {
+  fill: none;
+  stroke: var(--ext-mute);
+}
+
+.radar__front {
+  margin-top: 3px;
+  font-size: 14px;
+}
+
+.radar__name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mute);
+}
+
+.radar__hint {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.subject__close {
+  margin: auto 24px 24px !important;
+  color: var(--ink);
+}
+
+.subject__tc {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mute);
+}
+
+.live {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: 330px;
+  box-shadow: 0 0 0 2px var(--red);
+}
+
+.live .shot {
+  width: 100%;
+  height: 100%;
+}
+
+.live__tag {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 1px 5px;
+  background: rgba(23, 21, 26, 0.85);
+  color: var(--dtext);
+  font-size: 10px;
+}
+
+.subject__ch .btn--solid {
+  flex: none;
+}
+
+.subject__turning {
+  margin-top: auto;
+}
+
+/* Narrow doors (small laptops): tighter feeds, the essentials only */
+@container (max-width: 279px) {
+  .feed__desc,
+  .wing__foot {
+    display: none;
+  }
+  .feeds__list {
+    margin-bottom: 20px;
+  }
+}
+
+@container (max-width: 259px) {
+  .subject__augv {
+    font-size: 20px;
+  }
+  .wing__live {
+    position: static;
+    margin-top: 6px;
+  }
+  .feeds__list {
+    margin-top: 12px;
+  }
+  .feed {
+    gap: 10px;
+    padding: 0 8px;
+  }
+  .feed .shot {
+    width: 36cqw;
+  }
+  .subject__ch > .row-between {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .subject__ch .btn {
+    padding: 0 8px;
+    letter-spacing: 0.04em;
+  }
+  .subject__stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .subject__stats > :nth-child(3) {
+    display: none;
+  }
+}
+
+/* Small desktop heights: drop the least important pieces first */
+@container (max-height: 800px) {
+  .subject__label {
+    display: none;
+  }
+}
+
+@container (max-height: 700px) {
+  .subject__ekg:not(.subject__ekg--ch) {
+    display: none;
+  }
+  .subject__ch .subject__dl {
+    display: none;
+  }
+}
+
+/* The pump line: a heartbeat scrolling left, drawn twice so it loops */
+.ekg {
+  position: relative;
+  height: 84px;
+  flex: none;
+  overflow: hidden;
+  background: var(--dark);
+}
+
+.subject__ekg--ch {
+  height: 70px;
+}
+
+.ekg .cap {
+  position: absolute;
+  top: 8px;
+  color: var(--dtext) !important;
+}
+
+.ekg__l {
+  left: 10px;
+}
+
+.ekg__r {
+  right: 10px;
+  color: var(--dmute) !important;
+}
+
+.ekg svg {
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  width: 200%;
+  height: calc(100% - 28px);
+  animation: ekg 2.8s linear infinite;
+}
+
+.ekg__line {
+  fill: none;
+  stroke: var(--red-bright);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+@keyframes ekg {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Phone: the sheet under her card */
+.sheet {
+  display: none;
+}
+
+.sheet__hint {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.keys ol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+  margin-top: 10px;
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 46px;
+  padding-right: 10px;
+  box-shadow: inset 0 0 0 1px var(--ink);
+  text-decoration: none;
+  transition: background-color 140ms linear;
+}
+
+.key .chip {
+  display: none;
+}
+
+.key .shot {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-left: 1px;
+}
+
+.key__txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.key__num {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}
+
+.key__name {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.key__dot {
+  margin: 0 0 0 auto;
+  width: 8px;
+  height: 8px;
+  background: var(--ink);
+}
+
+.key[data-live] .key__dot {
+  background: var(--red);
+  box-shadow: 0 0 0 2px var(--inner);
+}
+
+.key[data-obstructed] .key__dot {
+  background: var(--ext-mute);
+}
+
+.key:hover,
+.key[data-hover],
+.key[aria-current='page'] {
+  background-color: var(--ink);
+  color: var(--dtext);
+}

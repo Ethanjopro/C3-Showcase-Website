@@ -34,7 +34,7 @@ const HELP = `commands (one per line):
   swipe <x0> <y0> <x1> <y1>                 viewport fractions 0-1 (touch on phone, mouse on desktop)
   scroll <selector|pixels>                  scroll element into view, or window to y
   press <key>                               e.g. Tab, Enter, Escape
-  colorway <id>                             click that swatch in the poster color bar
+  state                                     the case's state, view and channel
   wait <ms|selector>
   eval <js expression>                      prints the JSON result
   errors                                    console errors and page errors so far
@@ -156,9 +156,8 @@ async function run(line) {
     case 'press':
       await need().keyboard.press(arg);
       return say(`pressed ${arg}`);
-    case 'colorway':
-      await need().locator(`label[for="cw-poster-${arg}"]`).click();
-      return say(`colorway ${await page.evaluate(() => document.documentElement.dataset.colorway)}`);
+    case 'state':
+      return say(JSON.stringify(await need().evaluate(() => ({ ...document.getElementById('case')?.dataset, hash: location.hash }))));
     case 'wait':
       if (/^\d+$/.test(arg)) await need().waitForTimeout(Number(arg));
       else await need().waitForSelector(arg, { timeout: 15_000 });

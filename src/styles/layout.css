@@ -1,0 +1,591 @@
+/* Two layouts from one DOM, and the case's three states.
+   Phone (default): a status bar, her card over the channel keys, two door leaves
+   that swing open, and the card turning over to a channel.
+   Desktop (>= 1024 px): the doors open to either side of her and hold the feeds
+   and the subject; the middle panel turns to a channel.
+   States live on .case: data-state = sealed | open, data-view = hub | channel,
+   data-channel = info | rsvp | ... */
+
+/* ---------- Phone ---------- */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  height: 44px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 8px 0 14px;
+  background-color: var(--paper);
+  background-image: url('../art/grain.webp');
+  background-size: 256px 256px;
+}
+
+.bar__status {
+  display: flex;
+  align-items: center;
+}
+
+.bar__rsvp {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 6px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 600;
+}
+
+.case {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  height: max(calc(100svh - 44px), 620px);
+  margin: 0 auto;
+  /* The opened doors swing out past the screen's edges; don't let them make it scroll. */
+  overflow: hidden;
+  perspective: 1400px;
+  perspective-origin: 50% 45%;
+}
+
+.frame {
+  display: none;
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform-style: preserve-3d;
+  transition: transform var(--t-turn) var(--ease-turn);
+}
+
+.case[data-view='channel'] .panel {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.face--front {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--inner);
+  background-image: url('../art/grain.webp');
+  background-size: 256px 256px;
+}
+
+.face--back {
+  transform: rotateY(180deg);
+}
+
+.card {
+  flex: 1 1 auto;
+  min-height: 300px;
+  box-shadow: inset 0 -1px 0 var(--ink);
+}
+
+.dateloc.card__plate {
+  display: flex;
+}
+
+.sheet {
+  display: block;
+  flex: none;
+  padding: 12px 14px 16px;
+}
+
+.sheet .row-between .cap {
+  color: var(--mute);
+}
+
+.sheet .mono {
+  font-size: 15px;
+}
+
+/* Door leaves over her card */
+.wing {
+  position: absolute;
+  top: 0;
+  z-index: 20;
+  width: 50%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform var(--t-door) var(--ease-door), visibility 0s linear 0s;
+}
+
+.wing--l {
+  left: 0;
+  transform-origin: 0 50%;
+}
+
+.wing--r {
+  right: 0;
+  transform-origin: 100% 50%;
+}
+
+.wing__in {
+  display: none;
+}
+
+.case:not([data-state='sealed']) .wing {
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform var(--t-door) var(--ease-door), visibility 0s linear var(--t-door);
+}
+
+.case:not([data-state='sealed']) .wing--l {
+  transform: rotateY(-96deg);
+}
+
+.case:not([data-state='sealed']) .wing--r {
+  transform: rotateY(96deg);
+}
+
+.seal {
+  inset: 0;
+}
+
+/* Phone title card */
+.tc__top {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 14px;
+  padding: 14px 18px 0;
+}
+
+.tc__route,
+.tc__air {
+  display: none;
+}
+
+.tc__phone {
+  display: block;
+}
+
+.tc__phone .cap {
+  font-size: 10px;
+}
+
+.tc__ch {
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  font-size: 62px;
+  line-height: 0.88;
+}
+
+.tc__phone .ch__rule {
+  width: 44px;
+  margin: 4px 0 16px;
+}
+
+.tc__aug {
+  margin: 2px 0 8px;
+  font-size: 22px;
+}
+
+.tc__feed {
+  display: block;
+  height: 186px;
+  box-shadow: 0 0 0 2px var(--red);
+}
+
+.tc__feed .shot {
+  width: 100%;
+  height: 100%;
+}
+
+.tc__feed .hud {
+  inset: 8px;
+}
+
+.tc__feed .live__tag {
+  left: 6px;
+  bottom: 6px;
+  font-size: 9px;
+  padding: 1px 4px;
+}
+
+.tc__scroll {
+  padding: 22px 18px 18px;
+}
+
+.tc__foot {
+  gap: 8px;
+  padding: 10px 18px 16px;
+  border-top: 0;
+}
+
+.tc__foot .lk {
+  flex: 1;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 1px solid var(--dtext);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-align: center;
+}
+
+.tc__next {
+  background: var(--dtext);
+  color: var(--dark);
+}
+
+.tc__next-k {
+  /* "Next:" is read out, but there's no room to show it on a phone */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.tc__next:hover {
+  background: #fff;
+}
+
+.tc__back:hover {
+  background: var(--dark-2);
+}
+
+/* ---------- Desktop ---------- */
+
+@media (min-width: 1024px) {
+  :root {
+    --H: clamp(600px, 100vh - 40px, 960px);
+    /* Her painting's width at this height, but never so narrow the doors get
+       cramped (her dress is cropped at the bottom instead), nor wider than fits. */
+    --P: min(max(var(--H) * 0.66641, 520px), (100vw - 150px) / 2);
+    --W: calc(var(--P) / 2);
+  }
+
+  body::before {
+    /* registration crosses in the corners of the window */
+    content: '';
+    position: fixed;
+    inset: 28px;
+    pointer-events: none;
+    --c: var(--ink);
+    background:
+      linear-gradient(var(--c), var(--c)) 12px 0 / 1.2px 24px no-repeat,
+      linear-gradient(var(--c), var(--c)) 0 12px / 24px 1.2px no-repeat,
+      linear-gradient(var(--c), var(--c)) calc(100% - 12px) 0 / 1.2px 24px no-repeat,
+      linear-gradient(var(--c), var(--c)) 100% 12px / 24px 1.2px no-repeat,
+      linear-gradient(var(--c), var(--c)) 12px 100% / 1.2px 24px no-repeat,
+      linear-gradient(var(--c), var(--c)) 0 calc(100% - 12px) / 24px 1.2px no-repeat,
+      linear-gradient(var(--c), var(--c)) calc(100% - 12px) 100% / 1.2px 24px no-repeat,
+      linear-gradient(var(--c), var(--c)) 100% calc(100% - 12px) / 24px 1.2px no-repeat;
+  }
+
+  .bar {
+    position: fixed;
+    top: 16px;
+    right: 64px;
+    left: auto;
+    display: block;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    background: none;
+  }
+
+  .bar__name,
+  .bar__status {
+    display: none;
+  }
+
+  .bar__rsvp {
+    padding: 0 12px;
+    background: var(--ink);
+    color: var(--dtext);
+    text-decoration: none;
+  }
+
+  .bar__rsvp:hover {
+    background: var(--plum);
+  }
+
+  body {
+    padding: 20px 0;
+  }
+
+  .case {
+    width: calc(var(--P) * 2);
+    max-width: none;
+    height: var(--H);
+    margin: 0 auto;
+    overflow: visible;
+    perspective: 2600px;
+    perspective-origin: 50% 50%;
+  }
+
+  .panel {
+    left: var(--W);
+    right: auto;
+    width: var(--P);
+  }
+
+  .face--front {
+    display: block;
+  }
+
+  .card {
+    position: absolute;
+    inset: 0;
+    box-shadow: none;
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 32;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+
+  .dateloc.card__plate,
+  .sheet {
+    display: none;
+  }
+
+  .wing {
+    width: var(--W);
+    z-index: 5;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .wing--l {
+    left: 0;
+    transform-origin: 100% 50%;
+  }
+
+  .wing--r {
+    left: calc(var(--W) + var(--P));
+    right: auto;
+    transform-origin: 0 50%;
+  }
+
+  .wing__in {
+    display: block;
+  }
+
+  .wing__out {
+    transform: rotateY(180deg);
+  }
+
+  .case[data-state='sealed'] .wing--l {
+    transform: rotateY(180deg);
+  }
+
+  .case[data-state='sealed'] .wing--r {
+    transform: rotateY(-180deg);
+  }
+
+  .case:not([data-state='sealed']) .wing--l,
+  .case:not([data-state='sealed']) .wing--r {
+    transform: none;
+  }
+
+  .seal {
+    left: var(--W);
+    top: 0;
+    right: auto;
+    bottom: 0;
+    width: var(--P);
+  }
+
+  .when-desk {
+    display: inline;
+  }
+
+  .when-phone {
+    display: none;
+  }
+
+  .frame {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+  }
+
+  .frame__ruler {
+    position: absolute;
+    top: 60px;
+    bottom: 60px;
+    width: 12px;
+    opacity: 0.55;
+    background:
+      repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 50px) left top / 12px 100% no-repeat,
+      repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 10px) left top / 6px 100% no-repeat;
+  }
+
+  .frame__ruler--l {
+    left: -27px;
+  }
+
+  .frame__ruler--r {
+    right: -27px;
+    transform: scaleX(-1);
+  }
+
+  .frame__cap {
+    position: absolute;
+    top: 50%;
+    color: var(--mute);
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+  }
+
+  .frame__cap--l {
+    left: -76px;
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  .frame__cap--r {
+    right: -76px;
+    transform: translateY(-50%);
+  }
+
+  .frame__hinge {
+    position: absolute;
+    width: 8px;
+    height: 52px;
+    border-radius: 1px;
+    background: var(--ink);
+  }
+
+  .frame__hinge::before,
+  .frame__hinge::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--ext-mute);
+  }
+
+  .frame__hinge::before {
+    top: 9px;
+  }
+
+  .frame__hinge::after {
+    bottom: 9px;
+  }
+
+  .frame__hinge--lt,
+  .frame__hinge--lb {
+    left: calc(var(--W) - 4px);
+  }
+
+  .frame__hinge--rt,
+  .frame__hinge--rb {
+    left: calc(var(--W) + var(--P) - 4px);
+  }
+
+  .frame__hinge--lt,
+  .frame__hinge--rt {
+    top: 15%;
+  }
+
+  .frame__hinge--lb,
+  .frame__hinge--rb {
+    top: 79%;
+  }
+
+  /* Desktop title card */
+  .tc__top {
+    display: flex;
+    justify-content: space-between;
+    padding: 32px 40px 0;
+  }
+
+  .tc__route,
+  .tc__air {
+    display: block;
+  }
+
+  .feeds {
+    display: flex;
+  }
+
+  .tc__phone,
+  .tc__feed {
+    display: none;
+  }
+
+  .tc__scroll {
+    padding: 24px 40px 20px;
+  }
+
+  .tc__foot {
+    margin: 0 40px 12px;
+    padding: 6px 0 0;
+    border-top: 1px solid var(--drule);
+  }
+
+  .tc__next-k {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+
+  .tc__foot .lk {
+    flex: none;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dtext);
+    font-size: 13px;
+    text-decoration: underline;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1240px) {
+  .frame__cap {
+    display: none;
+  }
+}
+
+/* ---------- Reduced motion: nothing turns, swings or flickers ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .wing,
+  .case:not([data-state='sealed']) .wing,
+  .shot__ns,
+  .xr,
+  .lens {
+    transition: none !important;
+  }
+
+  .ekg svg,
+  .o-pump,
+  .o-blades,
+  .o-bellows,
+  .o-optic,
+  .tc__flash[data-on] {
+    animation: none !important;
+  }
+}

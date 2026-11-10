@@ -1,11 +1,26 @@
 {
+  "$comment": "Everything a visitor reads that isn't part of a channel's design. \"0.0.0\" is her own placeholder from the poster. Empty URLs hide their links.",
   "title": "C3 Showcase",
-  "description": "C3 Showcase: the Creative Computing class shows its work. Date 0.0.0, location 0.0.0.",
+  "description": "C3 Showcase: the Creative Computing class puts its work on show. Date 0.0.0, location 0.0.0.",
   "url": "https://ethanjopro.github.io/C3-Showcase-Website/",
-  "lang": "en",
-  "posterAlt": "Poster for C3 Showcase, hand-lettered in her rough ink line: a girl in headphones with wings, a halo of boxy screens strung on a cable above her head with cables dripping down, a screen over one eye and an X-ray panel over her ribcage, on a flat coral block.",
-  "credits": {
-    "art": "Poster art: 0.0.0",
-    "site": "Site: the Creative Computing class"
-  }
+  "date": "0.0.0",
+  "location": "0.0.0",
+  "about": "The Creative Computing class puts its work on show: games, apps, music and machines, one booth each.",
+  "rsvpUrl": "",
+  "rsvpSoon": "Opens soon",
+  "calendarUrl": "",
+  "mapUrl": "",
+  "sourceUrl": "",
+  "artist": "0.0.0",
+  "piece": { "title": "Poster art", "year": "2026", "medium": "Digital painting" },
+  "builtBy": "The Creative Computing class",
+  "projects": { "count": 8, "teaser": "Phone-shaped, like most of the work. On show day each booth comes online here." },
+  "channels": [
+    { "id": "info", "name": "Info", "desc": "When and where", "title": ["WHEN", "AND WHERE"] },
+    { "id": "rsvp", "name": "RSVP", "desc": "Get on the list", "title": ["COME", "AND BE SEEN"] },
+    { "id": "projects", "name": "Projects", "desc": "The class's work", "title": ["THE WORK", "UNDER GLASS"] },
+    { "id": "inside", "name": "Inside", "desc": "Look inside her", "title": ["WHAT SHE", "IS MADE OF"] },
+    { "id": "source", "name": "Source", "desc": "The site, skin off", "title": ["SKIN", "OFF"] },
+    { "id": "credits", "name": "Credits", "desc": "Who made it", "title": ["END OF", "BROADCAST"] }
+  ]
 }

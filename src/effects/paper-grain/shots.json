@@ -1,5 +1,0 @@
-[
-  { "name": "t0", "query": "?only=paper-grain&freeze=0" },
-  { "name": "t125", "query": "?only=paper-grain&freeze=125" },
-  { "name": "info-t0", "query": "?only=paper-grain&freeze=0", "steps": [{ "scrollTo": "#info" }, { "wait": 100 }], "viewports": [390] }
-]

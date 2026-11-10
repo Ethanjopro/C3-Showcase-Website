@@ -1,8 +1,0 @@
-[
-  { "name": "p0", "query": "?only=c3-window" },
-  { "name": "p15", "query": "?only=c3-window&c3=0.15", "steps": [{ "wait": 300 }], "viewports": [390] },
-  { "name": "p50", "query": "?only=c3-window&c3=0.5", "steps": [{ "wait": 300 }] },
-  { "name": "p100", "query": "?only=c3-window&c3=1", "steps": [{ "wait": 300 }] },
-  { "name": "p0-all", "query": "?freeze=0", "viewports": [390] },
-  { "name": "reduced", "query": "?only=c3-window", "viewports": [390], "reducedMotion": true }
-]

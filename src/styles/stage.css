@@ -1,0 +1,303 @@
+/* Her painting and our halo. The stage is drawn in her painting's own pixels
+   (853 x 1280) and scaled to fit its card by main.ts (--s). Layers, back to front:
+   her, back wires, back of the ring, cameras behind her, her head and wings again
+   (masked), front of the ring, front wires, cameras in front, her lettering,
+   the X-ray. */
+
+.card {
+  position: relative;
+  overflow: hidden;
+  background: var(--her-grey);
+  touch-action: manipulation;
+}
+
+.card__view {
+  position: absolute;
+  inset: 0;
+}
+
+.stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  transform: scale(var(--s, 0.4572));
+  visibility: hidden;
+}
+
+html[data-booted] .stage {
+  visibility: visible;
+}
+
+.stage > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.stage__her {
+  width: 853px;
+  height: 1280px;
+  z-index: 1;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.wires {
+  z-index: 2;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.wires--front {
+  z-index: 8;
+}
+
+.wires line {
+  stroke: var(--plum);
+  stroke-width: 1.6;
+  opacity: 0;
+}
+
+.wires line[data-on] {
+  opacity: 0.4;
+}
+
+.wires line[data-live] {
+  stroke: var(--red);
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.ring {
+  z-index: 3;
+  pointer-events: none;
+}
+
+.ring--front {
+  z-index: 7;
+}
+
+.ring path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.ring__body {
+  stroke: var(--plum);
+  stroke-width: 10;
+}
+
+.ring__glint {
+  stroke: #d9cfd3;
+  stroke-width: 2.6;
+}
+
+.stage__occ {
+  z-index: 6;
+  width: 853px;
+  height: 1280px;
+  pointer-events: none;
+  background: url('../art/her.webp') 0 0 / 100% 100% no-repeat;
+  -webkit-mask: url('../art/occluder.webp') 0 0 / 100% 100% no-repeat;
+  mask: url('../art/occluder.webp') 0 0 / 100% 100% no-repeat;
+}
+
+.stage__title {
+  z-index: 20;
+  pointer-events: none;
+  background-color: #24171f;
+  -webkit-mask: url('../art/title.svg') center / contain no-repeat;
+  mask: url('../art/title.svg') center / contain no-repeat;
+}
+
+/* A camera on the halo. main.ts moves it every frame. */
+.cam {
+  display: block;
+  z-index: 10;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cam img {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cam__tag {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+  background: var(--plum);
+  color: #f4eff2;
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  transition: background-color 160ms linear;
+}
+
+.cam[data-live] .cam__tag {
+  background: var(--red);
+}
+
+.cam:focus-visible {
+  outline: 4px solid var(--red);
+  outline-offset: 6px;
+}
+
+/* The X-ray: a lens on desktop, a band on phone. main.ts places the window
+   (left/top/size) and slides her X-ray inside it the other way. */
+.xr {
+  z-index: 25;
+  overflow: hidden;
+  pointer-events: none;
+  background: #070608;
+  opacity: 0;
+  transition: opacity 200ms linear;
+}
+
+.xr[data-on] {
+  opacity: 1;
+}
+
+.xr__in {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 853px;
+  height: 1280px;
+  will-change: transform;
+}
+
+.xr__in > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.xr__scan {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(to bottom, rgba(238, 234, 238, 0.07) 0 2px, transparent 2px 6px);
+}
+
+.o-labels {
+  font-family: var(--mono);
+  font-size: var(--lfs, 16px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+/* Desktop lens ring (page pixels, outside the scaled stage) */
+.lens {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 26;
+  pointer-events: none;
+  overflow: visible;
+  opacity: 0;
+  transition: opacity 200ms linear;
+  will-change: transform;
+}
+
+.lens[data-on] {
+  opacity: 1;
+}
+
+.lens__edge {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+
+.lens__glint {
+  fill: none;
+  stroke: var(--dtext);
+  stroke-width: 1;
+  opacity: 0.5;
+}
+
+.lens__ticks {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.lens__plate {
+  fill: var(--ink);
+}
+
+.lens__dot {
+  fill: var(--red);
+}
+
+.lens text {
+  fill: var(--dtext);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.9px;
+}
+
+.card__ruler {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0.7;
+  background:
+    repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 50px) left top / 14px 100% no-repeat,
+    repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 10px) left top / 7px 100% no-repeat;
+}
+
+.card__band-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 31;
+  display: none;
+  justify-content: space-between;
+  padding: 8px 12px;
+  color: var(--dtext);
+  pointer-events: none;
+}
+
+.card__band-label .cap {
+  font-size: 10px;
+}
+
+.dateloc.card__plate {
+  position: absolute;
+  left: 22px;
+  bottom: 16px;
+  z-index: 30;
+  display: none;
+  gap: 20px;
+  padding: 7px 12px 4px;
+  background: rgba(241, 239, 242, 0.94);
+  box-shadow: 0 0 0 1px var(--ink);
+  pointer-events: none;
+}
+
+.card__plate .cap {
+  color: var(--mute);
+  font-size: 10px;
+}
+
+.card__plate .big {
+  font-size: 34px;
+}

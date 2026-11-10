@@ -1,70 +1,53 @@
 # C3 Showcase: the brief
 
-Written 2026-10-22 for a fresh start. The first version (branch `archive/v1`) worked, but it read as ten separate effects layered on a rough placeholder, and its documents were so prescriptive they left no room to design. Start the design over. This page and her art are the only guides; anything not fixed here is yours to decide.
+Written 2026-10-22 for a fresh start, updated 2026-11-10 when the final direction ("the case") was built. The first version (branch `archive/v1`) worked, but it read as ten separate effects layered on a rough placeholder. This page and her art are the guides; anything not fixed here is yours to decide.
 
 ## The job
 
 - Promote the C3 Showcase, the Creative Computing class showcase.
 - Most visitors scan the QR code on her printed poster: on a phone, standing, with a few seconds of attention. The first screen must say what, when and where. RSVP and follow are one tap away.
 - The site should feel like her poster came alive. Her art is the star; the site frames it.
-- Launch is Tue 2026-11-03. The live site is `https://ethanjopro.github.io/C3-Showcase-Website/`, deployed from `main` by the existing GitHub Actions workflow. The QR code encodes that URL, so never rename the repo.
+- The live site is `https://ethanjopro.github.io/C3-Showcase-Website/`, deployed from `main` by the existing GitHub Actions workflow. The QR code encodes that URL, so never rename the repo.
 
 ## Where the look comes from
 
-- **Her drafts,** in `reference/drafts/`. The newest and closest to final are `figure-lineart-with-halo.webp` and `figure-lineart-no-halo.webp`: a praying figure with small wings and a ring of six screens around her head. The older drafts hold her "C3 Showcase" lettering and her six colorways.
+- **Her finished painting** (2026-11-10), in `art-src/her.webp`: a dark-haired girl with small grey wings, praying, in a great ruffled white dress on textured grey. It has no halo yet; ours stands in until she draws hers.
+- **Her notes** (her feedback on the first mockups): a mostly monochrome palette with red as the only splash; a mood between Alien Stage and Evangelion, techno-angelic horror, an angel augmented or replaced by technology; the halo's cameras (once microphones); an X-ray on hover showing her organs mechanized; a line on the poster bringing people to the site to "see what's inside".
+- **Her lettering** ("C3 Showcase") and the camera bodies of her halo, from her drafts in `reference/drafts/`.
 - **Her moodboard,** in `reference/moodboard/`, summarized in `reference/INSPIRATION.md` §1b. Ideas only: never trace, crop or ship a pin.
-- Her final layered art arrives around Oct 30. Build so that swapping in her files needs no code changes.
+- **The mockups** of the final direction: the "Final direction" page of the "C3 Showcase site mockups" canvas on claude.ai.
 
 ## Decided
 
-1. **Her poster is the hub.** The first screen is her poster, and her halo of six screens is the site's only navigation.
-   - The halo turns slowly around her head. Screens pass behind her head and swing out in front of it.
-   - Hovering or focusing a screen stops the turn and lifts that screen. Clicking or tapping brings it forward, zooms toward you, and lands on its destination.
-   - Six screens, six destinations. Five so far: Info, RSVP, Projects, Colors (her colorway picker) and Credits. The sixth is open; the X-ray of her chest was the old pick, but her new drawing has no ribcage panel.
-   - A small, quiet control brings you back to her halo from anywhere.
-2. **Her drawing is the only hand-drawn thing on the site.** Everything around it is crisp and precise, like good print production. No wobbly rules, scribbled circles or rough frames in the interface; they compete with her line instead of framing it.
-3. **Two inks on grey paper,** in her six colorways, with teal/coral as the default. The second ink is used as flat color, never for text.
-
-   | Colorway | Ink | Accent |
-   |---|---|---|
-   | teal/coral (default) | `#2E5A63` | `#E2604F` |
-   | black/red | `#1F1423` | `#C7433A` |
-   | mauve/periwinkle | `#764666` | `#8C85A3` |
-   | indigo/pink | `#402064` | `#B57198` |
-   | violet/pink | `#4A28AC` | `#D07DC3` |
-   | brown/orange | `#331110` | `#C38D70` |
-
-   Paper is `#C8C8CA`. These were sampled from her drafts and are approximate; teal and mauve need a darker text shade to pass contrast.
+1. **The case.** She is on display in a black case.
+   - It arrives sealed: two doors with her C3 split down the seam, "Show | Case", the date and location, and a red tape reading "See what's inside" (her poster line). One tap or click opens it.
+   - Inside, she turns out to wear a halo of six cameras, turning slowly above her head. Cameras behind her pass behind her hair and wings; each hangs on a wire from above, like a stage rig.
+   - The six cameras are the navigation: Info, RSVP, Projects, Inside (her X-ray), Source (the site, skin off) and Credits. The same six are a real list: the feeds on the left door (desktop) or the channel keys under her (phone).
+   - Hovering or focusing a camera, feed or key stops the turn and lifts that camera. Choosing one turns the middle panel over to that channel's title card, white on black. A quiet "Back to her halo" returns from anywhere; so do Escape and the browser's Back.
+   - Hover her (desktop) or hold her (phone) and an X-ray shows what she's made of.
+2. **Her drawing is the only hand-drawn thing on the site.** Everything around it is crisp and precise, like good print production.
+3. **Monochrome from her painting, one red.** Lavender greys and plum black from her painting; red (`#C8102E`) only ever means "live": the camera on air, its wire, the REC dot, her pump, the tape. This replaces v1's six colorways (and the Colors destination), per her notes.
 4. **Phone first** (390×844); the desktop view must look finished too.
-5. **"0.0.0"** stands in for the date and location until the real details exist. That's her own placeholder from the poster.
-6. **Character motion later.** Subtle movement for her (breathing, hair, wings) is welcome once her layers arrive. Plan for it, but don't fake it with the drafts.
+5. **"0.0.0"** stands in for the date, location and her name until the real details exist. That's her own placeholder from the poster.
+6. **Character motion later.** Subtle movement for her (breathing, hair, wings) is welcome once her layers arrive. Plan for it, but don't fake it.
+7. **Her files swap in without code.** Her art lives in `art-src/` (`npm run art` turns it into `src/art/`), and where things sit on her painting is data in `src/art/scene.json`. Words live in `src/content/site.json`.
 
 ## Yours to decide
 
-Everything else, including fonts (v1 used Grenze and Familjen Grotesk; keep or replace them), how the content beyond the hub is laid out and reached, transitions, the projects teaser, and whether any other effect earns its place. One strong idea beats many small ones.
+Everything else, including how the channels are laid out, transitions, the projects teaser, and whether any other effect earns its place. One strong idea beats many small ones.
 
 ## The floor (protects visitors, not style)
 
-- Text contrast of at least 4.5:1 in every colorway, and body text of at least 16 px.
+- Text contrast of at least 4.5:1, and body text of at least 16 px.
 - Keyboard and screen-reader users get the same destinations. The halo's links also exist as a real list.
 - With reduced motion: no turning and no autoplay, and everything stays reachable.
 - Fast on a phone over cellular, with no layout shift on load.
 - Nothing from `reference/` ships in the build.
 
-## What v1 left behind (reuse or delete)
-
-Everything is on the branch `archive/v1`:
-- the deploy and CI workflows
-- `npm run shots` (Playwright screenshots at 390 and 1440)
-- an art pipeline that cuts and tints layers (`scripts/art/`)
-- colorway tokens with a contrast test
-
-Keep what helps and delete the rest. `SPEC.md`, `PLAN.md`, `setup/PROMPTS.md` and `src/effects/` describe v1. They are history, not instructions.
-
 ## Waiting on her
 
 `OWNER.md` tracks it. The main items:
-- her final layers, including each halo screen on its own layer, the ring, a filled head-and-hair shape the screens can pass behind, and separate head, hair, wings, hands and dress for motion
-- her "C3 Showcase" lettering at high resolution
-- the name for her credit
-- whether the six colorways' colors are right
+- her halo (the ring and six cameras as layers), which replaces ours
+- her drawing of the inside, which replaces the placeholder machine parts in the X-ray
+- a larger export of her painting (853 × 1280 is soft on big screens), and a head, hair and wings mask
+- the name for her credit, and a title for the piece

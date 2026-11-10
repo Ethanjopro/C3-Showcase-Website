@@ -1,139 +1,574 @@
-// Boots the site. The HTML already holds the complete static poster and all
-// copy; everything here is progressive enhancement. One effect that throws is
-// logged and skipped, and never takes the page down with it.
+// The case: her halo turning, the doors, the channels, the X-ray and the live
+// readouts. The markup is already on the page (src/markup.ts); this wires it up.
 
-import './styles/index.css';
-import { quality, onChange, type Quality } from './core/motion';
-import { enabled } from './core/flags';
-import type { EffectModule } from './core/effect';
-import { effects, type EffectEntry } from './effects/registry';
-import { initMenu } from './ui/menu';
-import { initColorbar } from './ui/colorbar';
-import { initRsvpChip } from './ui/rsvp-chip';
+import '@fontsource/ibm-plex-mono/latin-500.css';
+import '@fontsource/ibm-plex-mono/latin-600.css';
+import '@fontsource/ibm-plex-sans/latin-400.css';
+import '@fontsource/ibm-plex-sans/latin-600.css';
+import './styles/base.css';
+import './styles/stage.css';
+import './styles/doors.css';
+import './styles/wings.css';
+import './styles/channels.css';
+import './styles/layout.css';
 
-const html = document.documentElement;
-const running = new Map<EffectEntry['name'], { mod: EffectModule; root: HTMLElement; q: Quality }>();
+import scene from './art/scene.json';
+import content from './content/site.json';
+import herUrl from './art/her.webp?url';
+import titleUrl from './art/title.svg?url';
+import { advance, aim, frontIndex, poses, wire, type Pose } from './halo.ts';
+import { copyNumber, marksOf, saveCopy, seedOf } from './copy.ts';
 
-function reveal(name: string) {
-  html.classList.remove(`fx-pending-${name}`);
+type View = 'hub' | 'channel';
+
+const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel) as T;
+const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => [...root.querySelectorAll<T>(sel)];
+const pad = (n: number, w = 2) => String(Math.floor(n)).padStart(w, '0');
+const ids = content.channels.map((c) => c.id);
+const halo = scene.halo;
+const [SW] = scene.size as [number, number];
+
+const caseEl = $('#case');
+const card = $('[data-card]');
+const stage = $('[data-stage]');
+const cams = $$<HTMLAnchorElement>('.cam');
+const wiresBack = $$<SVGLineElement>('.wires--back line');
+const wiresFront = $$<SVGLineElement>('.wires--front line');
+const xr = $('.xr');
+const xrIn = $('.xr__in');
+const lens = $<SVGSVGElement>('.lens');
+const bandLabel = $('.card__band-label');
+const feeds = $$<HTMLAnchorElement>('.feed');
+const keys = $$<HTMLAnchorElement>('.key');
+const radar = $$<SVGCircleElement>('[data-radar]');
+const flash = $('.tc__flash');
+const nextLink = $<HTMLAnchorElement>('[data-next]');
+const hint = $('[data-hint]');
+
+const reduceQ = matchMedia('(prefers-reduced-motion: reduce)');
+const deskQ = matchMedia('(min-width: 1024px)');
+// ?still=<degrees> pins the halo at that angle with nothing moving (screenshots, tests).
+const stillParam = new URLSearchParams(location.search).get('still');
+const still = stillParam !== null && !Number.isNaN(Number(stillParam));
+let reduce = reduceQ.matches || still;
+let desk = deskQ.matches;
+
+// ---------- State ----------
+let angle = still ? Number(stillParam) : halo.startAngle;
+let hover = -1;
+let ps: Pose[] = poses(halo, scene.cameras, angle);
+let live = frontIndex(ps);
+const t0 = performance.now();
+let scale = 0.4572;
+// X-ray: where the lens or band points, in her painting's pixels
+let mx = scene.chest.x;
+let my = scene.chest.y;
+let pointerIn = false;
+let scanning = false;
+
+const state = () => caseEl.dataset.state as 'sealed' | 'open';
+const view = () => caseEl.dataset.view as View;
+const channel = () => caseEl.dataset.channel ?? 'info';
+const chIndex = () => Math.max(0, ids.indexOf(channel()));
+
+// ---------- Layout ----------
+const camMult = () => (desk ? 1 : 1.13);
+
+function layout(): void {
+  scale = card.clientWidth / SW;
+  stage.style.setProperty('--s', String(scale));
+  xr.style.setProperty('--lfs', (desk ? 11 / scale : 10 / scale).toFixed(1) + 'px');
+  const fig = $('.xray__svg');
+  if (fig) {
+    const k = Math.max(fig.clientWidth / 616, fig.clientHeight / 640) || 1;
+    fig.style.setProperty('--lfs', (11 / k).toFixed(1) + 'px');
+  }
+  measureShots();
+  renderHalo(true);
+  renderXray();
+  renderShots();
 }
 
-async function start(entry: EffectEntry, root: HTMLElement, q: Quality) {
-  let mod: EffectModule | null = null;
+// ---------- The halo ----------
+const lastZ: number[] = [];
+const lastLive: boolean[] = [];
+
+function renderHalo(force = false): void {
+  ps = poses(halo, scene.cameras, angle, hover);
+  const nextLive = hover >= 0 ? hover : view() === 'channel' ? chIndex() : frontIndex(ps);
+  const liveChanged = nextLive !== live;
+  live = nextLive;
+  // Cameras and wires are only drawn while her side of the panel shows.
+  if (view() === 'channel' && !force) return;
+  const m = camMult();
+  ps.forEach((p, i) => {
+    const el = cams[i] as HTMLAnchorElement;
+    const art = scene.cameras[i]!;
+    const w = art.w * halo.cameraScale;
+    const h = art.h * halo.cameraScale;
+    el.style.transform = `translate3d(${(p.x - w / 2).toFixed(2)}px,${(p.y - h / 2).toFixed(2)}px,0) scale(${(p.scale * m).toFixed(4)}) rotate(${p.rotate.toFixed(2)}deg)`;
+    const z = i === hover ? 15 : p.depth < 0 ? 3 + Math.round((p.depth + 1) * 2) : 10 + Math.round(p.depth * 3);
+    if (force || lastZ[i] !== z) {
+      el.style.zIndex = String(z);
+      lastZ[i] = z;
+    }
+    const isLive = i === live;
+    if (force || lastLive[i] !== isLive) {
+      el.toggleAttribute('data-live', isLive);
+      lastLive[i] = isLive;
+    }
+    const [x1, y1, x2, y2] = wire(halo, p, h * m);
+    const on = p.depth < 0 ? wiresBack[i]! : wiresFront[i]!;
+    const off = p.depth < 0 ? wiresFront[i]! : wiresBack[i]!;
+    on.setAttribute('x1', x1.toFixed(1));
+    on.setAttribute('y1', y1.toFixed(1));
+    on.setAttribute('x2', x2.toFixed(1));
+    on.setAttribute('y2', String(y2));
+    on.setAttribute('data-on', '');
+    on.toggleAttribute('data-live', isLive);
+    off.removeAttribute('data-on');
+    off.removeAttribute('data-live');
+  });
+  if (liveChanged || force) renderLists();
+}
+
+// ---------- Feeds, keys, radar ----------
+function renderLists(): void {
+  const inCh = view() === 'channel';
+  const ci = chIndex();
+  ps.forEach((p, i) => {
+    const onDisplay = inCh && i === ci;
+    for (const el of [feeds[i], keys[i]]) {
+      if (!el) continue;
+      el.toggleAttribute('data-live', i === live);
+      el.toggleAttribute('data-obstructed', p.obstructed);
+      el.toggleAttribute('data-hover', i === hover);
+      if (onDisplay) el.setAttribute('aria-current', 'page');
+      else el.removeAttribute('aria-current');
+    }
+    setText(`[data-state-of="${i}"]`, `${pad(i + 1)} · ${onDisplay ? 'On display' : p.obstructed ? 'Obstructed' : i === live ? 'On air' : 'Live'}`);
+    for (const shot of all(`.shot[data-shot="${i}"]`)) shot.toggleAttribute('data-obstructed', p.obstructed);
+    const dot = radar[i];
+    if (dot) {
+      dot.setAttribute('cx', (38 + (29 * (p.x - halo.cx)) / halo.rx).toFixed(1));
+      dot.setAttribute('cy', (38 + (29 * (p.y - halo.cy)) / halo.ry).toFixed(1));
+      dot.setAttribute('r', i === live ? '4.5' : '3');
+      dot.toggleAttribute('data-live', i === live);
+      dot.toggleAttribute('data-obstructed', p.obstructed);
+    }
+  });
+  const inView = ps.filter((p) => !p.obstructed).length;
+  setText('[data-cams]', String(inView));
+  setText('[data-cams-of]', `${inView}/6`);
+  setText('[data-front-num]', pad(live + 1));
+  setText('[data-front-name]', content.channels[live]?.name ?? '');
+  const cam = ps[ci];
+  for (const shot of all('.shot[data-shot="-1"]')) shot.toggleAttribute('data-obstructed', !!cam?.obstructed);
+  setText('[data-cam-state]', cam?.obstructed ? 'Obstructed' : 'On air');
+}
+
+// The page never adds or removes these elements, so look each selector up once.
+const found = new Map<string, HTMLElement[]>();
+const all = (sel: string): HTMLElement[] => {
+  let els = found.get(sel);
+  if (!els) found.set(sel, (els = $$(sel)));
+  return els;
+};
+
+function setText(sel: string, text: string): void {
+  for (const el of all(sel)) if (el.textContent !== text) el.textContent = text;
+}
+
+// A feed is a crop of her painting, pointed at her face from where its camera sits.
+const shotBoxes = new Map<HTMLElement, { w: number; h: number; img: HTMLElement }>();
+function measureShots(): void {
+  shotBoxes.clear();
+  for (const shot of $$('.shot')) {
+    const img = $('.shot__img', shot);
+    if (shot.offsetParent === null) continue;
+    shotBoxes.set(shot, { w: shot.clientWidth, h: shot.clientHeight, img });
+  }
+}
+
+function renderShots(): void {
+  const ci = chIndex();
+  for (const [shot, box] of shotBoxes) {
+    const i = Number(shot.dataset.shot);
+    const p = ps[i < 0 ? ci : i];
+    if (!p || !box.w) continue;
+    // How much of her each kind of feed shows across, in her pixels.
+    const across = i < 0 ? 250 : box.w < 60 ? 200 : 280;
+    const zoom = box.w / across;
+    const a = aim(halo, scene.face, p);
+    box.img.style.backgroundSize = `${(SW * zoom).toFixed(1)}px auto`;
+    box.img.style.backgroundPosition = `${(box.w / 2 - a.x * zoom).toFixed(1)}px ${(box.h / 2 - a.y * zoom).toFixed(1)}px`;
+  }
+}
+
+// ---------- The X-ray: lens on desktop, band on phone ----------
+const BAND = 176;
+function renderXray(): void {
+  const hub = view() === 'hub' && state() === 'open';
+  if (desk) {
+    const R = 104 / scale;
+    xr.style.borderRadius = '50%';
+    xr.style.width = xr.style.height = `${2 * R}px`;
+    xr.style.transform = `translate3d(${(mx - R).toFixed(1)}px,${(my - R).toFixed(1)}px,0)`;
+    xrIn.style.transform = `translate3d(${(R - mx).toFixed(1)}px,${(R - my).toFixed(1)}px,0)`;
+    lens.style.transform = `translate3d(${(mx * scale - 120).toFixed(1)}px,${(my * scale - 120).toFixed(1)}px,0)`;
+    xr.toggleAttribute('data-on', hub);
+    lens.toggleAttribute('data-on', hub);
+    bandLabel.style.display = '';
+  } else {
+    const bh = BAND / scale;
+    const top = my - bh / 2;
+    xr.style.borderRadius = '0';
+    xr.style.width = `${SW}px`;
+    xr.style.height = `${bh}px`;
+    xr.style.transform = `translate3d(0,${top.toFixed(1)}px,0)`;
+    xr.style.boxShadow = `inset 0 ${1.5 / scale}px 0 #eeeaee, inset 0 ${-1.5 / scale}px 0 #eeeaee`;
+    xrIn.style.transform = `translate3d(0,${(-top).toFixed(1)}px,0)`;
+    xr.toggleAttribute('data-on', hub && scanning);
+    lens.removeAttribute('data-on');
+    bandLabel.style.display = hub && scanning ? 'flex' : 'none';
+    bandLabel.style.transform = `translateY(${(top * scale).toFixed(1)}px)`;
+    setText('[data-depth]', String(Math.round(20 + (my * scale) / 10)));
+  }
+}
+
+function toStage(e: { clientX: number; clientY: number }): { x: number; y: number } {
+  const r = card.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
+}
+
+function clampToCard(y: number, half: number): number {
+  const maxY = card.clientHeight / scale - half;
+  return Math.max(half, Math.min(maxY, y));
+}
+
+card.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch') return;
+  const p = toStage(e);
+  if (desk) {
+    const R = 104 / scale;
+    pointerIn = true;
+    mx = Math.max(R * 0.6, Math.min(SW - R * 0.6, p.x));
+    my = clampToCard(p.y, R * 0.6);
+  } else {
+    // A mouse on the phone layout scans as it moves.
+    scanning = true;
+    my = clampToCard(p.y, BAND / scale / 2);
+    syncHint();
+  }
+  renderXray();
+});
+
+card.addEventListener('pointerleave', (e) => {
+  if (e.pointerType === 'touch') return;
+  pointerIn = false;
+  if (!desk) {
+    scanning = false;
+    syncHint();
+  }
+  if (reduce) {
+    mx = scene.chest.x;
+    my = scene.chest.y;
+  }
+  renderXray();
+});
+
+// Phone: hold her to scan, then drag. A quick swipe still scrolls.
+let holdTimer = 0;
+let touchStart = { clientX: 0, clientY: 0 };
+card.addEventListener(
+  'touchstart',
+  (e) => {
+    if (desk || (e.target as Element).closest('.cam')) return;
+    const t = e.touches[0];
+    if (!t) return;
+    touchStart = { clientX: t.clientX, clientY: t.clientY };
+    clearTimeout(holdTimer);
+    holdTimer = window.setTimeout(() => {
+      scanning = true;
+      my = clampToCard(toStage(touchStart).y, BAND / scale / 2);
+      syncHint();
+      renderXray();
+    }, 160);
+  },
+  { passive: true },
+);
+card.addEventListener(
+  'touchmove',
+  (e) => {
+    const t = e.touches[0];
+    if (!t) return;
+    if (scanning) {
+      e.preventDefault();
+      my = clampToCard(toStage(t).y, BAND / scale / 2);
+      renderXray();
+    } else if (Math.hypot(t.clientX - touchStart.clientX, t.clientY - touchStart.clientY) > 10) {
+      clearTimeout(holdTimer);
+    }
+  },
+  { passive: false },
+);
+const endTouch = () => {
+  clearTimeout(holdTimer);
+  if (!scanning) return;
+  scanning = false;
+  syncHint();
+  renderXray();
+};
+card.addEventListener('touchend', endTouch);
+card.addEventListener('touchcancel', endTouch);
+card.addEventListener('contextmenu', (e) => {
+  if (scanning) e.preventDefault();
+});
+
+function syncHint(): void {
+  hint.textContent = scanning ? 'Drag over her to move the scan.' : 'Tap a camera to tune in. Hold her to look inside.';
+  renderStatus();
+}
+
+// ---------- Hover: a camera, its feed or its key lifts the camera and stops the turn ----------
+function setHover(i: number): void {
+  if (hover === i) return;
+  hover = i;
+  renderHalo();
+  renderLists();
+}
+[cams, feeds, keys].forEach((list) =>
+  list.forEach((el, i) => {
+    el.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'touch') setHover(i);
+    });
+    el.addEventListener('pointerleave', () => setHover(-1));
+    // Only keyboard focus lifts a camera; focus we move after a click shouldn't stop the turn.
+    el.addEventListener('focus', () => {
+      if (el.matches(':focus-visible')) setHover(i);
+    });
+    el.addEventListener('blur', () => setHover(-1));
+  }),
+);
+
+// ---------- Readouts ----------
+function timecode(ms: number): string {
+  const s = ms / 1000;
+  return `${pad(s / 3600)}:${pad((s / 60) % 60)}:${pad(s % 60)}:${pad((ms % 1000) / 40)}`;
+}
+
+let lastSlow = 0;
+function renderReadouts(now: number): void {
+  const el = now - t0;
+  const tc = timecode(el);
+  setText('[data-tc]', tc);
+  if (now - lastSlow > 300) {
+    lastSlow = now;
+    const t = now / 1000;
+    const aug = 74.2 + (el / 1000) * 0.003;
+    setText('[data-aug]', aug.toFixed(2));
+    setText('[data-aug-pct]', aug.toFixed(2) + '%');
+    for (const b of all('[data-aug-bar]')) b.style.width = `${Math.min(aug, 100).toFixed(2)}%`;
+    setText('[data-sync]', `${(98.2 + 0.3 * Math.sin(t * 1.7) + 0.1 * Math.sin(t * 5.3)).toFixed(1)}%`);
+    setText('[data-deg]', `${pad(angle, 3)}°`);
+  }
+  renderStatus(tc);
+}
+
+function renderStatus(tc = timecode(performance.now() - t0)): void {
+  const s = state() === 'sealed' ? 'Sealed' : view() === 'channel' ? `On air ${tc}` : scanning ? 'Scanning' : `Rec ${tc}`;
+  setText('[data-status]', s);
+}
+
+// ---------- The loop ----------
+let raf = 0;
+let last = 0;
+let lastShots = 0;
+function frame(now: number): void {
+  raf = requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now - (last || now)) / 1000);
+  last = now;
+  if (state() === 'sealed') return;
+  if (hover < 0) angle = advance(angle, dt, halo.turnSeconds);
+  if (desk && !pointerIn) {
+    // The lens drifts over her chest until you take it.
+    const t = now / 1000;
+    mx = scene.chest.x + 32 * Math.sin(t * 0.4);
+    my = scene.chest.y - 30 + 80 * Math.sin(t * 0.27);
+  }
+  renderHalo();
+  if (view() === 'hub') renderXray();
+  if (now - lastShots > 66) {
+    lastShots = now;
+    renderShots();
+    renderLists();
+  }
+  renderReadouts(now);
+}
+
+function start(): void {
+  if (reduce || raf || document.hidden) return;
+  last = 0;
+  raf = requestAnimationFrame(frame);
+}
+function stop(): void {
+  cancelAnimationFrame(raf);
+  raf = 0;
+}
+document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+
+// ---------- The case: doors, channels, routing ----------
+const front = $('.face--front');
+const back = $('.face--back');
+const insides = $$('.wing__in');
+const outsides = $$('.wing__out');
+
+function applyInert(): void {
+  const sealed = state() === 'sealed';
+  const ch = view() === 'channel';
+  $('.panel').inert = sealed;
+  front.inert = sealed || ch;
+  back.inert = sealed || !ch;
+  for (const el of insides) el.inert = sealed;
+  for (const el of outsides) el.inert = !sealed;
+}
+
+function remember(open: boolean): void {
   try {
-    mod = await entry.load();
-    await mod.init(root, { quality: q });
-    // The quality level may have changed while the chunk loaded or init ran;
-    // onChange only restarts effects already running, so catch up here.
-    while (quality() !== q) {
-      // Its lite is its full: keep it, as restart() does.
-      if (entry.liteIsFull && q !== 'static' && quality() !== 'static') break;
-      mod.destroy();
-      q = quality();
-      await mod.init(root, { quality: q });
-    }
-    running.set(entry.name, { mod, root, q });
-  } catch (err) {
-    console.error(`[c3] effect "${entry.name}" failed and was skipped`, err);
-    try {
-      mod?.destroy();
-    } catch {
-      // Already failing; the page carries on without it.
-    }
-  } finally {
-    reveal(entry.name);
+    if (open) sessionStorage.setItem('c3.open', '1');
+    else sessionStorage.removeItem('c3.open');
+  } catch {
+    /* private mode: the case just starts sealed next time */
   }
 }
 
-const idle = (fn: () => void) =>
-  typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 200);
-
-function schedule(entry: EffectEntry, root: HTMLElement): Promise<void> | void {
-  const go = () => start(entry, root, quality());
-  switch (entry.when) {
-    case 'load':
-      return go();
-    case 'idle':
-      return new Promise((resolve) => idle(() => void go().then(resolve)));
-    case 'visible': {
-      // Watch what the effect draws into: its `watch` targets, or the box
-      // around its mount (a hidden defs mount has no box of its own).
-      const targets = entry.watch
-        ? Array.from(document.querySelectorAll(entry.watch))
-        : [root.closest('.layer, section, .poster-stage') ?? root];
-      const io = new IntersectionObserver((entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        io.disconnect();
-        void go();
-      });
-      targets.forEach((t) => io.observe(t));
-      return;
-    }
-    case 'interaction': {
-      const events = ['pointerdown', 'keydown', 'scroll'] as const;
-      const once = () => {
-        events.forEach((type) => window.removeEventListener(type, once));
-        void go();
-      };
-      events.forEach((type) => window.addEventListener(type, once, { passive: true }));
-      return;
-    }
-  }
+function setChannelBits(id: string): void {
+  const i = Math.max(0, ids.indexOf(id));
+  setText('[data-ch-num]', pad(i + 1));
+  const next = content.channels[(i + 1) % ids.length]!;
+  nextLink.href = `#${next.id}`;
+  setText('[data-next-num]', pad(((i + 1) % ids.length) + 1));
+  setText('[data-next-name]', next.name);
 }
 
-function boot() {
-  initMenu();
-  initColorbar();
-  initRsvpChip();
-
-  const pending: Promise<void>[] = [];
-  for (const entry of effects) {
-    const root = document.querySelector<HTMLElement>(entry.mount);
-    if (!enabled(entry.name) || !root) {
-      if (!root && enabled(entry.name)) console.warn(`[c3] no mount for "${entry.name}" (${entry.mount})`);
-      reveal(entry.name);
-      continue;
-    }
-    const p = schedule(entry, root);
-    if (p) pending.push(p);
-  }
-  // Tests and screenshots wait for this: every `load` and `idle` effect has
-  // settled (started or failed). `visible` and `interaction` effects start later
-  // by design; shots and tests that need them scroll or interact first.
-  void Promise.all(pending).then(() => (html.dataset.booted = ''));
-
-  // Reduced motion switched on, or the device proved slow: restart running
-  // effects at the new quality level. A drop to lite waits while the menu is
-  // open: restarting halo-menu would swap the ring for the grid under the
-  // visitor's finger (and the ring's own frames are what trip the slow
-  // check). Reduced motion applies at once.
-  const menu = document.querySelector<HTMLDialogElement>('dialog#menu');
-  let held = false;
-  onChange((q) => {
-    held = q !== 'static' && Boolean(menu?.open);
-    if (!held) restart(q);
-  });
-  menu?.addEventListener('close', () => {
-    if (!held) return;
-    held = false;
-    restart(quality());
-  });
+function staticCut(): void {
+  if (reduce) return;
+  flash.removeAttribute('data-on');
+  void flash.offsetWidth;
+  flash.setAttribute('data-on', '');
 }
 
-function restart(q: Quality) {
-  for (const [name, { mod, root, q: was }] of running) {
-    const entry = effects.find((e) => e.name === name);
-    if (!entry || was === q) continue;
-    // Its lite is its full: nothing would change but a restart mid-scroll.
-    if (entry.liteIsFull && was !== 'static' && q !== 'static') continue;
-    try {
-      mod.destroy();
-    } catch (err) {
-      console.error(`[c3] effect "${name}" failed to stop`, err);
-    }
-    running.delete(name);
-    void start(entry, root, q);
-  }
+function focusSoon(el: HTMLElement | null | undefined): void {
+  if (!el) return;
+  requestAnimationFrame(() => el.focus({ preventScroll: true }));
 }
 
-boot();
+function openDoors(focus = true): void {
+  if (state() !== 'sealed') return;
+  caseEl.dataset.state = 'open';
+  remember(true);
+  applyInert();
+  renderStatus();
+  layout();
+  start();
+  if (focus) focusSoon((desk ? feeds[0] : keys[0]) ?? null);
+}
+
+function closeDoors(): void {
+  stop();
+  caseEl.dataset.view = 'hub';
+  caseEl.dataset.state = 'sealed';
+  remember(false);
+  if (location.hash) history.pushState(null, '', location.pathname + location.search);
+  applyInert();
+  renderStatus();
+  focusSoon($('.seal'));
+}
+
+function route(user: boolean): void {
+  const h = location.hash.slice(1);
+  if (ids.includes(h)) {
+    const wasChannel = view() === 'channel';
+    const prev = channel();
+    if (state() === 'sealed') {
+      caseEl.dataset.state = 'open';
+      remember(true);
+    }
+    caseEl.dataset.channel = h;
+    caseEl.dataset.view = 'channel';
+    setChannelBits(h);
+    if (wasChannel && prev !== h) staticCut();
+    if (user) focusSoon(document.getElementById(`ch-${h}-t`));
+    const sc = $('.tc__scroll');
+    if (sc) sc.scrollTop = 0;
+  } else if (view() === 'channel') {
+    const prev = chIndex();
+    caseEl.dataset.view = 'hub';
+    if (user) focusSoon((desk ? feeds[prev] : keys[prev]) ?? null);
+  }
+  applyInert();
+  renderHalo(true);
+  renderLists();
+  layout();
+  renderStatus();
+  if (state() === 'open') start();
+}
+
+window.addEventListener('hashchange', () => route(true));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && view() === 'channel' && !(e.target as Element).closest('input')) location.hash = 'halo';
+});
+// A keyboard press (detail 0) moves focus to the first channel; a click leaves it be.
+$('.seal').addEventListener('click', (e) => openDoors(e.detail === 0));
+$('[data-close]').addEventListener('click', closeDoors);
+// Clicking the link for the channel already showing still lands focus on it.
+document.addEventListener('click', (e) => {
+  const a = (e.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');
+  if (a && a.getAttribute('href') === location.hash && ids.includes(location.hash.slice(1))) {
+    e.preventDefault();
+    focusSoon(document.getElementById(`ch-${location.hash.slice(1)}-t`));
+  }
+});
+
+// ---------- RSVP: your own copy ----------
+const nameInput = $<HTMLInputElement>('#copy-name');
+const marksSvg = $('[data-marks]');
+function renderCopy(): void {
+  const name = nameInput.value.trim();
+  const seed = seedOf(name || 'C3');
+  setText('[data-copy-name]', (name || 'Your name').toUpperCase());
+  setText('[data-copy-no]', copyNumber(seed));
+  marksSvg.innerHTML = marksOf(seed)
+    .map((m) => `<rect x="${m.x}" y="${m.y}" width="${m.w}" height="2.5"/>`)
+    .join('');
+}
+nameInput.addEventListener('input', renderCopy);
+$('[data-save]').addEventListener('click', () => {
+  void saveCopy({ name: nameInput.value.trim(), date: content.date, her: herUrl, title: titleUrl });
+});
+
+// ---------- Boot ----------
+function onMedia(): void {
+  reduce = reduceQ.matches || still;
+  desk = deskQ.matches;
+  if (reduce) {
+    stop();
+    mx = scene.chest.x;
+    my = scene.chest.y;
+  } else if (state() === 'open') start();
+  layout();
+}
+reduceQ.addEventListener('change', onMedia);
+deskQ.addEventListener('change', onMedia);
+new ResizeObserver(() => layout()).observe(card);
+const fig = $('.xray');
+if (fig) new ResizeObserver(() => layout()).observe(fig);
+
+renderCopy();
+setChannelBits(channel());
+route(false);
+applyInert();
+layout();
+renderReadouts(performance.now());
+document.documentElement.dataset.booted = '';
+if (state() === 'open') start();
