@@ -20,6 +20,10 @@
   inset: 0;
 }
 
+.card[data-lens] {
+  cursor: crosshair;
+}
+
 .stage {
   position: absolute;
   left: 0;
