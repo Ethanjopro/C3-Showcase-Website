@@ -26,7 +26,7 @@ Written 2026-10-22 for a fresh start, updated 2026-11-10 when the final directio
    - Hovering or focusing a camera, feed or key stops the turn and lifts that camera. Choosing one turns the middle panel over to that channel's title card, white on black. A quiet "Back to her halo" returns from anywhere; so do Escape and the browser's Back.
    - Hover her (desktop) or hold her (phone) and an X-ray shows what she's made of.
 2. **Her drawing is the only hand-drawn thing on the site.** Everything around it is crisp and precise, like good print production.
-3. **Monochrome from her painting, one red.** Lavender greys and plum black from her painting; red (`#C8102E`) only ever means "live": the camera on air, its wire, the REC dot, her pump, the tape. This replaces v1's six colorways (and the Colors destination), per her notes.
+3. **Monochrome from her painting, one red.** Lavender greys and plum black from her painting, and one red (`#C8102E`) as the splash. Red marks what's live (the camera on air, its wire, the REC and ON AIR dots, her pump, the augmentation reading), plus three accents in the same spirit: the "See what's inside" tape, the short rule under each channel title, and the marks on a visitor's copy of the poster. Never for text on light grounds. This replaces v1's six colorways (and the Colors destination), per her notes.
 4. **Phone first** (390×844); the desktop view must look finished too.
 5. **"0.0.0"** stands in for the date, location and her name until the real details exist. That's her own placeholder from the poster.
 6. **Character motion later.** Subtle movement for her (breathing, hair, wings) is welcome once her layers arrive. Plan for it, but don't fake it.

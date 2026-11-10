@@ -16,6 +16,7 @@ import scene from './art/scene.json';
 import content from './content/site.json';
 import herUrl from './art/her.webp?url';
 import titleUrl from './art/title.svg?url';
+import xrayUrl from './art/her-xray.webp?url';
 import { advance, aim, frontIndex, poses, wire, type Pose } from './halo.ts';
 import { copyNumber, marksOf, saveCopy, seedOf } from './copy.ts';
 
@@ -89,6 +90,16 @@ function layout(): void {
   renderShots();
 }
 
+// Write an attribute only when it changes: these run many times a second.
+const flag = (el: Element, name: string, on: boolean) => {
+  if (el.hasAttribute(name) !== on) el.toggleAttribute(name, on);
+};
+const attr = (el: Element, name: string, value: string | null) => {
+  if (value === null) {
+    if (el.hasAttribute(name)) el.removeAttribute(name);
+  } else if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+};
+
 // ---------- The halo ----------
 const lastZ: number[] = [];
 const lastLive: boolean[] = [];
@@ -124,10 +135,10 @@ function renderHalo(force = false): void {
     on.setAttribute('y1', y1.toFixed(1));
     on.setAttribute('x2', x2.toFixed(1));
     on.setAttribute('y2', String(y2));
-    on.setAttribute('data-on', '');
-    on.toggleAttribute('data-live', isLive);
-    off.removeAttribute('data-on');
-    off.removeAttribute('data-live');
+    flag(on, 'data-on', true);
+    flag(on, 'data-live', isLive);
+    flag(off, 'data-on', false);
+    flag(off, 'data-live', false);
   });
   if (liveChanged || force) renderLists();
 }
@@ -140,21 +151,21 @@ function renderLists(): void {
     const onDisplay = inCh && i === ci;
     for (const el of [feeds[i], keys[i]]) {
       if (!el) continue;
-      el.toggleAttribute('data-live', i === live);
-      el.toggleAttribute('data-obstructed', p.obstructed);
-      el.toggleAttribute('data-hover', i === hover);
-      if (onDisplay) el.setAttribute('aria-current', 'page');
-      else el.removeAttribute('aria-current');
+      flag(el, 'data-live', i === live);
+      flag(el, 'data-obstructed', p.obstructed);
+      flag(el, 'data-hover', i === hover);
+      attr(el, 'aria-current', onDisplay ? 'page' : null);
     }
     setText(`[data-state-of="${i}"]`, `${pad(i + 1)} · ${onDisplay ? 'On display' : p.obstructed ? 'Obstructed' : i === live ? 'On air' : 'Live'}`);
-    for (const shot of all(`.shot[data-shot="${i}"]`)) shot.toggleAttribute('data-obstructed', p.obstructed);
+    for (const shot of all(`.shot[data-shot="${i}"]`)) flag(shot, 'data-obstructed', p.obstructed);
+    // The radar only shows in the desktop subject panel at the hub.
     const dot = radar[i];
-    if (dot) {
-      dot.setAttribute('cx', (38 + (29 * (p.x - halo.cx)) / halo.rx).toFixed(1));
-      dot.setAttribute('cy', (38 + (29 * (p.y - halo.cy)) / halo.ry).toFixed(1));
-      dot.setAttribute('r', i === live ? '4.5' : '3');
-      dot.toggleAttribute('data-live', i === live);
-      dot.toggleAttribute('data-obstructed', p.obstructed);
+    if (dot && desk && !inCh) {
+      attr(dot, 'cx', (38 + (29 * (p.x - halo.cx)) / halo.rx).toFixed(1));
+      attr(dot, 'cy', (38 + (29 * (p.y - halo.cy)) / halo.ry).toFixed(1));
+      attr(dot, 'r', i === live ? '4.5' : '3');
+      flag(dot, 'data-live', i === live);
+      flag(dot, 'data-obstructed', p.obstructed);
     }
   });
   const inView = ps.filter((p) => !p.obstructed).length;
@@ -163,7 +174,7 @@ function renderLists(): void {
   setText('[data-front-num]', pad(live + 1));
   setText('[data-front-name]', content.channels[live]?.name ?? '');
   const cam = ps[ci];
-  for (const shot of all('.shot[data-shot="-1"]')) shot.toggleAttribute('data-obstructed', !!cam?.obstructed);
+  for (const shot of all('.shot[data-shot="-1"]')) flag(shot, 'data-obstructed', !!cam?.obstructed);
   setText('[data-cam-state]', cam?.obstructed ? 'Obstructed' : 'On air');
 }
 
@@ -216,8 +227,9 @@ function renderXray(): void {
     xr.style.transform = `translate3d(${(mx - R).toFixed(1)}px,${(my - R).toFixed(1)}px,0)`;
     xrIn.style.transform = `translate3d(${(R - mx).toFixed(1)}px,${(R - my).toFixed(1)}px,0)`;
     lens.style.transform = `translate3d(${(mx * scale - 120).toFixed(1)}px,${(my * scale - 120).toFixed(1)}px,0)`;
-    xr.toggleAttribute('data-on', hub);
-    lens.toggleAttribute('data-on', hub);
+    xr.style.boxShadow = '';
+    flag(xr, 'data-on', hub && pointerIn);
+    flag(lens, 'data-on', hub && pointerIn);
     bandLabel.style.display = '';
   } else {
     const bh = BAND / scale;
@@ -228,8 +240,8 @@ function renderXray(): void {
     xr.style.transform = `translate3d(0,${top.toFixed(1)}px,0)`;
     xr.style.boxShadow = `inset 0 ${1.5 / scale}px 0 #eeeaee, inset 0 ${-1.5 / scale}px 0 #eeeaee`;
     xrIn.style.transform = `translate3d(0,${(-top).toFixed(1)}px,0)`;
-    xr.toggleAttribute('data-on', hub && scanning);
-    lens.removeAttribute('data-on');
+    flag(xr, 'data-on', hub && scanning);
+    flag(lens, 'data-on', false);
     bandLabel.style.display = hub && scanning ? 'flex' : 'none';
     bandLabel.style.transform = `translateY(${(top * scale).toFixed(1)}px)`;
     setText('[data-depth]', String(Math.round(20 + (my * scale) / 10)));
@@ -269,10 +281,6 @@ card.addEventListener('pointerleave', (e) => {
   if (!desk) {
     scanning = false;
     syncHint();
-  }
-  if (reduce) {
-    mx = scene.chest.x;
-    my = scene.chest.y;
   }
   renderXray();
 });
@@ -390,14 +398,7 @@ function frame(now: number): void {
   last = now;
   if (state() === 'sealed') return;
   if (hover < 0) angle = advance(angle, dt, halo.turnSeconds);
-  if (desk && !pointerIn) {
-    // The lens drifts over her chest until you take it.
-    const t = now / 1000;
-    mx = scene.chest.x + 32 * Math.sin(t * 0.4);
-    my = scene.chest.y - 30 + 80 * Math.sin(t * 0.27);
-  }
   renderHalo();
-  if (view() === 'hub') renderXray();
   if (now - lastShots > 66) {
     lastShots = now;
     renderShots();
@@ -407,7 +408,7 @@ function frame(now: number): void {
 }
 
 function start(): void {
-  if (reduce || raf || document.hidden) return;
+  if (reduce || raf || document.hidden || state() !== 'open') return;
   last = 0;
   raf = requestAnimationFrame(frame);
 }
@@ -463,10 +464,19 @@ function focusSoon(el: HTMLElement | null | undefined): void {
   requestAnimationFrame(() => el.focus({ preventScroll: true }));
 }
 
+// Her X-ray is the biggest image and stays hidden until the case is open: load it then.
+function loadXray(): void {
+  for (const el of $$('[data-xray]')) {
+    el.setAttribute(el instanceof HTMLImageElement ? 'src' : 'href', xrayUrl);
+    el.removeAttribute('data-xray');
+  }
+}
+
 function openDoors(focus = true): void {
   if (state() !== 'sealed') return;
   caseEl.dataset.state = 'open';
   remember(true);
+  loadXray();
   applyInert();
   renderStatus();
   layout();
@@ -506,12 +516,13 @@ function route(user: boolean): void {
     caseEl.dataset.view = 'hub';
     if (user) focusSoon((desk ? feeds[prev] : keys[prev]) ?? null);
   }
+  if (state() === 'open') loadXray();
   applyInert();
   renderHalo(true);
   renderLists();
   layout();
   renderStatus();
-  if (state() === 'open') start();
+  start();
 }
 
 window.addEventListener('hashchange', () => route(true));
@@ -571,4 +582,4 @@ applyInert();
 layout();
 renderReadouts(performance.now());
 document.documentElement.dataset.booted = '';
-if (state() === 'open') start();
+start();

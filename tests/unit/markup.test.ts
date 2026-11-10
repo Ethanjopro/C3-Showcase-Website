@@ -41,11 +41,18 @@ describe('markup', () => {
     const withUrls = renderCase({ ...c, rsvpUrl: 'https://example.com/rsvp', sourceUrl: 'https://example.com/src' }, s, W);
     expect(withUrls).toContain('href="https://example.com/rsvp"');
     expect(withUrls).toContain('Read the code on GitHub');
+    expect(html).not.toContain('bar__follow');
+    expect(renderCase({ ...c, followUrl: 'https://example.com/f' }, s, W)).toContain('class="cap bar__rsvp bar__follow" href="https://example.com/f"');
   });
 
   it('escapes content', () => {
     expect(esc('<a href="x">&\'</a>')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;');
     expect(renderCase({ ...c, date: '<b>' }, s, W)).not.toContain('<b>');
+  });
+
+  it('leaves her X-ray to load when the case opens', () => {
+    expect(html).not.toContain('her-xray');
+    expect(count(/data-xray/g)).toBe(2);
   });
 
   it('only points at art in src/art', () => {

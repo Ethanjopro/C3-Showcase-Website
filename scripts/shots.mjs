@@ -30,6 +30,7 @@ const STATES = [
   { name: 'open', hash: '', open: true },
   { name: 'scan', hash: '', open: true, widths: [390], act: async (page) => page.mouse.move(195, 380) },
   { name: 'hover', hash: '', open: true, widths: [1440], act: async (page) => page.hover('.feed[data-feed="3"]') },
+  { name: 'lens', hash: '', open: true, widths: [1440], act: async (page) => page.mouse.move(720, 560) },
   { name: 'info', hash: '#info' },
   { name: 'rsvp', hash: '#rsvp', act: async (page) => page.fill('#copy-name', 'Ethan') },
   { name: 'projects', hash: '#projects' },

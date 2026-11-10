@@ -13,9 +13,10 @@
   top: 0;
   z-index: 60;
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   height: 44px;
   max-width: 520px;
   margin: 0 auto;
@@ -296,7 +297,8 @@
     top: 16px;
     right: 64px;
     left: auto;
-    display: block;
+    display: flex;
+    gap: 8px;
     height: auto;
     margin: 0;
     padding: 0;

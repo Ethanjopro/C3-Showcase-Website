@@ -14,8 +14,7 @@
     "shots": "node scripts/shots.mjs",
     "check": "tsc --noEmit && vitest run",
     "test:e2e": "vite build && playwright test",
-    "art": "node scripts/art/build.mjs",
-    "art:placeholders": "node scripts/art/placeholders.mjs"
+    "art": "node scripts/art.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

@@ -9,6 +9,10 @@
   overflow: hidden;
   background: var(--her-grey);
   touch-action: manipulation;
+  /* Holding her is the phone's X-ray gesture: no save-image menu, no text selection */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .card__view {
@@ -196,6 +200,21 @@ html[data-booted] .stage {
   font-size: var(--lfs, 16px);
   font-weight: 500;
   letter-spacing: 0.06em;
+}
+
+/* A dark halo so labels stay readable where they cross her light lines */
+.o-labels text {
+  paint-order: stroke;
+  stroke: #070608;
+  stroke-width: 0.32em;
+  stroke-linejoin: round;
+}
+
+/* Nothing animates where nobody can see it */
+.xr:not([data-on]) *,
+.case:not([data-view='channel']) .ch *,
+.case[data-state='sealed'] * {
+  animation-play-state: paused !important;
 }
 
 /* Desktop lens ring (page pixels, outside the scaled stage) */

@@ -23,6 +23,8 @@ export interface Content {
   about: string;
   rsvpUrl: string;
   rsvpSoon: string;
+  followUrl: string;
+  followLabel: string;
   calendarUrl: string;
   mapUrl: string;
   sourceUrl: string;
@@ -83,7 +85,7 @@ ${cams}
 ${svg('ring ring--front', ring(0))}
 ${svg('wires wires--front', wires)}
 <div class="stage__title" aria-hidden="true" style="left:${L.x}px;top:${L.y}px;width:${L.w}px;height:${L.h}px"></div>
-<div class="xr" aria-hidden="true"><div class="xr__in"><img src="${ART}her-xray.webp" alt="" width="${W}" height="${H}" decoding="async"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${organs()}</svg></div><span class="xr__scan"></span></div>
+<div class="xr" aria-hidden="true"><div class="xr__in"><img data-xray alt="" width="${W}" height="${H}" decoding="async"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${organs()}</svg></div><span class="xr__scan"></span></div>
 </div>`;
 }
 
@@ -206,7 +208,8 @@ function channelBody(c: Content, ch: Channel, s: Scene): string {
     case 'info':
       return `<div class="dateloc dateloc--ch"><div><p class="cap">Date</p><p class="big">${esc(c.date)}</p>${maybeLink(c.calendarUrl, 'Add to calendar →')}</div><div><p class="cap">Location</p><p class="big">${esc(c.location)}</p>${maybeLink(c.mapUrl, 'Open in maps →')}</div></div>
 <p class="body">${esc(c.about)}</p>
-<a class="lk" href="#rsvp">RSVP on Ch 02 →</a>`;
+<a class="lk" href="#rsvp">RSVP on Ch 02 →</a>
+${maybeLink(c.followUrl, `${esc(c.followLabel)} the showcase →`)}`;
     case 'rsvp':
       return `${c.rsvpUrl ? `<a class="rsvp" href="${esc(c.rsvpUrl)}" rel="noopener"><span class="rsvp__word">RSVP</span><span>Get on the list ${dot()}</span></a>` : `<p class="rsvp rsvp--soon"><span class="rsvp__word">RSVP</span><span>${esc(c.rsvpSoon)}</span></p>`}
 <p class="cap ch__kicker">Print your own copy</p>
@@ -222,7 +225,7 @@ function channelBody(c: Content, ch: Channel, s: Scene): string {
       return `<figure class="xray">
 <div class="xray__box">
 <svg class="xray__svg" viewBox="117 402 616 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="An X-ray of her: her drawing inverted, with machine parts drawn inside it: optics for eyes, a core chip, servos at the jaw, bellows for lungs, rib plates, a red pump for a heart, a spine bus and a power cell.">
-<image href="${ART}her-xray.webp" x="0" y="0" width="${W}" height="${H}"/>${organs()}</svg>
+<image data-xray x="0" y="0" width="${W}" height="${H}"/>${organs()}</svg>
 <span class="hud" aria-hidden="true"></span><span class="scan scan--dark" aria-hidden="true"></span>
 </div>
 <figcaption class="cap xray__cap">Fig. 02 · The subject, X-ray. Parts labeled.</figcaption>
@@ -278,7 +281,7 @@ export function renderCase(c: Content, s: Scene, widths: Widths): string {
   return `<header class="bar">
 <p class="cap bar__name">C3 Showcase</p>
 <p class="cap bar__status" aria-hidden="true">${dot()}<span data-status>Sealed</span></p>
-<a class="cap bar__rsvp" href="#rsvp">RSVP</a>
+${c.followUrl ? `<a class="cap bar__rsvp bar__follow" href="${esc(c.followUrl)}" rel="noopener">${esc(c.followLabel)}</a>` : ''}<a class="cap bar__rsvp" href="#rsvp">RSVP</a>
 </header>
 <main class="case" id="case" data-state="sealed" data-view="hub" data-channel="info">
 <script>/* Before first paint: open on a channel from the URL, or open if this visit already opened the case. */(function(m){var h=location.hash.slice(1);var ids=${JSON.stringify(c.channels.map((ch) => ch.id))};try{if(sessionStorage.getItem('c3.open')==='1')m.dataset.state='open';}catch(e){}if(ids.indexOf(h)>=0){m.dataset.state='open';m.dataset.view='channel';m.dataset.channel=h;}})(document.currentScript.parentNode);</script>
