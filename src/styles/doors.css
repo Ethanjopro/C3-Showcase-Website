@@ -1,0 +1,214 @@
+/* The doors, closed: two black leaves meeting at a seam. Her C3, the orbit of the
+   halo and the red tape are each drawn whole in both doors and clipped by them,
+   so they split exactly down the seam. Sized in container units, so the same
+   doors work at phone and desktop size. */
+
+.door {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  color: var(--ext-text);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.door--l {
+  background: radial-gradient(90% 60% at 100% 42%, #221e25 0%, var(--dark) 62%, #0f0d10 100%);
+}
+
+.door--r {
+  background: radial-gradient(90% 60% at 0% 42%, #221e25 0%, var(--dark) 62%, #0f0d10 100%);
+}
+
+.door__panel {
+  position: absolute;
+  inset: 14px 0 14px 14px;
+  box-shadow: inset 0 0 0 1px rgba(236, 231, 235, 0.12);
+}
+
+.door--r .door__panel {
+  inset: 14px 14px 14px 0;
+}
+
+.door__panel::after {
+  content: '';
+  position: absolute;
+  inset: 6px 6px 6px 6px;
+  box-shadow: inset 0 0 0 1px rgba(236, 231, 235, 0.05);
+}
+
+.door--l .door__panel::after {
+  right: 6px;
+}
+
+.door__col {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6.5cqh 0 5.5cqh;
+}
+
+.door--l .door__col {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.door--r .door__col {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.door__label {
+  padding-inline: 10cqw;
+  color: var(--ext-text);
+  letter-spacing: 0.2em;
+  font-size: clamp(10px, 3.8cqw, 11px);
+}
+
+/* Her C3, 1.8 doors wide, centred on the seam */
+.door__c3 {
+  position: relative;
+  flex: none;
+  width: 180cqw;
+  aspect-ratio: 450 / 270;
+}
+
+.door--l .door__c3 {
+  margin-right: -90cqw;
+}
+
+.door--r .door__c3 {
+  margin-left: -90cqw;
+}
+
+.door__c3art {
+  position: absolute;
+  inset: 0;
+  background-color: var(--ext-text);
+  -webkit-mask: url('../art/c3.svg') center / contain no-repeat;
+  mask: url('../art/c3.svg') center / contain no-repeat;
+}
+
+.orbit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.orbit ellipse {
+  fill: none;
+  stroke: #6f6875;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 7;
+}
+
+.orbit__cam {
+  fill: var(--ext-mute);
+}
+
+.orbit__live {
+  fill: var(--red);
+}
+
+.door__word {
+  padding-inline: 4.5cqw;
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  font-size: 30cqw;
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+  color: var(--ext-text);
+}
+
+/* The red tape, 1.17 doors wide, across the seam */
+.door__tape {
+  flex: none;
+  width: 117cqw;
+  height: clamp(34px, 14cqw, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--red);
+  color: #f7efef;
+  transform: rotate(-2.4deg);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.door--l .door__tape {
+  margin-right: -58.5cqw;
+}
+
+.door--r .door__tape {
+  margin-left: -58.5cqw;
+}
+
+.door__tape .cap {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  white-space: nowrap;
+}
+
+.door__open {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-inline: 5.5cqw;
+  color: var(--ext-mute);
+  letter-spacing: 0.2em;
+}
+
+.door--l .door__open {
+  flex-direction: row-reverse;
+}
+
+.door__handle {
+  width: 7px;
+  height: 44px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--ext-mute), var(--ext-text) 45%, var(--ext-mute));
+}
+
+.door__dl {
+  padding-inline: 10cqw;
+}
+
+.door__dl .cap {
+  color: var(--ext-mute);
+}
+
+.door__dl .big {
+  font-size: clamp(34px, 16cqw, 54px);
+  color: var(--ext-text);
+}
+
+.when-desk {
+  display: none;
+}
+
+/* The whole sealed case is one button, so a tap anywhere on the doors opens it */
+.seal {
+  position: absolute;
+  z-index: 40;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 1px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.seal:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: -8px;
+}
+
+.case:not([data-state='sealed']) .seal {
+  display: none;
+}

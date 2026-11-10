@@ -1,149 +1,25 @@
 <!doctype html>
-<!--
-  Template. scripts/vite/c3-html.ts fills it at build time:
-    {{ file.key }}           copy from src/content/<file>.json (escaped)
-    <c3-art slot>            one poster layer from src/art/manifest.json
-    <c3-frame seed>          her rough frame line, around the parent box
-    <c3-hatch seed>          her stacked hatching strokes
-    <c3-reg seed>            a registration mark (circle and cross) in her line
-    <c3-colorbar group>      the colorway radio group
-    <c3-menu-items>          one screen per section, for the menu
-    <c3-section-tag id>      a section's heading and menu number, from sections.json
-    <c3-screens>             the project teaser screens
-    <c3-if path> / <c3-unless path>   keep the block only when the value is (not) empty
-    <c3-boot>                inline boot script (colorway, js class, prehide) and the art URLs
-  Every [data-fx] mount and wrapper here is owned per PLAN "Rules for parallel sessions".
--->
-<html lang="{{ site.lang }}" data-colorway="teal-coral">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>{{ site.title }}</title>
-    <meta name="description" content="{{ site.description }}" />
-    <link rel="canonical" href="{{ site.url }}" />
-    <c3-boot></c3-boot>
-    <script type="module" src="/src/main.ts"></script>
-  </head>
-  <body>
-    <a class="skip-link" href="#info">{{ ui.skip }}</a>
-
-    <!-- Effect mounts with no visible box of their own. -->
-    <div class="fx-defs" aria-hidden="true">
-      <div data-fx="line-boil"></div>
-      <div data-fx="sketch-in"></div>
-      <div data-fx="misregister"></div>
-      <div data-fx="crt-screens"></div>
-    </div>
-    <div class="fx-layer fx-layer--grain" data-fx="paper-grain" aria-hidden="true"></div>
-    <div class="fx-layer fx-layer--wipe" data-fx="palette" aria-hidden="true"></div>
-
-    <header class="chrome">
-      <c3-if path="event.rsvp.url">
-        <a class="chrome__button chrome__button--rsvp" href="{{ event.rsvp.url }}" data-rsvp-chip hidden>{{ event.rsvp.label }}</a>
-      </c3-if>
-      <button class="chrome__button" type="button" aria-haspopup="dialog" aria-controls="menu" data-menu-open hidden>
-        {{ ui.menu }}
-      </button>
-    </header>
-
-    <main id="main">
-      <section id="poster" class="poster-section" aria-labelledby="poster-title">
-        <h1 id="poster-title" class="visually-hidden">{{ event.name }}</h1>
-        <div class="regmarks" aria-hidden="true">
-          <c3-reg seed="61"></c3-reg><c3-reg seed="62"></c3-reg><c3-reg seed="63"></c3-reg><c3-reg seed="64"></c3-reg>
-        </div>
-
-        <div class="poster-stage" data-prehide="c3-window" style="{{ art.frameVars }}">
-          <div class="poster" role="img" aria-label="{{ site.posterAlt }}">
-            <c3-art slot="paper"></c3-art>
-            <c3-art slot="wings"></c3-art>
-            <c3-art slot="fill"></c3-art>
-            <c3-art slot="lineart"></c3-art>
-            <c3-art slot="ribcage"></c3-art>
-            <div class="layer layer--xray"><div class="fx-mount" data-fx="xray"></div></div>
-            <c3-art slot="eyescreen"></c3-art>
-            <c3-art slot="cables"></c3-art>
-            <c3-art slot="halo"></c3-art>
-            <c3-art slot="title"></c3-art>
-          </div>
-          <button class="halo-hit" type="button" style="{{ art.haloHit }}" data-menu-open="halo" title="{{ ui.haloLabel }}" tabindex="-1" aria-hidden="true" hidden></button>
-          <div class="fx-mount" data-fx="c3-window" aria-hidden="true"></div>
-        </div>
-
-        <div class="poster-print">
-          <p class="print print--date"><span class="print__label">{{ event.dateLabel }}</span> <span class="print__value">{{ event.date }}</span></p>
-          <p class="print print--class">{{ event.class }}</p>
-          <p class="print print--location"><span class="print__label">{{ event.locationLabel }}</span> <span class="print__value">{{ event.location }}</span></p>
-          <c3-colorbar group="poster"></c3-colorbar>
-          <div class="print print--xray" data-fx="xray" data-part="toggle"></div>
-        </div>
-      </section>
-
-      <section id="info" class="panel" aria-labelledby="info-title">
-        <c3-frame seed="11"></c3-frame>
-        <header class="panel__header">
-          <c3-section-tag id="info"></c3-section-tag>
-          <div class="fx-mount" data-fx="panel-wipe" aria-hidden="true"></div>
-        </header>
-        <dl class="facts">
-          <div class="fact">
-            <dt class="fact__label"><c3-hatch seed="3"></c3-hatch>{{ event.dateLabel }}</dt>
-            <dd class="fact__value">{{ event.date }}</dd>
-          </div>
-          <div class="fact">
-            <dt class="fact__label"><c3-hatch seed="5"></c3-hatch>{{ event.locationLabel }}</dt>
-            <dd class="fact__value">{{ event.location }}</dd>
-          </div>
-        </dl>
-        <div class="info-actions">
-          <p class="info-about">{{ event.about }}</p>
-          <c3-if path="event.rsvp.url">
-            <a class="button" href="{{ event.rsvp.url }}">{{ event.rsvp.label }}</a>
-          </c3-if>
-          <c3-unless path="event.rsvp.url">
-            <p class="soon"><span class="soon__mark">{{ event.rsvp.label }}</span> {{ event.rsvp.soon }}</p>
-          </c3-unless>
-          <c3-if path="event.follow.url">
-            <a class="link" href="{{ event.follow.url }}">{{ event.follow.label }}</a>
-          </c3-if>
-        </div>
-      </section>
-
-      <section id="projects" class="panel panel--projects" aria-labelledby="projects-title">
-        <c3-frame seed="13"></c3-frame>
-        <header class="panel__header">
-          <c3-section-tag id="projects"></c3-section-tag>
-          <div class="fx-mount" data-fx="panel-wipe" data-part="projects" aria-hidden="true"></div>
-        </header>
-        <c3-screens></c3-screens>
-        <p class="teaser">{{ projects.teaser }}</p>
-      </section>
-    </main>
-
-    <footer id="credits" class="panel panel--credits" aria-labelledby="credits-title">
-      <c3-frame seed="17"></c3-frame>
-      <header class="panel__header">
-        <c3-section-tag id="credits"></c3-section-tag>
-        <div class="fx-mount" data-fx="panel-wipe" data-part="credits" aria-hidden="true"></div>
-      </header>
-      <div class="credits">
-        <p>{{ site.credits.art }}</p>
-        <p>{{ site.credits.site }}</p>
-        <c3-if path="event.follow.url">
-          <p><a class="link" href="{{ event.follow.url }}">{{ event.follow.label }}</a></p>
-        </c3-if>
-        <c3-colorbar group="credits"></c3-colorbar>
-        <p><a class="link" href="#poster">{{ ui.backToTop }}</a></p>
-      </div>
-    </footer>
-
-    <dialog id="menu" class="menu" aria-labelledby="menu-title">
-      <h2 id="menu-title" class="visually-hidden">{{ ui.menuTitle }}</h2>
-      <nav aria-labelledby="menu-title">
-        <ul class="menu__list"><c3-menu-items></c3-menu-items></ul>
-      </nav>
-      <div class="fx-mount menu__ring" data-fx="halo-menu" aria-hidden="true"></div>
-      <button class="chrome__button menu__close" type="button" data-menu-close>{{ ui.close }}</button>
-    </dialog>
-  </body>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<meta name="theme-color" content="#DEDDE1">
+<link rel="canonical" href="{{url}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{url}}">
+<meta property="og:image" content="{{url}}og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The C3 Showcase site: her painting in an open black case, a halo of six cameras turning above her head, live feeds of her on the left door and readouts on the right.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141216'/%3E%3Cellipse cx='16' cy='16' rx='12' ry='4' fill='none' stroke='%23ECE7EB' stroke-width='2'/%3E%3Ccircle cx='16' cy='20' r='3' fill='%23C8102E'/%3E%3C/svg%3E">
+<script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+<!--case-->
+</body>
 </html>

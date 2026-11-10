@@ -1,6 +1,6 @@
 ---
 name: run-c3-showcase
-description: Build, run, screenshot and drive the C3 Showcase site (Vite + TypeScript poster site). Use when asked to start or preview the site, take screenshots at phone or desktop size, click/tap/swipe through it, check an effect in a real browser, run its tests, or compare it with her drafts.
+description: Build, run, screenshot and drive the C3 Showcase site (Vite + TypeScript, "the case"). Use when asked to start or preview the site, take screenshots at phone or desktop size, click/tap through it, check the halo, doors, channels or X-ray in a real browser, run its tests, or compare it with her art and the mockups.
 ---
 
 The C3 Showcase site is a static Vite build. Agents drive it with
@@ -20,10 +20,9 @@ npm ci
 ## Build
 
 ```bash
-npm run build          # dist/; content and art are baked into index.html here
+npm run build          # dist/; the page is baked into index.html from src/content and src/art
+npm run art            # only after replacing her files in art-src/
 ```
-
-Re-run `npm run art` first if you changed `src/art/manifest.json` or a file in `art-src/`.
 
 ## Run (agent path): the driver
 
@@ -32,132 +31,88 @@ default, or the live source with `--dev` (no build needed). Screenshots land in
 `.shots/driver/<name>.png`. The exit code is 1 if the page logged console errors.
 
 ```bash
-node .claude/skills/run-c3-showcase/driver.mjs <<'EOF'
+node .claude/skills/run-c3-showcase/driver.mjs <<'EOF2'
 open phone
-ss phone-top
-colorway black-red
-tap [data-menu-open=""]
-wait dialog#menu[open]
-ss phone-menu
-click dialog#menu a[href="#projects"]
-wait 600
-eval document.activeElement.id
-swipe 0.5 0.8 0.5 0.2
-scroll #credits
-ss phone-credits
-open desktop ?off=all reduced
-ss desktop-reduced
+ss phone-sealed
+tap .seal
+wait 1600
+state
+ss phone-open
+tap .key[data-key="1"]
+wait 1300
+ss phone-rsvp
+press Escape
+open desktop ?still=20
+click .seal
+wait 1700
+hover .feed[data-feed="3"]
+ss desktop-hover
+goto ?still=20#inside
+ss desktop-inside
+open desktop reduced
 errors
 quit
-EOF
+EOF2
 ```
 
-Then **look at the PNGs** (Read them). Live source, no build:
-
-```bash
-node .claude/skills/run-c3-showcase/driver.mjs --dev <<'EOF'
-open desktop ?freeze=0
-ssel .poster-stage dev-poster
-errors
-quit
-EOF
-```
-
-Interactive, one command at a time:
-
-```bash
-tmux new-session -d -s c3 -x 200 -y 50
-tmux send-keys -t c3 'node .claude/skills/run-c3-showcase/driver.mjs' Enter
-timeout 60 bash -c 'until tmux capture-pane -t c3 -p | grep -q "Type help"; do sleep 0.3; done'
-tmux send-keys -t c3 'open phone' Enter
-timeout 60 bash -c 'until tmux capture-pane -t c3 -p | grep -q "opened phone"; do sleep 0.3; done'
-tmux send-keys -t c3 'ss tmux-top' Enter
-tmux send-keys -t c3 'quit' Enter
-tmux kill-session -t c3
-```
+Then **look at the PNGs** (Read them).
 
 | command | what it does |
 |---|---|
 | `open [phone\|desktop] [?query] [reduced]` | New page: phone is 390×844 with touch, desktop is 1440×900. Waits for `html[data-booted]` and fonts. `reduced` emulates prefers-reduced-motion. |
-| `goto <path or ?query>` | Navigate the current page. |
+| `goto <path or ?query#hash>` | Navigate the current page. |
 | `ss [name]` / `ssfull [name]` / `ssel <selector> [name]` | Viewport / full page / one element → `.shots/driver/`. |
 | `click` / `tap` / `hover <selector>` | `tap` is a real touch on phone. |
-| `swipe x0 y0 x1 y1` | Viewport fractions; CDP touch events on phone, mouse drag on desktop. |
-| `scroll <selector or pixels>` | Instant scroll; prints `scrollY`. |
+| `swipe x0 y0 x1 y1` | Viewport fractions; touch on phone, mouse drag on desktop. |
 | `press <key>` | `Tab`, `Enter`, `Escape`… |
-| `colorway <id>` | Click that swatch, e.g. `black-red`. |
+| `state` | The case's `data-state` (sealed/open), `data-view` (hub/channel), `data-channel`, and the hash. |
 | `wait <ms or selector>` | |
 | `eval <js>` | Prints the JSON result. |
 | `errors` | Console and page errors so far. |
 
-Useful query strings (they work on any URL): `?off=xray,palette`,
-`?only=line-boil`, `?off=all` (static poster only), `?freeze=<ms>` (pins the
-effect clock, so stepped effects screenshot the same every time) and
-`?quality=full|lite|static`.
+Useful URLs: `?still=<degrees>` pins the halo at an angle with nothing moving
+(repeatable screenshots); `#info` … `#credits` open a channel directly (the case
+opens itself); `#halo` is the hub. The case remembers it was opened for the tab's
+session (`sessionStorage c3.open`).
 
-## Screenshots for review (CLAUDE.md "verify")
+The X-ray band on phone needs a held touch; synthesize one in `eval`:
+`new TouchEvent('touchstart', {touches: [new Touch({identifier: 1, target: card, clientX: 200, clientY: 320})], bubbles: true})`
+on `[data-card]`, wait 300 ms, then check `.xr[data-on]`. A mouse over the card on the phone layout scans too.
 
-```bash
-npm run build && npm run shots          # every section at 390 and 1440, -reduced variants, menu, page
-npm run shots -- --no-build xray        # one effect's shots.json states; keeps the other files
-```
-
-Output: `.shots/<section>@<width>.png` and `.shots/<effect>-<state>@<width>.png`.
-Effect states go in `src/effects/<name>/shots.json` (format in PLAN 1.9).
-
-## Direct invocation (core code without a browser)
-
-Pure core functions are unit-tested with vitest in Node. Copy a test in
-`tests/unit/` (for example `ticker.test.ts`, which drives `createTicker` with a
-hand-cranked driver) and run it:
+## Screenshots for review (CLAUDE.md "Check your work")
 
 ```bash
-npx vitest run tests/unit/ticker.test.ts
+npm run shots                 # every state at 390 and 1440, plus -reduced variants
+npm run shots -- --no-build inside rsvp
 ```
 
-## Run (human path)
-
-```bash
-npm run dev            # http://localhost:5173, Ctrl-C to stop. Useless headless; use the driver.
-```
+Output: `.shots/<state>@<width>.png` for sealed, open, scan (390), hover (1440),
+info, rsvp, projects, inside, source, credits.
 
 ## Test
 
 ```bash
-npm run check          # tsc + vitest: 58 tests
-npm run test:e2e       # builds, then Playwright: 52 pass, 2 skipped by design (build checks run on desktop only)
+npm run check          # tsc + vitest (halo math, markup, title fitting, copy, contrast)
+npm run test:e2e       # builds, then Playwright at both sizes: keyboard path, reduced motion, axe, layout shift, reference/ not shipped
 ```
 
 ## Gotchas
 
-- **Vite quits when stdin ends.** Vite listens for `end` on stdin and shuts
-  down when it fires, so a driver serving through Vite died the moment a
-  heredoc finished, before any command ran. The driver detaches that listener;
-  keep that if you write another stdin-driven script that uses Vite's
+- **Vite quits when stdin ends.** The driver detaches Vite's `end` listener on
+  stdin; keep that if you write another stdin-driven script that uses Vite's
   `preview()` or `createServer()`.
-- **`npx playwright test` reuses a stale `dist/`.** Its web server is
-  `vite preview`, so changes don't show until you rebuild. Use
-  `npm run test:e2e`, which builds first.
+- **`npx playwright test` reuses a stale `dist/`.** Use `npm run test:e2e`, which builds first.
 - **Don't run `npx playwright install`.** `@playwright/test` and
   `playwright-core` are pinned to 1.56.1 because the cloud image ships that
-  version's Chromium (revision 1194). A newer `playwright-core`, for example
-  one pulled in as a peer of `@axe-core/playwright`, splits the types and
-  fails `tsc`.
-- **Art URLs live in an inline `<style>` in `index.html`, not in CSS
-  variables.** A `url()` inside a custom property resolves against the
-  stylesheet (`dist/assets/`), not the page, so every mask silently 404'd.
-  `scripts/vite/c3-html.ts` writes those rules.
-- **Smooth scrolling is on** (`scroll-behavior: smooth`). Scroll with
-  `behavior: 'instant'` before screenshotting, or you capture mid-scroll.
-  The driver's `scroll` already does.
-- **Full-page screenshots put the fixed Menu button wherever the viewport
-  was.** It's an artifact, not a layout bug. `npm run shots` hides the chrome
-  for section captures.
-- **Section headings, copy and art are baked in at build time** (by
-  `scripts/vite/c3-html.ts`). Changing `src/content/*.json` or the manifest
-  needs a rebuild, or `--dev`.
+  version's Chromium.
+- **Never give an element the id a channel's hash uses** (`#info` …): the
+  browser would scroll the 3D case to reveal it. Sections are `#ch-info` and so on.
+- **The page is baked at build time** (`scripts/vite/case-html.ts`). Editing
+  `site.json`, `scene.json` or `markup.ts` needs a rebuild, or `--dev`.
+- **A focused feed or camera stops the turn** (keyboard focus only). If the halo
+  seems frozen in a test, check `document.activeElement`.
 
 ## Troubleshooting
 
 - **`Port 4190 is already in use`**: another driver is still running. Quit it, or pass `--port 4191`.
-- **`warn: html[data-booted] never appeared`**: `main.ts` didn't boot. Check `errors`. Often an effect threw during init, though the page still renders.
+- **`warn: html[data-booted] never appeared`**: `main.ts` didn't boot. Check `errors`.

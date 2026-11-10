@@ -1,7 +1,0 @@
-{
-  "$comment": "mode: teaser shows `screens` empty screens and the teaser line; items fill the archive later (out of scope for launch).",
-  "mode": "teaser",
-  "screens": 6,
-  "teaser": "Projects are revealed at the show.",
-  "items": []
-}

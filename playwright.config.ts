@@ -1,14 +1,13 @@
 import { defineConfig } from '@playwright/test';
 
-// `npm run test:e2e` builds, then runs these against `vite preview`.
-// Tests live in tests/e2e/ (shared) and src/effects/<name>/<name>.spec.ts
-// (owned by each effect step). Chromium only; @playwright/test is pinned to the
-// version whose Chromium the cloud image ships.
+// `npm run test:e2e` builds, then runs tests/e2e against `vite preview`.
+// Chromium only; @playwright/test is pinned to the version whose Chromium the
+// cloud image ships.
 const PORT = 4173;
 
 export default defineConfig({
   testDir: '.',
-  testMatch: ['tests/e2e/**/*.spec.ts', 'src/effects/*/*.spec.ts'],
+  testMatch: ['tests/e2e/**/*.spec.ts'],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   reporter: process.env.CI ? [['github'], ['list']] : 'list',

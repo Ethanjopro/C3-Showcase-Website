@@ -1,6 +1,0 @@
-[
-  { "name": "info-covered", "query": "?only=panel-wipe&freeze=0", "steps": [{ "scrollTo": "#info" }, { "wait": 300 }], "viewports": [390] },
-  { "name": "info-mid-wipe", "query": "?only=panel-wipe&freeze=220", "steps": [{ "scrollTo": "#info" }, { "wait": 300 }] },
-  { "name": "info-end", "query": "?only=panel-wipe", "steps": [{ "scrollTo": "#info" }, { "wait": 900 }] },
-  { "name": "info-reduced", "query": "?only=panel-wipe", "steps": [{ "scrollTo": "#info" }, { "wait": 300 }], "viewports": [390], "reducedMotion": true }
-]

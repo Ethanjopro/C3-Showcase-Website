@@ -1,9 +1,0 @@
-{
-  "$comment": "Copy for the xray effect (PLAN step 4): the X-ray toggle in the poster's small print, and the hint beside it. The hint names the gesture this device has; static (reduced motion) offers the toggle alone.",
-  "toggle": "X-ray",
-  "hint": {
-    "touch": "or scribble across her chest",
-    "pointer": "or move over her chest",
-    "static": "see through her chest"
-  }
-}
