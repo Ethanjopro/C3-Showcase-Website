@@ -142,7 +142,7 @@
 }
 
 .feed__state {
-  font-size: 10px;
+  font-size: 11px;
   opacity: 0.75;
 }
 
@@ -206,7 +206,7 @@
 
 .subject__stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 18px;
   padding-bottom: 16px;
@@ -308,7 +308,7 @@
 
 .radar .cap {
   color: var(--mute);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .radar__orbit {
@@ -368,7 +368,7 @@
 }
 
 .subject__tc {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--mute);
 }
@@ -393,7 +393,7 @@
   padding: 1px 5px;
   background: rgba(23, 21, 26, 0.85);
   color: var(--dtext);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .subject__ch .btn--solid {
@@ -407,7 +407,8 @@
 /* Narrow doors (small laptops): tighter feeds, the essentials only */
 @container (max-width: 279px) {
   .feed__desc,
-  .wing__foot {
+  .wing__foot,
+  .subject .tba {
     display: none;
   }
   .feeds__list {
@@ -440,12 +441,6 @@
   .subject__ch .btn {
     padding: 0 8px;
     letter-spacing: 0.04em;
-  }
-  .subject__stats {
-    grid-template-columns: 1fr 1fr;
-  }
-  .subject__stats > :nth-child(3) {
-    display: none;
   }
 }
 
@@ -563,7 +558,7 @@
 
 .key__num {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.06em;
   opacity: 0.72;

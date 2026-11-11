@@ -20,7 +20,7 @@ const caseState = (page: Page) =>
 test('arrives sealed, saying what, when and where, and opens with one tap', async ({ page }) => {
   const errors = await boot(page);
   await expect(page.locator('h1')).toContainText('C3 Showcase');
-  await expect(page.locator('h1')).toContainText('Date 0.0.0');
+  await expect(page.locator('h1')).toContainText(/Date \S+.*Location \S+/);
   await expect(page.locator('.door--l .door__dl .big')).toBeVisible();
   expect((await caseState(page)).state).toBe('sealed');
   await page.locator('.seal').click();
@@ -78,6 +78,64 @@ test('the halo turns, and stops for a hovered or focused camera', async ({ page 
   const held = await cam.evaluate((el: HTMLElement) => el.style.transform);
   await page.waitForTimeout(400);
   expect(await cam.evaluate((el: HTMLElement) => el.style.transform)).toBe(held);
+});
+
+test('tuning in swings that channel\'s camera round to the front, so its feed is never blocked', async ({ page }, info) => {
+  await boot(page);
+  await page.locator('.seal').click();
+  const list = info.project.name === 'desktop' ? '.feed' : '.key';
+  const attr = info.project.name === 'desktop' ? 'data-feed' : 'data-key';
+  for (const i of [3, 0]) {
+    await page.locator(list).nth(i).click();
+    await expect.poll(async () => (await caseState(page)).view).toBe('channel');
+    // The swing takes about a second; then the camera holds at the front.
+    await expect(page.locator(`${list}[${attr}="${i}"]`)).toHaveAttribute('data-live', '', { timeout: 3000 });
+    await page.waitForTimeout(1300);
+    await expect(page.locator(`${list}[${attr}="${i}"]`)).not.toHaveAttribute('data-obstructed');
+    await expect(page.locator('.shot[data-shot="-1"]').first()).not.toHaveAttribute('data-obstructed');
+    await page.locator('.tc__back').click();
+    await expect.poll(async () => (await caseState(page)).view).toBe('hub');
+    // Back at the hub, it's still the camera at the front.
+    await expect(page.locator(`.cam[data-cam="${i}"]`)).toHaveAttribute('data-live', '');
+  }
+});
+
+test('a deep link lands with its camera already at the front', async ({ page }) => {
+  // Projects' camera starts behind her head; arriving on its channel brings it round at once.
+  await boot(page, './#projects');
+  await expect(page.locator('.shot[data-shot="-1"]').first()).not.toHaveAttribute('data-obstructed');
+  await expect(page.locator('.key[data-key="2"]')).toHaveAttribute('data-live', '');
+  await expect(page.locator('.key[data-key="2"]')).not.toHaveAttribute('data-obstructed');
+});
+
+test('on a phone, swiping a channel sideways goes to the next or the one before', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'touch');
+  await boot(page, './#rsvp');
+  const swipe = (x0: number, x1: number) =>
+    page.locator('.tc').evaluate(
+      (tc, [a, b]) => {
+        const t = (x: number) => new Touch({ identifier: 1, target: tc, clientX: x, clientY: 500 });
+        tc.dispatchEvent(new TouchEvent('touchstart', { touches: [t(a!)], bubbles: true }));
+        tc.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t(b!)], bubbles: true }));
+      },
+      [x0, x1],
+    );
+  await swipe(320, 80);
+  await expect.poll(async () => (await caseState(page)).channel).toBe('projects');
+  await swipe(80, 320);
+  await expect.poll(async () => (await caseState(page)).channel).toBe('rsvp');
+  await swipe(200, 230); // too short: stays put
+  await page.waitForTimeout(200);
+  expect((await caseState(page)).channel).toBe('rsvp');
+});
+
+test('saving your poster downloads it and says so', async ({ page }) => {
+  await boot(page, './#rsvp');
+  await page.locator('#copy-name').fill('Ada');
+  const download = page.waitForEvent('download');
+  await page.locator('[data-save]').click();
+  expect((await download).suggestedFilename()).toBe('c3-showcase-ada.png');
+  await expect(page.locator('[data-copy-status]')).toHaveText(/Saved/);
 });
 
 test.describe('reduced motion', () => {

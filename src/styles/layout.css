@@ -174,7 +174,7 @@
 }
 
 .tc__phone .cap {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .tc__ch {
@@ -219,7 +219,7 @@
 }
 
 .tc__scroll {
-  padding: 22px 18px 18px;
+  padding: 22px 18px 44px;
 }
 
 .tc__foot {
@@ -394,6 +394,19 @@
     transform: rotateY(180deg);
   }
 
+  /* Once a door has swung, its far side stops being drawn at all (it was only
+     turned away, which still left it under the pointer and in the way of checks). */
+  .wing__out,
+  .wing__in {
+    transition: visibility 0s linear 0s;
+  }
+
+  .case:not([data-state='sealed']) .wing__out,
+  .case[data-state='sealed'] .wing__in {
+    visibility: hidden;
+    transition: visibility 0s linear var(--t-door);
+  }
+
   .case[data-state='sealed'] .wing--l {
     transform: rotateY(180deg);
   }
@@ -538,7 +551,11 @@
   }
 
   .tc__scroll {
-    padding: 24px 40px 20px;
+    padding: 24px 40px 40px;
+  }
+
+  .cam::before {
+    inset: -14px -10px;
   }
 
   .tc__foot {

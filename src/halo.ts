@@ -62,6 +62,17 @@ export function frontIndex(ps: Pose[]): number {
   return best;
 }
 
+/** The halo angle that brings this camera round to the front. In [0, 360). */
+export function frontAngle(cam: CameraArt): number {
+  return (((90 - cam.base) % 360) + 360) % 360;
+}
+
+/** The shorter way round from one angle to another, in degrees: (-180, 180]. */
+export function shortestTurn(from: number, to: number): number {
+  const d = (((to - from) % 360) + 360) % 360;
+  return d > 180 ? d - 360 : d;
+}
+
 /** Next angle after `dt` seconds of turning. Kept in [0, 360). */
 export function advance(angle: number, dt: number, turnSeconds: number): number {
   return (((angle + (dt * 360) / turnSeconds) % 360) + 360) % 360;

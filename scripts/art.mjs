@@ -1,7 +1,7 @@
 // npm run art: turns her source files in art-src/ into the files the site ships
 // in src/art/. Re-run it after replacing anything in art-src/ (see art-src/README.md).
 //
-//   her.webp             her painting, as she sent it          -> src/art/her.webp
+//   her.webp + grade.json  her painting, recoloured to the site -> src/art/her.webp
 //   (derived)            an X-ray film of her painting         -> src/art/her-xray.webp
 //   occluder.png         alpha: her head, hair and wings       -> src/art/occluder.webp
 //   cameras/camera-NN-line.png + -fill.png                     -> src/art/camera-NN.webp
@@ -21,8 +21,28 @@ await mkdir(OUT, { recursive: true });
 const PLUM = { r: 0x3a, g: 0x27, b: 0x31 };
 const BODY = { r: 0xe2, g: 0xda, b: 0xde };
 
-// Her painting: re-encoded once, never resized (it is the star; 853 x 1280 is what we have).
-await sharp(path.join(SRC, 'her.webp')).webp({ quality: 88, effort: 6 }).toFile(path.join(OUT, 'her.webp'));
+// Her painting, never resized (it is the star; 853 x 1280 is what we have), recoloured
+// into the site's palette by grade.json: a gradient map on brightness, mixed over her colours.
+{
+  const grade = JSON.parse(await readFile(path.join(SRC, 'grade.json'), 'utf8'));
+  const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const stops = grade.stops.map(([at, h]) => [at, hex(h)]);
+  const k = grade.strength ?? 0;
+  const { data, info } = await sharp(path.join(SRC, 'her.webp')).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const out = Buffer.alloc(data.length);
+  for (let i = 0; i < data.length; i += 3) {
+    const l = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+    let j = 1;
+    while (j < stops.length - 1 && stops[j][0] < l) j++;
+    const [a0, c0] = stops[j - 1];
+    const [a1, c1] = stops[j];
+    const t = Math.max(0, Math.min(1, (l - a0) / (a1 - a0 || 1)));
+    for (let c = 0; c < 3; c++) out[i + c] = Math.round(data[i + c] * (1 - k) + (c0[c] + (c1[c] - c0[c]) * t) * k);
+  }
+  await sharp(out, { raw: { width: info.width, height: info.height, channels: 3 } })
+    .webp({ quality: 88, effort: 6 })
+    .toFile(path.join(OUT, 'her.webp'));
+}
 
 // X-ray film: luminance inverted, the paper pushed to black and her line to white, a cold tint.
 {
