@@ -22,12 +22,14 @@ const PLUM = { r: 0x3a, g: 0x27, b: 0x31 };
 const BODY = { r: 0xe2, g: 0xda, b: 0xde };
 
 // Her painting, never resized (it is the star; 853 x 1280 is what we have), recoloured
-// into the site's palette by grade.json: a gradient map on brightness, mixed over her colours.
+// into the site's palette by grade.json: a gradient map on brightness that keeps a little of
+// her hue, mixed over her colours.
 {
   const grade = JSON.parse(await readFile(path.join(SRC, 'grade.json'), 'utf8'));
   const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const stops = grade.stops.map(([at, h]) => [at, hex(h)]);
   const k = grade.strength ?? 0;
+  const keep = grade.keepColour ?? 0;
   const { data, info } = await sharp(path.join(SRC, 'her.webp')).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const out = Buffer.alloc(data.length);
   for (let i = 0; i < data.length; i += 3) {
@@ -37,7 +39,11 @@ const BODY = { r: 0xe2, g: 0xda, b: 0xde };
     const [a0, c0] = stops[j - 1];
     const [a1, c1] = stops[j];
     const t = Math.max(0, Math.min(1, (l - a0) / (a1 - a0 || 1)));
-    for (let c = 0; c < 3; c++) out[i + c] = Math.round(data[i + c] * (1 - k) + (c0[c] + (c1[c] - c0[c]) * t) * k);
+    for (let c = 0; c < 3; c++) {
+      // The stop colour, plus some of her own hue (her colour minus its grey).
+      const target = c0[c] + (c1[c] - c0[c]) * t + keep * (data[i + c] - l * 255);
+      out[i + c] = Math.max(0, Math.min(255, Math.round(data[i + c] * (1 - k) + target * k)));
+    }
   }
   await sharp(out, { raw: { width: info.width, height: info.height, channels: 3 } })
     .webp({ quality: 88, effort: 6 })

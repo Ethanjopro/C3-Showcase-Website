@@ -421,6 +421,7 @@ function bringToFront(i: number, instant: boolean): void {
 let raf = 0;
 let last = 0;
 let lastShots = 0;
+let lastAngle = NaN;
 function frame(now: number): void {
   raf = requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - (last || now)) / 1000);
@@ -430,12 +431,18 @@ function frame(now: number): void {
     const k = Math.max(0, Math.min(1, (now - turn.t0) / turn.ms));
     const eased = 1 - (1 - k) ** 3;
     angle = (((turn.from + turn.by * eased) % 360) + 360) % 360;
-    if (k >= 1) turn = null;
+    if (k >= 1) {
+      angle = (((turn.from + turn.by) % 360) + 360) % 360;
+      turn = null;
+    }
   } else if (hover < 0 && view() === 'hub') {
     angle = advance(angle, dt, halo.turnSeconds);
   }
+  const moved = angle !== lastAngle;
+  lastAngle = angle;
   renderHalo();
-  if (turn || now - lastShots > 66) {
+  // Held still (a channel on air, a hovered camera): the feeds don't change, so skip them.
+  if (moved && (turn || now - lastShots > 66)) {
     lastShots = now;
     renderShots();
     renderLists();

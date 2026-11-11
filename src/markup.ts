@@ -234,7 +234,7 @@ ${maybeLink(c.followUrl, `${esc(c.followLabel)} the showcase →`)}`;
 <p class="cap ch__kicker">${c.rsvpUrl ? 'Then make your own poster' : 'While you wait, make your own poster'}</p>
 <p class="body">Type your name. It goes into the small print and the red marks grow from it, so no two posters match.</p>
 <div class="copy">
-<div class="copy__form"><label class="cap copy__label" for="copy-name">Your name</label><input class="copy__input" id="copy-name" name="name" type="text" maxlength="18" autocomplete="given-name" spellcheck="false" value=""><button class="btn btn--line btn--light copy__save" type="button" data-save>Save my poster</button><p class="cap copy__status" role="status" data-copy-status></p></div>
+<div class="copy__form"><label class="cap copy__label" for="copy-name">Your name</label><input class="copy__input" id="copy-name" name="name" type="text" maxlength="18" autocomplete="given-name" spellcheck="false" value=""><button class="btn btn--line btn--light copy__save" type="button" data-save>Save my poster</button><p class="copy__status" role="status" data-copy-status></p></div>
 <figure class="copy__card" aria-label="Your poster, with your name in the small print"><img src="${ART}her.webp" alt="" width="${W}" height="${H}" decoding="async"><span class="copy__title"></span><svg class="copy__marks" viewBox="0 0 150 243" preserveAspectRatio="none" aria-hidden="true" data-marks></svg><figcaption class="copy__foot"><span class="copy__name" data-copy-name>YOUR NAME</span><span class="copy__no">COPY <span data-copy-no>000000</span> · ${esc(c.date)}</span></figcaption></figure>
 </div>`;
     case 'projects':

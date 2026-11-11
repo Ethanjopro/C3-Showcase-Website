@@ -1,6 +1,7 @@
 {
-  "$comment": "How npm run art recolours her painting to sit in the site's palette (plum, ink, lavender paper). Each pixel's brightness (0 dark to 1 light) picks a colour from these stops, then that colour is mixed over hers by 'strength'. Set strength to 0 to ship her colours exactly as she painted them. Her file in art-src is never changed, and the X-ray is always made from her original.",
+  "$comment": "How npm run art recolours her painting to sit in the site's palette (plum, ink, lavender paper). Each pixel's brightness (0 dark to 1 light) picks a colour from these stops; keepColour adds back that much of her own hue on top (it keeps her cool dress shadows apart from the warm background); then the result is mixed over her colours by 'strength'. Set strength to 0 to ship her colours exactly as she painted them. Her file in art-src is never changed, and the X-ray is always made from her original.",
   "strength": 0.85,
+  "keepColour": 0.55,
   "stops": [
     [0, "#100d12"],
     [0.22, "#2a1b24"],
