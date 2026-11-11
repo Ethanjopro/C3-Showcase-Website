@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import scene from '../../src/art/scene.json';
-import { advance, aim, frontIndex, OBSTRUCTED_BELOW, pose, poses, wire } from '../../src/halo.ts';
+import { advance, aim, frontAngle, frontIndex, OBSTRUCTED_BELOW, pose, poses, shortestTurn, wire } from '../../src/halo.ts';
 
 const halo = scene.halo;
 const cams = scene.cameras;
@@ -31,6 +31,27 @@ describe('halo', () => {
   it('finds the front camera', () => {
     expect(frontIndex(poses(halo, cams, 0))).toBe(0); // camera 01 sits at 90
     expect(frontIndex(poses(halo, cams, 60))).toBe(5); // camera 06 (base 30) reaches 90
+  });
+
+  it('brings any channel\'s camera round to the front, in view', () => {
+    cams.forEach((cam, i) => {
+      const a = frontAngle(cam);
+      expect(a).toBeGreaterThanOrEqual(0);
+      expect(a).toBeLessThan(360);
+      const ps = poses(halo, cams, a);
+      expect(frontIndex(ps)).toBe(i);
+      expect(ps[i]!.depth).toBeCloseTo(1);
+      expect(ps[i]!.obstructed).toBe(false);
+    });
+  });
+
+  it('turns the shorter way round', () => {
+    expect(shortestTurn(10, 50)).toBe(40);
+    expect(shortestTurn(350, 10)).toBe(20);
+    expect(shortestTurn(10, 350)).toBe(-20);
+    expect(shortestTurn(0, 180)).toBe(180);
+    expect(shortestTurn(90, 90)).toBe(0);
+    expect(Math.abs(shortestTurn(123.4, 271.9))).toBeLessThanOrEqual(180);
   });
 
   it('turns once every turnSeconds and wraps', () => {

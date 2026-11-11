@@ -37,8 +37,8 @@ function load(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Draws the copy at 1080 px wide and downloads it as a PNG. */
-export async function saveCopy(opts: { name: string; date: string; her: string; title: string }): Promise<void> {
+/** Draws the copy at 1080 px wide and downloads it as a PNG. Resolves true once handed to the browser. */
+export async function saveCopy(opts: { name: string; date: string; her: string; title: string }): Promise<boolean> {
   const W = 1080;
   const H = Math.round((W * 181) / 112);
   const k = W / 150;
@@ -46,7 +46,7 @@ export async function saveCopy(opts: { name: string; date: string; her: string; 
   canvas.width = W;
   canvas.height = H;
   const g = canvas.getContext('2d');
-  if (!g) return;
+  if (!g) return false;
   const [her, title] = await Promise.all([load(opts.her), load(opts.title)]);
   g.fillStyle = '#dcdbde';
   g.fillRect(0, 0, W, H);
@@ -90,7 +90,7 @@ export async function saveCopy(opts: { name: string; date: string; her: string; 
   g.fillText(`COPY ${copyNumber(seed)} · ${opts.date} · C3 SHOWCASE`, 40, H - footH * 0.16);
 
   const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
-  if (!blob) return;
+  if (!blob) return false;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   const slug = (opts.name || 'copy').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'copy';
@@ -99,4 +99,5 @@ export async function saveCopy(opts: { name: string; date: string; her: string; 
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return true;
 }

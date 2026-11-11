@@ -17,7 +17,7 @@ import content from './content/site.json';
 import herUrl from './art/her.webp?url';
 import titleUrl from './art/title.svg?url';
 import xrayUrl from './art/her-xray.webp?url';
-import { advance, aim, frontIndex, poses, wire, type Pose } from './halo.ts';
+import { advance, aim, frontAngle, frontIndex, poses, shortestTurn, wire, type Pose } from './halo.ts';
 import { copyNumber, marksOf, saveCopy, seedOf } from './copy.ts';
 
 type View = 'hub' | 'channel';
@@ -45,6 +45,7 @@ const radar = $$<SVGCircleElement>('[data-radar]');
 const flash = $('.tc__flash');
 const nextLink = $<HTMLAnchorElement>('[data-next]');
 const hint = $('[data-hint]');
+const hintText = hint.textContent ?? '';
 
 const reduceQ = matchMedia('(prefers-reduced-motion: reduce)');
 const deskQ = matchMedia('(min-width: 1024px)');
@@ -66,6 +67,8 @@ let mx = scene.chest.x;
 let my = scene.chest.y;
 let pointerIn = false;
 let scanning = false;
+// A channel's camera on its way round to the front (see bringToFront)
+let turn: { from: number; by: number; t0: number; ms: number } | null = null;
 
 const state = () => caseEl.dataset.state as 'sealed' | 'open';
 const view = () => caseEl.dataset.view as View;
@@ -109,8 +112,8 @@ function renderHalo(force = false): void {
   const nextLive = hover >= 0 ? hover : view() === 'channel' ? chIndex() : frontIndex(ps);
   const liveChanged = nextLive !== live;
   live = nextLive;
-  // Cameras and wires are only drawn while her side of the panel shows.
-  if (view() === 'channel' && !force) return;
+  // Cameras and wires are only drawn while her side of the panel shows (or turns away).
+  if (view() === 'channel' && !force && !turn) return;
   const m = camMult();
   ps.forEach((p, i) => {
     const el = cams[i] as HTMLAnchorElement;
@@ -156,7 +159,7 @@ function renderLists(): void {
       flag(el, 'data-hover', i === hover);
       attr(el, 'aria-current', onDisplay ? 'page' : null);
     }
-    setText(`[data-state-of="${i}"]`, `${pad(i + 1)} · ${onDisplay ? 'On display' : p.obstructed ? 'Obstructed' : i === live ? 'On air' : 'Live'}`);
+    setText(`[data-state-of="${i}"]`, `${pad(i + 1)} · ${onDisplay ? 'On display' : p.obstructed ? 'Behind her' : i === live ? 'On air' : 'Live'}`);
     for (const shot of all(`.shot[data-shot="${i}"]`)) flag(shot, 'data-obstructed', p.obstructed);
     // The radar only shows in the desktop subject panel at the hub.
     const dot = radar[i];
@@ -175,7 +178,7 @@ function renderLists(): void {
   setText('[data-front-name]', content.channels[live]?.name ?? '');
   const cam = ps[ci];
   for (const shot of all('.shot[data-shot="-1"]')) flag(shot, 'data-obstructed', !!cam?.obstructed);
-  setText('[data-cam-state]', cam?.obstructed ? 'Obstructed' : 'On air');
+  setText('[data-cam-state]', cam?.obstructed ? 'Behind her' : 'On air');
 }
 
 // The page never adds or removes these elements, so look each selector up once.
@@ -347,7 +350,7 @@ card.addEventListener('contextmenu', (e) => {
 });
 
 function syncHint(): void {
-  hint.textContent = scanning ? 'Drag over her to move the scan.' : 'Tap a camera to tune in. Hold her to look inside.';
+  hint.textContent = scanning ? 'Drag to move the X-ray.' : hintText;
   renderStatus();
 }
 
@@ -379,19 +382,17 @@ function timecode(ms: number): string {
   return `${pad(s / 3600)}:${pad((s / 60) % 60)}:${pad(s % 60)}:${pad((ms % 1000) / 40)}`;
 }
 
-let lastSlow = 0;
+let lastSlow = -Infinity;
 function renderReadouts(now: number): void {
   const el = now - t0;
   const tc = timecode(el);
   setText('[data-tc]', tc);
   if (now - lastSlow > 300) {
     lastSlow = now;
-    const t = now / 1000;
     const aug = 74.2 + (el / 1000) * 0.003;
     setText('[data-aug]', aug.toFixed(2));
     setText('[data-aug-pct]', aug.toFixed(2) + '%');
     for (const b of all('[data-aug-bar]')) b.style.width = `${Math.min(aug, 100).toFixed(2)}%`;
-    setText('[data-sync]', `${(98.2 + 0.3 * Math.sin(t * 1.7) + 0.1 * Math.sin(t * 5.3)).toFixed(1)}%`);
     setText('[data-deg]', `${pad(angle, 3)}°`);
   }
   renderStatus(tc);
@@ -402,18 +403,46 @@ function renderStatus(tc = timecode(performance.now() - t0)): void {
   setText('[data-status]', s);
 }
 
+// ---------- Tuning in: the channel's camera swings round to the front and holds ----------
+function bringToFront(i: number, instant: boolean): void {
+  const cam = scene.cameras[i];
+  if (!cam) return;
+  const to = frontAngle(cam);
+  const by = shortestTurn(angle, to);
+  if (instant || reduce || Math.abs(by) < 0.5) {
+    turn = null;
+    angle = to;
+    return;
+  }
+  turn = { from: angle, by, t0: performance.now(), ms: 450 + Math.abs(by) * 3.5 };
+}
+
 // ---------- The loop ----------
 let raf = 0;
 let last = 0;
 let lastShots = 0;
+let lastAngle = NaN;
 function frame(now: number): void {
   raf = requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - (last || now)) / 1000);
   last = now;
   if (state() === 'sealed') return;
-  if (hover < 0) angle = advance(angle, dt, halo.turnSeconds);
+  if (turn) {
+    const k = Math.max(0, Math.min(1, (now - turn.t0) / turn.ms));
+    const eased = 1 - (1 - k) ** 3;
+    angle = (((turn.from + turn.by * eased) % 360) + 360) % 360;
+    if (k >= 1) {
+      angle = (((turn.from + turn.by) % 360) + 360) % 360;
+      turn = null;
+    }
+  } else if (hover < 0 && view() === 'hub') {
+    angle = advance(angle, dt, halo.turnSeconds);
+  }
+  const moved = angle !== lastAngle;
+  lastAngle = angle;
   renderHalo();
-  if (now - lastShots > 66) {
+  // Held still (a channel on air, a hovered camera): the feeds don't change, so skip them.
+  if (moved && (turn || now - lastShots > 66)) {
     lastShots = now;
     renderShots();
     renderLists();
@@ -519,6 +548,8 @@ function route(user: boolean): void {
     caseEl.dataset.channel = h;
     caseEl.dataset.view = 'channel';
     setChannelBits(h);
+    // On arrival (user false: a deep link, already marked as a channel before boot) it's set at once.
+    if (!user || !wasChannel || prev !== h) bringToFront(ids.indexOf(h), !user);
     if (wasChannel && prev !== h) staticCut();
     if (user) focusSoon(document.getElementById(`ch-${h}-t`));
     const sc = $('.tc__scroll');
@@ -533,7 +564,8 @@ function route(user: boolean): void {
   renderHalo(true);
   renderLists();
   layout();
-  renderStatus();
+  lastSlow = -Infinity; // the halo may have jumped: refresh the slow readouts now
+  renderReadouts(performance.now());
   start();
 }
 
@@ -565,10 +597,44 @@ function renderCopy(): void {
     .map((m) => `<rect x="${m.x}" y="${m.y}" width="${m.w}" height="2.5"/>`)
     .join('');
 }
-nameInput.addEventListener('input', renderCopy);
-$('[data-save]').addEventListener('click', () => {
-  void saveCopy({ name: nameInput.value.trim(), date: content.date, her: herUrl, title: titleUrl });
+const copyStatus = $('[data-copy-status]');
+nameInput.addEventListener('input', () => {
+  renderCopy();
+  copyStatus.textContent = '';
 });
+$('[data-save]').addEventListener('click', async () => {
+  copyStatus.textContent = 'Making your poster…';
+  const ok = await saveCopy({ name: nameInput.value.trim(), date: content.date, her: herUrl, title: titleUrl }).catch(() => false);
+  copyStatus.textContent = ok ? 'Saved. Look in your downloads.' : 'That didn’t save. Try once more?';
+});
+
+// ---------- Phone: swipe a channel sideways for the next or the one before ----------
+let swipeFrom: { x: number; y: number } | null = null;
+const tc = $('.tc');
+tc.addEventListener(
+  'touchstart',
+  (e) => {
+    const t = e.touches[0];
+    const onOwnScroller = (e.target as Element).closest('input, .code');
+    swipeFrom = !desk && t && e.touches.length === 1 && !onOwnScroller ? { x: t.clientX, y: t.clientY } : null;
+  },
+  { passive: true },
+);
+tc.addEventListener(
+  'touchend',
+  (e) => {
+    const t = e.changedTouches[0];
+    const from = swipeFrom;
+    swipeFrom = null;
+    if (!from || !t || view() !== 'channel') return;
+    const dx = t.clientX - from.x;
+    const dy = t.clientY - from.y;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    const n = ids.length;
+    location.hash = ids[(chIndex() + (dx < 0 ? 1 : n - 1)) % n]!;
+  },
+  { passive: true },
+);
 
 // ---------- Boot ----------
 function onMedia(): void {
@@ -576,6 +642,9 @@ function onMedia(): void {
   desk = deskQ.matches;
   if (reduce) {
     stop();
+    // A swing in progress lands at once.
+    if (turn) angle = (((turn.from + turn.by) % 360) + 360) % 360;
+    turn = null;
     mx = scene.chest.x;
     my = scene.chest.y;
   } else if (state() === 'open') start();

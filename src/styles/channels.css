@@ -38,6 +38,9 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--drule) transparent;
+  /* Words fade out at the bottom edge, so it's clear there's more to scroll */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
 }
 
 .tc__foot {
@@ -231,6 +234,15 @@ a.rsvp:hover {
   color: var(--dtext);
 }
 
+/* "Saved", said where the button is. Space kept so nothing jumps. */
+.copy__status {
+  min-height: 1.35em;
+  margin-top: 8px;
+  color: var(--dtext);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
 .btn--light:hover {
   background: var(--dtext);
   color: var(--dark);
@@ -362,7 +374,7 @@ a.rsvp:hover {
 
 .tile__label {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--dmute);
 }
 
@@ -389,7 +401,6 @@ a.rsvp:hover {
 .xray__cap {
   margin-top: 8px;
   color: var(--dmute) !important;
-  font-size: 10px;
 }
 
 /* Source */

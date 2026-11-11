@@ -65,7 +65,7 @@
   padding-inline: 10cqw;
   color: var(--ext-text);
   letter-spacing: 0.2em;
-  font-size: clamp(10px, 3.8cqw, 11px);
+  font-size: clamp(11px, 4cqw, 12px);
 }
 
 /* Her C3, 1.8 doors wide, centred on the seam */

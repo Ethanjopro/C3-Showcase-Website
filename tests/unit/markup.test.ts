@@ -30,7 +30,24 @@ describe('markup', () => {
   });
 
   it('says what, when and where in the heading', () => {
-    expect(html).toMatch(/<h1[^>]*>C3 Showcase[^<]*Date 0\.0\.0[^<]*Location 0\.0\.0/);
+    const dated = renderCase({ ...c, date: '4.12.26', location: 'Room 101' }, s, W);
+    expect(dated).toMatch(/<h1[^>]*>C3 Showcase[^<]*Date 4\.12\.26[^<]*Location Room 101/);
+  });
+
+  it('says "to be announced" while the date and place are still her placeholder', () => {
+    expect(c.date).toBe('0.0.0');
+    expect(html).toMatch(/<h1[^>]*>[^<]*Date to be announced[^<]*Location to be announced/);
+    expect(html).toContain('coming soon');
+    expect(html).toContain(' · TBA');
+    const dated = renderCase({ ...c, date: '4.12.26', location: 'Room 101', artist: 'Her Name' }, s, W);
+    expect(dated).not.toContain('TBA');
+    expect(dated).not.toContain('to be announced');
+    expect(dated).not.toContain('coming soon');
+    expect(dated).toContain('Her Name, ');
+  });
+
+  it('keeps the moving cameras out of the tab order and the accessible tree (the feeds and keys carry them)', () => {
+    expect(count(/<a class="cam"[^>]*tabindex="-1" aria-hidden="true"/g)).toBe(6);
   });
 
   it('hides links whose URL is empty', () => {
