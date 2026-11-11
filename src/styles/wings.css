@@ -408,8 +408,14 @@
 @container (max-width: 279px) {
   .feed__desc,
   .wing__foot,
-  .subject .tba {
+  .subject .tba,
+  .subject__tc {
     display: none;
+  }
+  .feed__state {
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
   }
   .feeds__list {
     margin-bottom: 20px;

@@ -635,6 +635,9 @@ function onMedia(): void {
   desk = deskQ.matches;
   if (reduce) {
     stop();
+    // A swing in progress lands at once.
+    if (turn) angle = (((turn.from + turn.by) % 360) + 360) % 360;
+    turn = null;
     mx = scene.chest.x;
     my = scene.chest.y;
   } else if (state() === 'open') start();
