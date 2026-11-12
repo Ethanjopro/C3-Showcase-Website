@@ -12,7 +12,7 @@ Everything waiting on Ethan or the artist, in one place.
 | # | Question or action | Needed by | Until then |
 |---|---|---|---|
 | 2 | **About blurb:** one or two lines about the showcase (`src/content/site.json`, `about`) | Any time | "The Creative Computing class puts its work on show: games, apps, music and machines, one booth each." |
-| 3 | **Date and location** (`date`, `location`; also `calendarUrl` and `mapUrl` if you want those links). Put them in `site.json` and every "TBA" label and the "coming soon" line disappear by themselves. | Launch | "0.0.0" labelled "TBA", "coming soon" on Info, no calendar or map links |
+| 3 | **Date** (time and rooms are in: 5–6:30 PM, Grand Atrium plus the Jordan Gallery and Dean's Gallery). **Location** (`date`, `location`; also `calendarUrl` and `mapUrl` if you want those links). Put them in `site.json` and every "TBA" label and the "coming soon" line disappear by themselves. | Launch | "0.0.0" labelled "TBA", "coming soon" on Info, no calendar or map links |
 | 4 | **RSVP link** (`rsvpUrl`) | Launch | "RSVP · Opens soon", not a link |
 | 5 | **Follow link:** which platform, and the URL | Launch | Not shown |
 | 20 | **"Read the code on GitHub"** on the Source channel: the repo is private, so the link is hidden (`sourceUrl` is empty). Make the repo public and fill `sourceUrl`, or leave it hidden. | Any time | Hidden |

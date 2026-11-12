@@ -20,6 +20,10 @@ export interface Content {
   url: string;
   date: string;
   location: string;
+  /** Shown under the date, e.g. "5–6:30 PM". Optional. */
+  time?: string;
+  /** Every room, shown under the location. Optional. */
+  rooms?: string;
   about: string;
   rsvpUrl: string;
   rsvpSoon: string;
@@ -62,7 +66,10 @@ const capFor = (label: string, v: string) =>
   `<p class="cap">${label}${isTBA(v) ? '<span class="tba" aria-hidden="true"> · TBA</span><span class="vh">: to be announced</span>' : ''}</p>`;
 
 /** A big value. Her placeholder still shows, but isn't read out: its caption already says so. */
-const bigFor = (v: string, cls = 'big') => `<p class="${cls}"${isTBA(v) ? ' aria-hidden="true"' : ''}>${esc(v)}</p>`;
+const bigFor = (v: string, cls = 'big') => `<p class="${cls}"${isTBA(v) ? ' aria-hidden="true"' : ''}>${fit(v)}</p>`;
+
+/** Long values (a room name, not "0.0.0") set smaller inside their big slot so they fit the column. */
+const fit = (v: string) => (v.trim().length > 7 ? `<span class="big__long">${esc(v)}</span>` : esc(v));
 
 /** A link if there's a URL, nothing otherwise (empty URLs hide their links). */
 const maybeLink = (url: string, text: string, cls = 'lk') => (url ? `<a class="${cls}" href="${esc(url)}" rel="noopener">${text}</a>` : '');
@@ -135,8 +142,12 @@ function keys(c: Content): string {
   return `<nav class="keys" aria-label="Channels"><ol>${rows}</ol></nav>`;
 }
 
+/** A small line under a big value (the time, the rooms); nothing when empty. */
+const note = (v?: string) => (v?.trim() ? `<p class="dl__note">${esc(v)}</p>` : '');
+const roomsNote = (c: Content) => note(c.rooms);
+
 const dateLoc = (c: Content, cls: string) =>
-  `<div class="${cls}"><div>${capFor('Date', c.date)}${bigFor(c.date)}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}</div></div>`;
+  `<div class="${cls}"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time)}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${roomsNote(c)}</div></div>`;
 
 const ekg = (cls = '') =>
   `<div class="ekg ${cls}" aria-hidden="true"><p class="cap ekg__l">Pump</p><p class="cap ekg__r">72 bpm</p><svg viewBox="0 0 672 70" preserveAspectRatio="none"><path class="ekg__line" d="${ekgPath()}"/></svg><span class="scan scan--dark"></span></div>`;
@@ -201,7 +212,7 @@ function door(c: Content, side: 'l' | 'r'): string {
 <p class="door__word">${L ? 'SHOW' : 'CASE'}</p>
 <div class="door__tape"><span class="cap">See what’s inside</span></div>
 <p class="cap door__open"><span class="door__handle"></span><span class="door__open-t">${L ? '<span class="when-phone">Tap to</span><span class="when-desk">Click to</span>' : 'open'}</span></p>
-<div class="door__dl">${capFor(L ? 'Date' : 'Location', L ? c.date : c.location)}<p class="big">${esc(L ? c.date : c.location)}</p></div>
+<div class="door__dl">${capFor(L ? 'Date' : 'Location', L ? c.date : c.location)}<p class="big">${fit(L ? c.date : c.location)}</p>${L ? note(c.time) : ''}</div>
 </div>
 </div>`;
 }
@@ -225,7 +236,7 @@ function channelBody(c: Content, ch: Channel, s: Scene): string {
   const [W, H] = s.size;
   switch (ch.id) {
     case 'info':
-      return `<div class="dateloc dateloc--ch"><div>${capFor('Date', c.date)}${bigFor(c.date)}${isTBA(c.date) ? '' : maybeLink(c.calendarUrl, 'Add to calendar →')}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${isTBA(c.location) ? '' : maybeLink(c.mapUrl, 'Open in maps →')}</div></div>
+      return `<div class="dateloc dateloc--ch"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time)}${isTBA(c.date) ? '' : maybeLink(c.calendarUrl, 'Add to calendar →')}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${roomsNote(c)}${isTBA(c.location) ? '' : maybeLink(c.mapUrl, 'Open in maps →')}</div></div>
 ${comingSoon(c)}<p class="body">${esc(c.about)}</p>
 <a class="lk" href="#rsvp">RSVP on Ch 02 →</a>
 ${maybeLink(c.followUrl, `${esc(c.followLabel)} the showcase →`)}`;
@@ -304,7 +315,7 @@ ${c.followUrl ? `<a class="cap bar__rsvp bar__follow" href="${esc(c.followUrl)}"
 </header>
 <main class="case" id="case" data-state="sealed" data-view="hub" data-channel="info">
 <script>/* Before first paint: open on a channel from the URL, or open if this visit already opened the case. */(function(m){var h=location.hash.slice(1);var ids=${JSON.stringify(c.channels.map((ch) => ch.id))};try{if(sessionStorage.getItem('c3.open')==='1')m.dataset.state='open';}catch(e){}if(ids.indexOf(h)>=0){m.dataset.state='open';m.dataset.view='channel';m.dataset.channel=h;}})(document.currentScript.parentNode);</script>
-<h1 class="vh">C3 Showcase: the Creative Computing class showcase. Date ${isTBA(c.date) ? 'to be announced' : esc(c.date)}. Location ${isTBA(c.location) ? 'to be announced' : esc(c.location)}.</h1>
+<h1 class="vh">C3 Showcase: the Creative Computing class showcase. Date ${isTBA(c.date) ? 'to be announced' : esc(c.date)}. ${c.time?.trim() ? ` ${esc(c.time)}.` : ''} Location ${isTBA(c.location) ? 'to be announced' : esc(c.location)}${c.rooms?.trim() ? `, ${esc(c.rooms)}` : ''}.</h1>
 <div class="frame" aria-hidden="true"><span class="frame__ruler frame__ruler--l"></span><span class="frame__ruler frame__ruler--r"></span><p class="cap frame__cap frame__cap--l">C3 Showcase · Specimen 01 · On display</p><p class="cap frame__cap frame__cap--r">Rec <span data-tc>00:00:00:00</span> · Halo <span data-deg>015°</span> · Augmentation <span data-aug>74.20</span>%</p><span class="frame__hinge frame__hinge--lt"></span><span class="frame__hinge frame__hinge--lb"></span><span class="frame__hinge frame__hinge--rt"></span><span class="frame__hinge frame__hinge--rb"></span></div>
 <div class="wing wing--l">
 ${feeds(c)}
