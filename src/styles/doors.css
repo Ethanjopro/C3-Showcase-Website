@@ -105,10 +105,10 @@
   margin-inline: 3cqw;
 }
 
-/* The red tape, 1.17 doors wide, across the seam */
+/* The red tape, 1.28 doors wide, across the seam: her line, and the one instruction */
 .door__tape {
   flex: none;
-  width: 117cqw;
+  width: 128cqw;
   height: clamp(34px, 14cqw, 44px);
   display: flex;
   align-items: center;
@@ -120,52 +120,46 @@
 }
 
 .door--l .door__tape {
-  margin-right: -58.5cqw;
+  margin-right: -64cqw;
 }
 
 .door--r .door__tape {
-  margin-left: -58.5cqw;
+  margin-left: -64cqw;
 }
 
 .door__tape .cap {
-  font-size: 12px;
-  letter-spacing: 0.24em;
+  font-size: clamp(10px, 5.6cqw, 12px);
+  letter-spacing: 0.14em;
   white-space: nowrap;
 }
 
-.door__open {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding-inline: 5.5cqw;
-  color: var(--ext-mute);
-  letter-spacing: 0.2em;
-}
-
-.door--l .door__open {
-  flex-direction: row-reverse;
-}
-
+/* A handle on each door, either side of the seam */
 .door__handle {
+  flex: none;
   width: 7px;
   height: 44px;
+  margin-inline: 5.5cqw;
   border-radius: 1px;
   background: linear-gradient(90deg, var(--ext-mute), var(--ext-text) 45%, var(--ext-mute));
 }
 
+/* When on one door, where on the other: the same three lines at the same sizes, mirrored
+   about the seam */
 .door__dl {
-  /* Both doors' blocks are built the same (label, big line, small line) and so stand the
-     same height, which keeps everything above them level across the seam. */
-  --big: clamp(34px, 16cqw, 54px);
+  --big: clamp(22px, 12.5cqw, 36px);
   padding-inline: 10cqw;
 }
 
 .door__dl .cap {
+  margin-bottom: 6px;
   color: var(--ext-mute);
+  letter-spacing: 0.2em;
 }
 
 .door__dl .big {
+  line-height: 1;
   color: var(--ext-text);
+  white-space: nowrap;
 }
 
 .door__dl .dl__note {

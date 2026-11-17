@@ -4,7 +4,8 @@
 //   her.webp + grade.json  her finished painting (grade off)  -> src/art/her.webp
 //   (derived)            her title and frame, cut out          -> src/art/front.webp
 //   (derived)            an X-ray film of her painting         -> src/art/her-xray.webp
-//   occluder.png         alpha: her head, hair and wings       -> src/art/occluder.webp
+//   occluder.png         alpha: her head, hair and wings       -> src/art/occluder.webp (less her moving parts)
+//   (derived)            her wings, cut out to move            -> src/art/part-<id>.webp, under-<id>.webp
 //   lettering/title.webp her C3 mark and SHOWCASE wordmark     -> src/art/mark.webp, word-l.webp, word-r.webp
 //   poster.webp          her poster with the event details     -> public/c3-showcase-poster.webp
 //   textures/*.png       paper grain, static noise             -> src/art/*.webp
@@ -74,8 +75,7 @@ await mkdir(OUT, { recursive: true });
 // Front: her title and the top of her frame, cut out of her painting (the light pixels and
 // the red of the title's shadow), so the cameras' wires can pass behind them.
 {
-  const scene = JSON.parse(await readFile(path.join(ROOT, 'src/art/scene.json'), 'utf8'));
-  const F = scene.front;
+  const F = JSON.parse(await readFile(path.join(ROOT, 'src/art/scene.json'), 'utf8')).front;
   const { data, info } = await sharp(path.join(SRC, 'her.webp'))
     .removeAlpha()
     .extract({ left: F.x, top: F.y, width: F.w, height: F.h })
@@ -103,8 +103,103 @@ await mkdir(OUT, { recursive: true });
     .toFile(path.join(OUT, 'front.webp'));
 }
 
+// Her moving parts (scene.json "parts": her wings). Each is cut out of her painting as its own
+// picture, so it can turn a little about where it joins her. Three things come out per part:
+//   part-<id>.webp   the piece itself: her pixels, see-through around it, fading in from its root
+//   under-<id>.webp  what shows when it moves aside: her ground, grown in from around the piece
+// and the occluder (her head, hair and wings, which the halo passes behind) loses the piece's
+// area, since the piece now does that job itself.
+const scene = JSON.parse(await readFile(path.join(ROOT, 'src/art/scene.json'), 'utf8'));
+const occ = await sharp(path.join(SRC, 'occluder.png')).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+{
+  const her = await sharp(path.join(SRC, 'her.webp')).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const smooth = (e0, e1, x) => {
+    const t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0)));
+    return t * t * (3 - 2 * t);
+  };
+  // Grow (max) or shrink (min) a mask by r pixels; blur it by r pixels. All on Float32Arrays.
+  const pass = (a, w, h, r, pick) => {
+    const run = (src, horizontal) => {
+      const out = new Float32Array(src.length);
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++) {
+          let v = pick === 'mean' ? 0 : src[y * w + x];
+          let n = 0;
+          for (let k = -r; k <= r; k++) {
+            const xx = horizontal ? x + k : x;
+            const yy = horizontal ? y : y + k;
+            if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+            const s = src[yy * w + xx];
+            if (pick === 'max') v = Math.max(v, s);
+            else if (pick === 'min') v = Math.min(v, s);
+            else v += s;
+            n++;
+          }
+          out[y * w + x] = pick === 'mean' ? v / n : v;
+        }
+      return out;
+    };
+    return run(run(a, true), false);
+  };
+  for (const part of scene.parts.list) {
+    const [bx, by, w, h] = part.box;
+    const [[x1, y1], [x2, y2]] = part.root;
+    // Signed distance from the root line, positive on the piece's side.
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const side = Math.sign((x2 - x1) * (part.tip[1] - y1) - (y2 - y1) * (part.tip[0] - x1)) || 1;
+    const dist = (x, y) => (side * ((x2 - x1) * (y - y1) - (y2 - y1) * (x - x1))) / len;
+    const px = (x, y) => ((by + y) * her.info.width + bx + x) * 3;
+    // The piece: everything lighter or redder than her night-blue ground, on its side of the root.
+    let mask = new Float32Array(w * h);
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const i = px(x, y);
+        const [r, g, b] = [her.data[i], her.data[i + 1], her.data[i + 2]];
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        if (dist(bx + x, by + y) > 0 && (lum > 44 || (r - b > 28 && r > 60))) mask[y * w + x] = 1;
+      }
+    mask = pass(pass(mask, w, h, 3, 'max'), w, h, 3, 'min'); // close the gaps between feathers
+    const piece = pass(pass(mask, w, h, 1, 'max'), w, h, 1, 'mean');
+    const hole = pass(pass(mask, w, h, 4, 'max'), w, h, 1, 'mean');
+    const F = part.feather;
+    const rgba = Buffer.alloc(w * h * 4);
+    const under = Buffer.alloc(w * h * 4);
+    // Her ground, grown inward from the edge of the hole until it is smooth.
+    const fill = new Float32Array(w * h * 3);
+    const open = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const j = y * w + x;
+        open[j] = hole[j] > 0.02 && dist(bx + x, by + y) > 0 ? 1 : 0;
+        for (let c = 0; c < 3; c++) fill[j * 3 + c] = open[j] ? [9, 14, 25][c] : her.data[px(x, y) + c];
+      }
+    for (let it = 0; it < 300; it++)
+      for (let y = 1; y < h - 1; y++)
+        for (let x = 1; x < w - 1; x++) {
+          const j = y * w + x;
+          if (!open[j]) continue;
+          for (let c = 0; c < 3; c++) fill[j * 3 + c] = (fill[(j - 1) * 3 + c] + fill[(j + 1) * 3 + c] + fill[(j - w) * 3 + c] + fill[(j + w) * 3 + c]) / 4;
+        }
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const j = y * w + x;
+        const d = dist(bx + x, by + y);
+        const i = px(x, y);
+        rgba.set([her.data[i], her.data[i + 1], her.data[i + 2], Math.round(255 * piece[j] * smooth(2, F, d))], j * 4);
+        // The ground only covers her painted piece where the moving one is solid above it.
+        const cover = hole[j] * smooth(F * 0.6, F * 1.5, d);
+        under.set([Math.round(fill[j * 3]), Math.round(fill[j * 3 + 1]), Math.round(fill[j * 3 + 2]), Math.round(255 * cover)], j * 4);
+        const o = ((by + y) * occ.info.width + bx + x) * 4 + 3;
+        occ.data[o] = Math.round(occ.data[o] * (1 - cover));
+      }
+    const raw = { raw: { width: w, height: h, channels: 4 } };
+    await sharp(rgba, raw).webp({ quality: 90, alphaQuality: 100, effort: 6 }).toFile(path.join(OUT, `part-${part.id}.webp`));
+    await sharp(under, raw).webp({ quality: 86, alphaQuality: 100, effort: 6 }).toFile(path.join(OUT, `under-${part.id}.webp`));
+  }
+}
+
 // Occluder: only its alpha matters (CSS mask), so store it as a lossless alpha WebP.
-await sharp(path.join(SRC, 'occluder.png')).webp({ lossless: true, effort: 6 }).toFile(path.join(OUT, 'occluder.webp'));
+await sharp(occ.data, { raw: occ.info }).webp({ lossless: true, effort: 6 }).toFile(path.join(OUT, 'occluder.webp'));
 
 // Her title: the C3 mark, and her SHOWCASE wordmark split between SHOW and CASE for the two
 // doors. Columns are in her title.webp (1200 x 600); the trim drops the empty edges.

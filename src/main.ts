@@ -73,6 +73,14 @@ let pointerIn = false;
 let scanning = false;
 // A channel's camera on its way round to the front (see bringToFront)
 let turn: { from: number; by: number; t0: number; ms: number } | null = null;
+// How fast the halo is turning, as a share of full speed: it eases down while a camera is
+// pointed at (slow enough to read and click, never stopped) and back up after.
+let speed = 1;
+const HOVER_SPEED = 0.14;
+// Turning the panel over takes this long (--t-turn): half for one face out, half for the other in.
+const TURN_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--t-turn')) || 950;
+// Until when her side of the panel is still in view after tuning in (its half of the turn)
+let frontShowsUntil = 0;
 
 const state = () => caseEl.dataset.state as 'sealed' | 'open';
 const view = () => caseEl.dataset.view as View;
@@ -141,8 +149,8 @@ function renderHalo(force = false): void {
   const nextLive = hover >= 0 ? hover : view() === 'channel' ? chIndex() : frontIndex(ps);
   const liveChanged = nextLive !== live;
   live = nextLive;
-  // The rig is only drawn while her side of the panel shows (or turns away).
-  if (view() === 'channel' && !force && !turn) return;
+  // The rig is only drawn while her side of the panel shows (or is still turning away).
+  if (view() === 'channel' && !force && performance.now() > frontShowsUntil) return;
   const size = camSize();
   // The link and number tag of each camera ride on top of its drawing.
   ps.forEach((p, i) => {
@@ -333,7 +341,7 @@ function syncHint(): void {
   hint.textContent = scanning ? 'Drag to move the X-ray.' : hintText;
 }
 
-// ---------- Hover: a camera, its feed or its key lifts the camera and stops the turn ----------
+// ---------- Hover: a camera, its feed or its key lifts the camera and slows the turn ----------
 function setHover(i: number): void {
   if (hover === i) return;
   hover = i;
@@ -386,10 +394,12 @@ function frame(now: number): void {
       angle = wrap(turn.from + turn.by);
       turn = null;
     }
-  } else if (hover < 0 && view() === 'hub') {
-    angle = advance(angle, dt, halo.turnSeconds);
+  } else if (view() === 'hub') {
+    // Ease toward the speed wanted: about a third of a second to slow down or pick back up.
+    speed += ((hover < 0 ? 1 : HOVER_SPEED) - speed) * (1 - Math.exp(-dt * 7));
+    angle = advance(angle, dt * speed, halo.turnSeconds);
   }
-  // Held still (a channel on air, a hovered camera): nothing to redraw.
+  // Held still (a channel on air): nothing to redraw.
   if (angle === lastAngle) return;
   lastAngle = angle;
   renderHalo();
@@ -450,14 +460,6 @@ function remember(open: boolean): void {
   }
 }
 
-function setChannelBits(id: string): void {
-  const i = Math.max(0, ids.indexOf(id));
-  setText('[data-ch-num]', pad(i + 1));
-  const next = content.channels[(i + 1) % ids.length]!;
-  nextLink.href = `#${next.id}`;
-  setText('[data-next-name]', next.name);
-}
-
 function staticCut(): void {
   if (reduce) return;
   flash.removeAttribute('data-on');
@@ -465,9 +467,49 @@ function staticCut(): void {
   flash.setAttribute('data-on', '');
 }
 
-function focusSoon(el: HTMLElement | null | undefined): void {
+// Move focus to where the visitor has just gone. A face of the panel that is still turning
+// into view can't take focus yet, so try again until it can (unless they've moved on).
+function focusSoon(el: HTMLElement | null | undefined, tries = 8): void {
   if (!el) return;
-  requestAnimationFrame(() => el.focus({ preventScroll: true }));
+  const was = document.activeElement;
+  requestAnimationFrame(() => {
+    el.focus({ preventScroll: true });
+    const active = document.activeElement;
+    if (active === el || tries <= 0 || (active !== was && active !== document.body)) return;
+    setTimeout(() => focusSoon(el, tries - 1), 110);
+  });
+}
+
+// Which channel the title card is showing (data-shown). It follows data-channel at once,
+// except from one channel to another: then the card turns edge-on showing the old one,
+// swaps, and turns back in showing the new one.
+let cardTurn: Animation | null = null;
+function showChannel(id: string, turnOver: boolean, focus: boolean): void {
+  const show = () => {
+    const i = Math.max(0, ids.indexOf(id));
+    caseEl.dataset.shown = id;
+    setText('[data-ch-num]', pad(i + 1));
+    const next = content.channels[(i + 1) % ids.length]!;
+    nextLink.href = `#${next.id}`;
+    setText('[data-next-name]', next.name);
+    $('.tc__scroll').scrollTop = 0;
+    if (focus) focusSoon(document.getElementById(`ch-${id}-t`));
+  };
+  cardTurn?.cancel();
+  cardTurn = null;
+  if (!turnOver || reduce || typeof back.animate !== 'function') return show();
+  const ease = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || 'ease';
+  const away = back.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-90deg)' }], { duration: TURN_MS / 2, easing: ease('--ease-turn-in'), fill: 'forwards' });
+  cardTurn = away;
+  away.finished
+    .then(() => {
+      if (cardTurn !== away) return;
+      show();
+      staticCut();
+      cardTurn = back.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: TURN_MS / 2, easing: ease('--ease-turn-out') });
+      away.cancel();
+    })
+    .catch(() => undefined); // cancelled: a newer choice took over
 }
 
 // Her X-ray is the biggest image and stays hidden until the case is open: load it then.
@@ -508,12 +550,11 @@ function route(user: boolean): void {
     remember(true);
     caseEl.dataset.channel = h;
     caseEl.dataset.view = 'channel';
-    setChannelBits(h);
     // On arrival (user false: a deep link, already marked as a channel before boot) it's set at once.
     if (!user || !wasChannel || prev !== h) bringToFront(ids.indexOf(h), !user);
-    if (wasChannel && prev !== h) staticCut();
-    if (user) focusSoon(document.getElementById(`ch-${h}-t`));
-    $('.tc__scroll').scrollTop = 0;
+    if (!wasChannel && user && !reduce) frontShowsUntil = performance.now() + TURN_MS / 2;
+    // From her, the panel turns over to the channel. From another channel, the card itself turns.
+    showChannel(h, user && wasChannel && prev !== h, user);
   } else if (view() === 'channel') {
     const prev = chIndex();
     caseEl.dataset.view = 'hub';
@@ -617,6 +658,5 @@ deskQ.addEventListener('change', onMedia);
 new ResizeObserver(() => layout()).observe(card);
 
 renderCount();
-setChannelBits(channel());
 route(false);
 document.documentElement.dataset.booted = '';

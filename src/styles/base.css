@@ -42,7 +42,9 @@
   --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --ease-door: cubic-bezier(0.25, 0.8, 0.2, 1);
-  --ease-turn: cubic-bezier(0.3, 0.7, 0.2, 1);
+  /* A turn is two halves: one face swings away (in), the other swings in (out) */
+  --ease-turn-in: cubic-bezier(0.55, 0, 0.85, 0.45);
+  --ease-turn-out: cubic-bezier(0.15, 0.55, 0.3, 1);
   --t-door: 1500ms;
   --t-turn: 950ms;
 

@@ -86,10 +86,10 @@
   container-type: inline-size;
 }
 
-.case[data-channel='info'] .ch[data-ch='info'],
-.case[data-channel='attend'] .ch[data-ch='attend'],
-.case[data-channel='work'] .ch[data-ch='work'],
-.case[data-channel='poster'] .ch[data-ch='poster'] {
+.case[data-shown='info'] .ch[data-ch='info'],
+.case[data-shown='attend'] .ch[data-ch='attend'],
+.case[data-shown='work'] .ch[data-ch='work'],
+.case[data-shown='poster'] .ch[data-ch='poster'] {
   display: block;
 }
 
