@@ -61,6 +61,7 @@ export interface Scene {
   size: [number, number];
   halo: Halo;
   front: { x: number; y: number; w: number; h: number };
+  float: { drop: number; seconds: number; feather: number };
   parts: { list: Part[] };
   face: { x: number; y: number };
   chest: { x: number; y: number };
@@ -108,8 +109,9 @@ function stage(c: Content, s: Scene): string {
       return `<img class="part" src="${ART}part-${p.id}.webp" ${size(p)} style="${at(p)};transform-origin:${pivot[0]}px ${pivot[1]}px;--from:${p.swing![0]}deg;--to:${p.swing![1]}deg;${beat}">`;
     })
     .join('');
-  return `<div class="stage" data-stage style="width:${W}px;height:${H}px">
+  return `<div class="stage" data-stage style="width:${W}px;height:${H}px;--drop:${s.float.drop}px;--float:${s.float.seconds}s">
 <img class="stage__her" src="${ART}her.webp" alt="Her poster art, framed in silver on a night-blue ground under the C3 Showcase title: a red-haired girl with small white wings, hands pressed together in prayer and a small ring held at them, in a great ruffled cream dress. Above her head turns a halo of ${countWord(c.channels.length).toLowerCase()} cameras, each hung on a wire and pointed at her." width="${W}" height="${H}" fetchpriority="high" draggable="false">
+<div class="stage__body" aria-hidden="true" style="top:${F.y + F.h}px;height:${H - F.y - F.h}px;background-position:0 -${F.y + F.h}px;--feather:${s.float.feather}px"></div>
 ${unders}
 <canvas class="rig rig--back" aria-hidden="true"></canvas>
 ${cams}
