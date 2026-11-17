@@ -265,6 +265,17 @@ test('on a phone, the open case ends under the channel buttons: nothing blank be
   await expect(page.locator('.wing--l')).toBeHidden();
   const gap = await page.evaluate(() => document.documentElement.scrollHeight - document.querySelector('.keys')!.getBoundingClientRect().bottom - scrollY);
   expect(gap).toBeLessThanOrEqual(24);
+  // The page is never taller than the screen with the toolbars showing (100svh), whatever 100vh says.
+  const css = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:absolute;top:0;height:100svh;width:1px';
+    document.body.append(probe);
+    const svh = probe.getBoundingClientRect().height;
+    probe.remove();
+    return { svh, doc: document.documentElement.scrollHeight, bodyMin: getComputedStyle(document.body).minHeight };
+  });
+  expect(parseFloat(css.bodyMin)).toBeLessThanOrEqual(css.svh + 0.5);
+  expect(css.doc).toBeLessThanOrEqual(Math.ceil(css.svh) + 1);
 });
 
 test('holding her on a phone shows the X-ray', async ({ page }, info) => {
