@@ -32,7 +32,7 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 
 ## Decided
 
-- **2026-11-17 (built):** a blank area under the phone channels (seen by Ethan, not reproducible in Chromium). Most likely Safari letting the swung-open door leaves extend the page: the doors now leave the page once open, and the case clips with `contain: paint`. If it's still there, check on the device which browser.
+- **2026-11-17 (built):** the blank area under the phone channels (Ethan's screenshot, Brave on iPhone). Cause: `body { min-height: 100vh }`. On iPhone 100vh is the screen with the toolbars hidden, while the case is sized to the screen with them showing (100svh), so the page ran a toolbar's height past the case. Body now uses 100svh. The earlier door change (doors leave the page once open, `contain: paint`) stays as a safeguard.
 
 - **2026-11-17 (built):** on the phone, the countdown and the "Tap a camera / press and hold" line under her picture are gone, so her picture gets the room. The countdown stays on Info and on the desktop's right door; the X-ray still works by pressing and holding her.
 

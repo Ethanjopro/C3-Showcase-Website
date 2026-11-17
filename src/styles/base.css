@@ -60,7 +60,10 @@ html {
 
 body {
   margin: 0;
+  /* The screen with the browser's toolbars showing. On phones 100vh is the screen with them
+     hidden, which left a toolbar-tall blank strip under the case. */
   min-height: 100vh;
+  min-height: 100svh;
   background-color: var(--paper);
   background-image: url('../art/grain.webp');
   background-size: 256px 256px;
