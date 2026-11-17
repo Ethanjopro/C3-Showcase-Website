@@ -118,11 +118,12 @@ test('the halo turns, and slows right down (without stopping) for a hovered came
 
 test('every change is a cut with a burst of static: no flip, from any channel', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'checked once');
-  const statics = () => page.locator('.cut').evaluate((el) => el.getAnimations().length);
+  // How many bursts of static have played: each is a third of a second, too quick to catch mid-play.
+  const statics = () => page.locator('.cut').evaluate((el: HTMLElement) => Number(el.dataset.n ?? 0));
   // From the poster to another channel (the case the owner saw without static)
   await boot(page, './#poster');
   await page.locator('.feed[data-feed="0"]').click();
-  expect(await statics()).toBe(1);
+  await expect.poll(statics).toBe(1);
   await expect(page.locator('#case')).toHaveAttribute('data-shown', 'info');
   await expect(page.locator('#ch-info')).toBeVisible();
   // Nothing turns: no face is transformed or animated
@@ -134,12 +135,13 @@ test('every change is a cut with a burst of static: no flip, from any channel', 
   // Poster to her, and her to a channel
   await page.goto('./#poster');
   await expect(page.locator('#ch-poster')).toBeVisible();
+  const before = await statics();
   await page.locator('.tc__back').click();
-  expect(await statics()).toBe(1);
+  await expect.poll(statics).toBe(before + 1);
   await expect(page.locator('.face--front')).toBeVisible();
   await page.waitForTimeout(500);
   await page.locator('.feed[data-feed="3"]').click();
-  expect(await statics()).toBe(1);
+  await expect.poll(statics).toBe(before + 2);
   await expect(page.locator('#ch-poster')).toBeVisible();
 });
 
@@ -253,6 +255,16 @@ test.describe('a phone with the browser toolbars up (390 × 664)', () => {
     }
     await expect(page.locator('.sheet__when')).toBeVisible();
   });
+});
+
+test('on a phone, the open case ends under the channel buttons: nothing blank below', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'phone layout');
+  await boot(page);
+  await page.locator('.seal').tap();
+  await expect(page.locator('#case')).toHaveAttribute('data-doors-gone', '', { timeout: 3000 });
+  await expect(page.locator('.wing--l')).toBeHidden();
+  const gap = await page.evaluate(() => document.documentElement.scrollHeight - document.querySelector('.keys')!.getBoundingClientRect().bottom - scrollY);
+  expect(gap).toBeLessThanOrEqual(24);
 });
 
 test('holding her on a phone shows the X-ray', async ({ page }, info) => {

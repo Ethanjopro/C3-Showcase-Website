@@ -32,6 +32,8 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 
 ## Decided
 
+- **2026-11-17 (built):** a blank area under the phone channels (seen by Ethan, not reproducible in Chromium). Most likely Safari letting the swung-open door leaves extend the page: the doors now leave the page once open, and the case clips with `contain: paint`. If it's still there, check on the device which browser.
+
 - **2026-11-17 (built):** on the phone, the countdown and the "Tap a camera / press and hold" line under her picture are gone, so her picture gets the room. The countdown stays on Info and on the desktop's right door; the X-ray still works by pressing and holding her.
 
 - **2026-11-17 (built):** no more flip. Every change (her to a channel, channel to channel, back to her) is a cut under a burst of static over the whole panel. The static used to live on the channel card only, so it didn't show everywhere; it now covers the panel and plays on every change.

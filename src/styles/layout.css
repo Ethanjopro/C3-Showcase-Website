@@ -77,8 +77,11 @@
   --screen: 100vh;
   --sealed-h: max(var(--screen) - 48px, min(128vw, 640px));
   margin: 0 auto;
-  /* The opened doors swing out past the screen's edges; don't let them make it scroll. */
+  /* The opened doors swing out past the screen's edges; don't let them make it scroll.
+     contain: paint clips them in every browser (Safari doesn't always clip 3D-turned
+     children with overflow alone), and once open they leave the page (data-doors-gone). */
   overflow: hidden;
+  contain: paint;
   perspective: 1400px;
   perspective-origin: 50% 45%;
   --depth: 1400px;
@@ -155,6 +158,10 @@
   display: block;
   flex: none;
   padding: 12px 14px 16px;
+}
+
+.case[data-doors-gone] .wing {
+  display: none;
 }
 
 /* Door leaves over her card */
@@ -268,6 +275,7 @@
     height: var(--H);
     margin: 0 auto;
     overflow: visible;
+    contain: none;
     perspective: 2600px;
     perspective-origin: 50% 50%;
     --depth: 2600px;
@@ -310,6 +318,11 @@
 
   .sheet {
     display: none;
+  }
+
+  .wing,
+  .case[data-doors-gone] .wing {
+    display: block;
   }
 
   .wing {

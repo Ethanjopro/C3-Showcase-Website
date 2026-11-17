@@ -451,6 +451,7 @@ function remember(open: boolean): void {
 let cutAnim: Animation | null = null;
 function staticCut(): void {
   if (reduce || typeof cut.animate !== 'function') return;
+  cut.dataset.n = String(Number(cut.dataset.n ?? 0) + 1); // how many have played (for tests)
   cutAnim?.cancel();
   cutAnim = cut.animate([{ opacity: 0.6 }, { opacity: 0.35, offset: 0.4 }, { opacity: 0 }], { duration: 340, easing: 'linear' });
 }
@@ -488,9 +489,26 @@ function loadXray(): void {
   }
 }
 
+// Once the doors have swung open they leave the page altogether (data-doors-gone), so a
+// browser can't let the swung-out leaves make the page longer than what's on it.
+let doorsTimer = 0;
+const DOOR_MS = (() => {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--t-door').trim();
+  const n = parseFloat(v);
+  return !Number.isFinite(n) || n <= 0 ? 1500 : v.endsWith('ms') ? n : n * 1000;
+})();
+function doorsGone(gone: boolean, after = 0): void {
+  clearTimeout(doorsTimer);
+  if (!gone) return void delete caseEl.dataset.doorsGone;
+  doorsTimer = window.setTimeout(() => {
+    if (state() === 'open') caseEl.dataset.doorsGone = '';
+  }, after);
+}
+
 function openDoors(focus = true): void {
   if (state() !== 'sealed') return;
   caseEl.dataset.state = 'open';
+  doorsGone(true, reduce ? 0 : DOOR_MS + 50);
   remember(true);
   loadXray();
   applyInert();
@@ -501,6 +519,7 @@ function openDoors(focus = true): void {
 
 function closeDoors(): void {
   stop();
+  doorsGone(false);
   caseEl.dataset.view = 'hub';
   caseEl.dataset.state = 'sealed';
   remember(false);
@@ -514,6 +533,7 @@ function route(user: boolean): void {
   if (ids.includes(h)) {
     const wasChannel = view() === 'channel';
     const prev = channel();
+    if (state() === 'sealed') doorsGone(true, reduce || !user ? 0 : DOOR_MS + 50);
     caseEl.dataset.state = 'open';
     remember(true);
     caseEl.dataset.channel = h;
@@ -626,5 +646,6 @@ deskQ.addEventListener('change', onMedia);
 new ResizeObserver(() => layout()).observe(card);
 
 renderCount();
+if (state() === 'open') doorsGone(true); // opened before the script ran (a channel link, or this visit)
 route(false);
 document.documentElement.dataset.booted = '';
