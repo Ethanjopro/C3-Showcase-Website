@@ -4,7 +4,7 @@
   "halo": {
     "$comment": "The ring the cameras ride: an ellipse above her head, one camera per channel. turnSeconds is one full turn. cameraSize scales the drawn cameras (cameraSizePhone on the phone layout, where her painting is small). aimDrop is how far below the ring's centre they point: at her face.",
     "cx": 425, "cy": 380, "rx": 215, "ry": 56,
-    "turnSeconds": 40,
+    "turnSeconds": 22,
     "startAngle": 20,
     "cameraSize": 1.15,
     "cameraSizePhone": 1.25,
