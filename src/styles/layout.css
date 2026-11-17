@@ -100,42 +100,33 @@
   z-index: 1;
 }
 
-/* The panel's two faces: her, and the channels. Turning it over is two half turns:
-   the face in view swings away edge-on, then the other swings in. A face that is
-   away is hidden outright (not just turned), so nothing on it can show through.
-   Each face carries its own perspective, and a face at rest has no transform at all,
-   so the panel never depends on the browser sorting two planes in 3D. */
+/* The panel's two faces: her, and the channels. Changing between them is a cut, covered
+   by a burst of static (.cut); the face that's away is hidden outright. */
 .face {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  transition:
-    transform calc(var(--t-turn) / 2) var(--ease-turn-out) calc(var(--t-turn) / 2),
-    visibility 0s linear calc(var(--t-turn) / 2);
 }
 
 .face--back,
 .case[data-view='channel'] .face--front {
   visibility: hidden;
-  transition:
-    transform calc(var(--t-turn) / 2) var(--ease-turn-in),
-    visibility 0s linear calc(var(--t-turn) / 2);
-}
-
-.face--back {
-  transform: perspective(var(--depth)) rotateY(90deg);
-}
-
-.case[data-view='channel'] .face--front {
-  transform: perspective(var(--depth)) rotateY(-90deg);
 }
 
 .case[data-view='channel'] .face--back {
   visibility: visible;
-  transform: none;
-  transition:
-    transform calc(var(--t-turn) / 2) var(--ease-turn-out) calc(var(--t-turn) / 2),
-    visibility 0s linear calc(var(--t-turn) / 2);
+}
+
+/* The burst of static over the whole panel, on every change of channel or back to her */
+.cut {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background-color: var(--dtext);
+  -webkit-mask: url('../art/static.webp') center / 180px 320px;
+  mask: url('../art/static.webp') center / 180px 320px;
 }
 
 .face--front {
@@ -526,8 +517,6 @@
 /* ---------- Reduced motion: nothing turns, swings or flickers ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .face,
-  .case[data-view='channel'] .face,
   .wing,
   .case:not([data-state='sealed']) .wing,
   .shot__ns,
@@ -544,8 +533,7 @@
   .o-pump,
   .o-blades,
   .o-bellows,
-  .o-optic,
-  .tc__flash[data-on] {
+  .o-optic {
     animation: none !important;
   }
 }
