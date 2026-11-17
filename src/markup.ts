@@ -255,7 +255,6 @@ function titleCard(c: Content, widths: Widths): string {
 <a class="btn btn--line tc__back" href="#halo">Back to her halo</a>
 <a class="btn btn--solid tc__next" href="#${c.channels[1 % n]!.id}" data-next><span class="tc__next-k">Next: </span><span data-next-name>${esc(c.channels[1 % n]!.name)}</span><span aria-hidden="true"> →</span></a>
 </div>
-<span class="tc__flash" aria-hidden="true"></span>
 </div>`;
 }
 
@@ -288,6 +287,7 @@ ${keys(c)}
 <div class="face face--back">
 ${titleCard(c, widths)}
 </div>
+<span class="cut" aria-hidden="true"></span>
 </div>
 <div class="wing wing--r">
 ${eventPanel(c)}

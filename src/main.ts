@@ -43,7 +43,7 @@ const xrIn = $('.xr__in');
 const lens = $<SVGSVGElement>('.lens');
 const feeds = $$<HTMLAnchorElement>('.feed');
 const keys = $$<HTMLAnchorElement>('.key');
-const flash = $('.tc__flash');
+const cut = $('.cut');
 const nextLink = $<HTMLAnchorElement>('[data-next]');
 const hint = $('[data-hint]');
 const hintText = hint.textContent ?? '';
@@ -78,16 +78,6 @@ let turn: { from: number; by: number; t0: number; ms: number } | null = null;
 // pointed at (slow enough to read and click, never stopped) and back up after.
 let speed = 1;
 const HOVER_SPEED = 0.14;
-// Turning the panel over takes this long (--t-turn): half for one face out, half for the other in.
-// The build may write the time as "950ms" or ".95s": read either.
-const TURN_MS = (() => {
-  const v = getComputedStyle(document.documentElement).getPropertyValue('--t-turn').trim();
-  const n = parseFloat(v);
-  if (!Number.isFinite(n) || n <= 0) return 950;
-  return v.endsWith('ms') ? n : n * 1000;
-})();
-// Until when her side of the panel is still in view after tuning in (its half of the turn)
-let frontShowsUntil = 0;
 
 const state = () => caseEl.dataset.state as 'sealed' | 'open';
 const view = () => caseEl.dataset.view as View;
@@ -156,8 +146,8 @@ function renderHalo(force = false): void {
   const nextLive = hover >= 0 ? hover : view() === 'channel' ? chIndex() : frontIndex(ps);
   const liveChanged = nextLive !== live;
   live = nextLive;
-  // The rig is only drawn while her side of the panel shows (or is still turning away).
-  if (view() === 'channel' && !force && performance.now() > frontShowsUntil) return;
+  // The rig is only drawn while her side of the panel shows.
+  if (view() === 'channel' && !force) return;
   const size = camSize();
   // The link and number tag of each camera ride on top of its drawing.
   ps.forEach((p, i) => {
@@ -467,11 +457,12 @@ function remember(open: boolean): void {
   }
 }
 
+// A burst of static over the panel: every change of channel, and back to her.
+let cutAnim: Animation | null = null;
 function staticCut(): void {
-  if (reduce) return;
-  flash.removeAttribute('data-on');
-  void flash.offsetWidth;
-  flash.setAttribute('data-on', '');
+  if (reduce || typeof cut.animate !== 'function') return;
+  cutAnim?.cancel();
+  cutAnim = cut.animate([{ opacity: 0.6 }, { opacity: 0.35, offset: 0.4 }, { opacity: 0 }], { duration: 340, easing: 'linear' });
 }
 
 // Move focus to where the visitor has just gone. A face of the panel that is still turning
@@ -487,51 +478,16 @@ function focusSoon(el: HTMLElement | null | undefined, tries = 8): void {
   });
 }
 
-// Which channel the title card is showing (data-shown). It follows data-channel at once,
-// except from one channel to another: then the card turns edge-on showing the old one,
-// swaps, and turns back in showing the new one.
-let cardTurn: Animation | null = null;
-// While the card is turning away, the channel it will show when it comes back
-let turningTo: { id: string; focus: boolean } | null = null;
-function stopCardTurn(): void {
-  cardTurn?.cancel();
-  cardTurn = null;
-  turningTo = null;
-}
-function showChannel(id: string, turnOver: boolean, focus: boolean): void {
-  const show = () => {
-    const to = turningTo ?? { id, focus };
-    turningTo = null;
-    const i = Math.max(0, ids.indexOf(to.id));
-    caseEl.dataset.shown = to.id;
-    setText('[data-ch-num]', pad(i + 1));
-    const next = content.channels[(i + 1) % ids.length]!;
-    nextLink.href = `#${next.id}`;
-    setText('[data-next-name]', next.name);
-    $('.tc__scroll').scrollTop = 0;
-    if (to.focus) focusSoon(document.getElementById(`ch-${to.id}-t`));
-  };
-  // Another choice while the card is still turning away: it just comes back showing that one.
-  if (turningTo && turnOver && !reduce) {
-    turningTo = { id, focus };
-    return;
-  }
-  stopCardTurn();
-  if (!turnOver || reduce || typeof back.animate !== 'function') return show();
-  turningTo = { id, focus };
-  const P = `perspective(${getComputedStyle(caseEl).getPropertyValue('--depth').trim() || '1400px'})`;
-  const ease = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || 'ease';
-  const away = back.animate([{ transform: `${P} rotateY(0deg)` }, { transform: `${P} rotateY(-90deg)` }], { duration: TURN_MS / 2, easing: ease('--ease-turn-in'), fill: 'forwards' });
-  cardTurn = away;
-  away.finished
-    .then(() => {
-      if (cardTurn !== away) return;
-      show();
-      staticCut();
-      cardTurn = back.animate([{ transform: `${P} rotateY(90deg)` }, { transform: `${P} rotateY(0deg)` }], { duration: TURN_MS / 2, easing: ease('--ease-turn-out') });
-      away.cancel();
-    })
-    .catch(() => undefined); // cancelled: a newer choice took over
+// Which channel the title card is showing (data-shown), and the bits that follow from it.
+function showChannel(id: string, focus: boolean): void {
+  const i = Math.max(0, ids.indexOf(id));
+  caseEl.dataset.shown = id;
+  setText('[data-ch-num]', pad(i + 1));
+  const next = content.channels[(i + 1) % ids.length]!;
+  nextLink.href = `#${next.id}`;
+  setText('[data-next-name]', next.name);
+  $('.tc__scroll').scrollTop = 0;
+  if (focus) focusSoon(document.getElementById(`ch-${id}-t`));
 }
 
 // Her X-ray is the biggest image and stays hidden until the case is open: load it then.
@@ -574,15 +530,12 @@ function route(user: boolean): void {
     caseEl.dataset.view = 'channel';
     // On arrival (user false: a deep link, already marked as a channel before boot) it's set at once.
     if (!user || !wasChannel || prev !== h) bringToFront(ids.indexOf(h), !user);
-    if (!wasChannel && user && !reduce) frontShowsUntil = performance.now() + TURN_MS / 2;
-    // From her, the panel turns over to the channel. From another channel, the card itself turns.
-    showChannel(h, user && wasChannel && prev !== h, user);
+    showChannel(h, user);
+    if (user && (!wasChannel || prev !== h)) staticCut();
   } else if (view() === 'channel') {
     const prev = chIndex();
-    // Leaving mid-turn: the card stops where it is and shows the channel that was chosen.
-    stopCardTurn();
-    caseEl.dataset.shown = channel();
     caseEl.dataset.view = 'hub';
+    if (user) staticCut();
     if (user) focusSoon((desk ? feeds[prev] : keys[prev]) ?? null);
   }
   if (state() === 'open') loadXray();

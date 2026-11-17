@@ -69,30 +69,6 @@
   white-space: nowrap;
 }
 
-/* A burst of static between channels */
-.tc__flash {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background-color: var(--dtext);
-  -webkit-mask: url('../art/static.webp') center / 180px 320px;
-  mask: url('../art/static.webp') center / 180px 320px;
-}
-
-.tc__flash[data-on] {
-  animation: flash 320ms linear;
-}
-
-@keyframes flash {
-  0% {
-    opacity: 0.55;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
 /* One channel */
 .ch {
   display: none;

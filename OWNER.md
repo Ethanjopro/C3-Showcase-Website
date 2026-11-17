@@ -32,6 +32,8 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 
 ## Decided
 
+- **2026-11-17 (built):** no more flip. Every change (her to a channel, channel to channel, back to her) is a cut under a burst of static over the whole panel. The static used to live on the channel card only, so it didn't show everywhere; it now covers the panel and plays on every change.
+
 - **2026-11-17 (built):** her whole body floats: everything below her title band sinks 6 px and rises again over 3.4 s, with her wings, the ring and the halo's head mask riding along.
 
 - **2026-11-17 (built):** the halo always passes in front of her wings (still behind her head and hair). The ring at her hands bobs twice as fast (1.3 s each way). The halo above her head keeps its 40 s turn (briefly 22 s by mistake: Ethan meant the ring at her hands).
