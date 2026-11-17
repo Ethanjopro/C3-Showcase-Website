@@ -59,7 +59,6 @@ export interface Scene {
   size: [number, number];
   halo: Halo;
   front: { x: number; y: number; w: number; h: number };
-  title: { x: number; y: number; w: number; h: number };
   parts: { list: Part[] };
   face: { x: number; y: number };
   chest: { x: number; y: number };
@@ -113,7 +112,6 @@ ${cams}
 ${parts}
 <canvas class="rig rig--front" aria-hidden="true"></canvas>
 <img class="stage__front" src="${ART}front.webp" alt="" width="${F.w}" height="${F.h}" style="left:${F.x}px;top:${F.y}px" draggable="false" decoding="async">
-<span class="glint" aria-hidden="true" style="left:${s.title.x}px;top:${s.title.y}px;width:${s.title.w}px;height:${s.title.h}px;--mx:${F.x - s.title.x}px;--my:${F.y - s.title.y}px;--mw:${F.w}px;--mh:${F.h}px"></span>
 <div class="xr" aria-hidden="true"><div class="xr__in"><img data-xray alt="" width="${W}" height="${H}" decoding="async"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${organs()}</svg></div><span class="xr__scan"></span></div>
 </div>`;
 }

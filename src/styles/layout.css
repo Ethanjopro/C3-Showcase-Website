@@ -81,6 +81,7 @@
   overflow: hidden;
   perspective: 1400px;
   perspective-origin: 50% 45%;
+  --depth: 1400px;
 }
 
 /* The screen with the browser's toolbars showing, where the browser can say (older ones use vh) */
@@ -97,12 +98,13 @@
 .panel {
   position: relative;
   z-index: 1;
-  transform-style: preserve-3d;
 }
 
 /* The panel's two faces: her, and the channels. Turning it over is two half turns:
    the face in view swings away edge-on, then the other swings in. A face that is
-   away is hidden outright (not just turned), so nothing on it can show through. */
+   away is hidden outright (not just turned), so nothing on it can show through.
+   Each face carries its own perspective, and a face at rest has no transform at all,
+   so the panel never depends on the browser sorting two planes in 3D. */
 .face {
   position: absolute;
   inset: 0;
@@ -121,11 +123,11 @@
 }
 
 .face--back {
-  transform: rotateY(90deg);
+  transform: perspective(var(--depth)) rotateY(90deg);
 }
 
 .case[data-view='channel'] .face--front {
-  transform: rotateY(-90deg);
+  transform: perspective(var(--depth)) rotateY(-90deg);
 }
 
 .case[data-view='channel'] .face--back {
@@ -277,6 +279,7 @@
     overflow: visible;
     perspective: 2600px;
     perspective-origin: 50% 50%;
+    --depth: 2600px;
   }
 
   .panel {
@@ -535,7 +538,6 @@
 
   .count .dot,
   .part,
-  .glint::before,
   .o-pump,
   .o-blades,
   .o-bellows,
