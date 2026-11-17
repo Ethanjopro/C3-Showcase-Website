@@ -125,14 +125,28 @@ test('from one channel to another the card turns over to the new one', async ({ 
   await page.locator('.feed[data-feed="0"]').click();
   // Mid-turn the old channel is still the one showing, edge-on; then the new one swings in.
   expect(await page.locator('#case').getAttribute('data-shown')).toBe('poster');
-  const turning = await page.locator('.face--back').evaluate((el) => el.getAnimations().length);
-  expect(turning).toBeGreaterThan(0);
+  // A real half turn (hundreds of milliseconds), not an instant cut.
+  const turning = await page.locator('.face--back').evaluate((el) => el.getAnimations().map((a) => Number(a.effect?.getComputedTiming().duration)));
+  expect(turning.length).toBeGreaterThan(0);
+  expect(Math.max(...turning)).toBeGreaterThan(300);
   await expect(page.locator('#case')).toHaveAttribute('data-shown', 'info');
   await expect(page.locator('#ch-info')).toBeVisible();
   await expect(page.locator('#ch-poster')).toBeHidden();
   await expect(page.locator('#ch-info-t')).toBeFocused();
   await expect(page.locator('.face--front')).toBeHidden();
   await expect.poll(() => page.locator('.face--back').evaluate((el) => getComputedStyle(el).transform)).toMatch(/^(none|matrix\(1, 0, 0, 1, 0, 0\))$/);
+});
+
+test('leaving for her in the middle of a turn between channels still lands cleanly', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'checked once');
+  await boot(page, './#poster');
+  await page.locator('.feed[data-feed="0"]').click();
+  await page.waitForTimeout(150);
+  await page.keyboard.press('Escape');
+  await expect.poll(async () => (await caseState(page)).view).toBe('hub');
+  await expect(page.locator('.face--front')).toBeVisible();
+  expect(await page.locator('.face--back').evaluate((el) => el.getAnimations().filter((a) => !(a instanceof CSSTransition)).length)).toBe(0);
+  expect(await page.locator('#case').getAttribute('data-shown')).toBe('info');
 });
 
 test('tuning in swings that channel\'s camera round to the front, so its feed is never blocked', async ({ page }, info) => {

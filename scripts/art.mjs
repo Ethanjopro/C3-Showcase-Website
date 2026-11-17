@@ -159,6 +159,28 @@ const occ = await sharp(path.join(SRC, 'occluder.png')).ensureAlpha().raw().toBu
         if (dist(bx + x, by + y) > 0 && (lum > 44 || (r - b > 28 && r > 60))) mask[y * w + x] = 1;
       }
     mask = pass(pass(mask, w, h, 3, 'max'), w, h, 3, 'min'); // close the gaps between feathers
+    // Fill any dark pocket wholly inside the piece (a shadow between feathers): whatever
+    // of the box can't be reached from its edge without crossing the piece is part of it.
+    {
+      const outside = new Uint8Array(w * h);
+      const todo = [];
+      const visit = (x, y) => {
+        if (x < 0 || y < 0 || x >= w || y >= h) return;
+        const j = y * w + x;
+        if (outside[j] || mask[j] > 0.5) return;
+        outside[j] = 1;
+        todo.push(j);
+      };
+      for (let x = 0; x < w; x++) (visit(x, 0), visit(x, h - 1));
+      for (let y = 0; y < h; y++) (visit(0, y), visit(w - 1, y));
+      while (todo.length) {
+        const j = todo.pop();
+        const [x, y] = [j % w, Math.floor(j / w)];
+        (visit(x - 1, y), visit(x + 1, y), visit(x, y - 1), visit(x, y + 1));
+      }
+      // Only on the piece's own side of the root line: across it is the rest of her.
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!outside[y * w + x] && dist(bx + x, by + y) > 0) mask[y * w + x] = 1;
+    }
     const piece = pass(pass(mask, w, h, 1, 'max'), w, h, 1, 'mean');
     const hole = pass(pass(mask, w, h, 4, 'max'), w, h, 1, 'mean');
     const F = part.feather;

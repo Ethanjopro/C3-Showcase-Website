@@ -128,8 +128,8 @@
 }
 
 .door__tape .cap {
-  font-size: clamp(10px, 5.6cqw, 12px);
-  letter-spacing: 0.14em;
+  font-size: 12px;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
@@ -146,7 +146,7 @@
 /* When on one door, where on the other: the same three lines at the same sizes, mirrored
    about the seam */
 .door__dl {
-  --big: clamp(22px, 12.5cqw, 36px);
+  --big: clamp(20px, 12.5cqw, 36px);
   padding-inline: 10cqw;
 }
 

@@ -53,6 +53,7 @@ const deskQ = matchMedia('(min-width: 1024px)');
 // ?still=<degrees> pins the halo at that angle with nothing moving (screenshots, tests).
 const stillParam = new URLSearchParams(location.search).get('still');
 const still = stillParam !== null && !Number.isNaN(Number(stillParam));
+if (still) document.documentElement.dataset.still = '';
 let reduce = reduceQ.matches || still;
 let desk = deskQ.matches;
 
@@ -78,7 +79,13 @@ let turn: { from: number; by: number; t0: number; ms: number } | null = null;
 let speed = 1;
 const HOVER_SPEED = 0.14;
 // Turning the panel over takes this long (--t-turn): half for one face out, half for the other in.
-const TURN_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--t-turn')) || 950;
+// The build may write the time as "950ms" or ".95s": read either.
+const TURN_MS = (() => {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--t-turn').trim();
+  const n = parseFloat(v);
+  if (!Number.isFinite(n) || n <= 0) return 950;
+  return v.endsWith('ms') ? n : n * 1000;
+})();
 // Until when her side of the panel is still in view after tuning in (its half of the turn)
 let frontShowsUntil = 0;
 
@@ -484,20 +491,34 @@ function focusSoon(el: HTMLElement | null | undefined, tries = 8): void {
 // except from one channel to another: then the card turns edge-on showing the old one,
 // swaps, and turns back in showing the new one.
 let cardTurn: Animation | null = null;
+// While the card is turning away, the channel it will show when it comes back
+let turningTo: { id: string; focus: boolean } | null = null;
+function stopCardTurn(): void {
+  cardTurn?.cancel();
+  cardTurn = null;
+  turningTo = null;
+}
 function showChannel(id: string, turnOver: boolean, focus: boolean): void {
   const show = () => {
-    const i = Math.max(0, ids.indexOf(id));
-    caseEl.dataset.shown = id;
+    const to = turningTo ?? { id, focus };
+    turningTo = null;
+    const i = Math.max(0, ids.indexOf(to.id));
+    caseEl.dataset.shown = to.id;
     setText('[data-ch-num]', pad(i + 1));
     const next = content.channels[(i + 1) % ids.length]!;
     nextLink.href = `#${next.id}`;
     setText('[data-next-name]', next.name);
     $('.tc__scroll').scrollTop = 0;
-    if (focus) focusSoon(document.getElementById(`ch-${id}-t`));
+    if (to.focus) focusSoon(document.getElementById(`ch-${to.id}-t`));
   };
-  cardTurn?.cancel();
-  cardTurn = null;
+  // Another choice while the card is still turning away: it just comes back showing that one.
+  if (turningTo && turnOver && !reduce) {
+    turningTo = { id, focus };
+    return;
+  }
+  stopCardTurn();
   if (!turnOver || reduce || typeof back.animate !== 'function') return show();
+  turningTo = { id, focus };
   const ease = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || 'ease';
   const away = back.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-90deg)' }], { duration: TURN_MS / 2, easing: ease('--ease-turn-in'), fill: 'forwards' });
   cardTurn = away;
@@ -557,6 +578,9 @@ function route(user: boolean): void {
     showChannel(h, user && wasChannel && prev !== h, user);
   } else if (view() === 'channel') {
     const prev = chIndex();
+    // Leaving mid-turn: the card stops where it is and shows the channel that was chosen.
+    stopCardTurn();
+    caseEl.dataset.shown = channel();
     caseEl.dataset.view = 'hub';
     if (user) focusSoon((desk ? feeds[prev] : keys[prev]) ?? null);
   }

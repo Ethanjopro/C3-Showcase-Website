@@ -308,6 +308,12 @@ html[data-booted] .stage {
   }
 }
 
+/* ?still pins everything for repeatable screenshots: her wings at rest, no passing light */
+html[data-still] .part,
+html[data-still] .glint::before {
+  animation: none;
+}
+
 /* Nothing animates where nobody can see it */
 .xr:not([data-on]) *,
 .case[data-view='channel'] .stage *,
