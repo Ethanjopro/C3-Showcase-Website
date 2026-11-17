@@ -1,5 +1,5 @@
 // npm run shots: build, serve dist/, and capture every state of the case at
-// 390 x 844 and 1440 x 900 into .shots/ (CLAUDE.md "Check your work").
+// 390 x 844, 390 x 664 (a phone with Safari's toolbars up) and 1440 x 900 into .shots/ (CLAUDE.md "Check your work").
 //
 //   .shots/<state>@<width>.png       sealed, open, scan (phone), info … poster
 //   .shots/<state>-reduced@<width>.png  the same with prefers-reduced-motion
@@ -22,6 +22,8 @@ const want = (name) => !only.length || only.includes(name);
 export const VIEWPORTS = {
   1440: { viewport: { width: 1440, height: 900 } },
   390: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+  // The same phone as Safari first shows it, toolbars up: what a poster-scanner actually sees.
+  '390x664': { viewport: { width: 390, height: 664 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, only: ['sealed', 'open', 'info'] },
 };
 
 // Each state: a URL hash, whether the case starts open, and an optional action.
@@ -44,9 +46,10 @@ await mkdir(OUT, { recursive: true });
 const browser = await chromium.launch();
 
 for (const reduced of [false, true]) {
-  for (const [w, opts] of Object.entries(VIEWPORTS)) {
+  for (const [w, { only: onlyStates, ...opts }] of Object.entries(VIEWPORTS)) {
     for (const s of STATES) {
-      if (!want(s.name) || (s.widths && !s.widths.includes(Number(w)))) continue;
+      if (!want(s.name) || (s.widths && !s.widths.includes(Number(w))) || (onlyStates && !onlyStates.includes(s.name))) continue;
+      if (reduced && onlyStates) continue;
       if (reduced && !['sealed', 'open', 'info'].includes(s.name)) continue;
       const ctx = await browser.newContext({ ...opts, reducedMotion: reduced ? 'reduce' : 'no-preference' });
       if (s.open) await ctx.addInitScript(() => sessionStorage.setItem('c3.open', '1'));

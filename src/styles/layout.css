@@ -54,7 +54,7 @@
   /* a full 44 px of touch around the 36 px button */
   content: '';
   position: absolute;
-  inset: 2px 0;
+  inset: -4px 0;
 }
 
 .bar__cta:hover {
@@ -71,7 +71,11 @@
   position: relative;
   width: 100%;
   max-width: 520px;
-  height: max(calc(100svh - 48px), 620px);
+  /* Sealed, the case is one screen tall, or as tall as the doors need (they are sized from
+     their width). Open, it grows to fit her card and the sheet under it, and the page
+     scrolls if a short screen can't hold both: she is never squeezed or covered. */
+  --screen: 100vh;
+  --sealed-h: max(var(--screen) - 48px, min(128vw, 640px));
   margin: 0 auto;
   /* The opened doors swing out past the screen's edges; don't let them make it scroll. */
   overflow: hidden;
@@ -79,13 +83,19 @@
   perspective-origin: 50% 45%;
 }
 
+/* The screen with the browser's toolbars showing, where the browser can say (older ones use vh) */
+@supports (height: 100svh) {
+  .case {
+    --screen: 100svh;
+  }
+}
+
 .frame {
   display: none;
 }
 
 .panel {
-  position: absolute;
-  inset: 0;
+  position: relative;
   z-index: 1;
   transform-style: preserve-3d;
   transition: transform var(--t-turn) var(--ease-turn);
@@ -104,11 +114,18 @@
 }
 
 .face--front {
+  position: relative;
   display: flex;
   flex-direction: column;
+  min-height: calc(var(--screen) - 48px);
   background-color: var(--inner);
   background-image: url('../art/grain.webp');
   background-size: 256px 256px;
+}
+
+.case[data-state='sealed'] .face--front {
+  height: var(--sealed-h);
+  min-height: 0;
 }
 
 .face--back {
@@ -117,12 +134,9 @@
 
 .card {
   flex: 1 1 auto;
-  min-height: 300px;
+  /* always tall enough to show her down past her hands (her painting is as wide as the card) */
+  min-height: min(82vw, 426px);
   box-shadow: inset 0 -1px 0 var(--silver-dim);
-}
-
-.card__plate {
-  display: grid;
 }
 
 .sheet {
@@ -137,7 +151,7 @@
   top: 0;
   z-index: 20;
   width: 50%;
-  height: 100%;
+  height: var(--sealed-h);
   transform-style: preserve-3d;
   transition: transform var(--t-door) var(--ease-door), visibility 0s linear 0s;
 }
@@ -223,6 +237,11 @@
     display: none;
   }
 
+  /* Open, the right door has this button in it, so the corner one steps aside */
+  body:has(.case:not([data-state='sealed'])) .bar {
+    display: none;
+  }
+
   .bar__cta {
     min-height: 44px;
   }
@@ -242,13 +261,23 @@
   }
 
   .panel {
+    position: absolute;
     left: var(--W);
-    right: auto;
+    top: 0;
     width: var(--P);
+    height: 100%;
   }
 
-  .face--front {
+  .face--front,
+  .case[data-state='sealed'] .face--front {
+    position: absolute;
     display: block;
+    height: auto;
+    min-height: 0;
+  }
+
+  .wing {
+    height: 100%;
   }
 
   .card {
@@ -266,7 +295,6 @@
     box-shadow: inset 0 0 0 1px var(--silver-dim);
   }
 
-  .card__plate,
   .sheet {
     display: none;
   }

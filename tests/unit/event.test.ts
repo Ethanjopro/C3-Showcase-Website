@@ -30,7 +30,9 @@ describe('the event', () => {
   });
 
   it('writes a calendar file other calendars accept', () => {
-    const ics = icsFile(site);
+    const folded = icsFile(site);
+    for (const line of folded.split('\r\n')) expect(new TextEncoder().encode(line).length, line).toBeLessThanOrEqual(75);
+    const ics = folded.replace(/\r\n /g, ''); // unfolded, as a calendar reads it
     expect(ics.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true);
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true);
     expect(ics).toContain('DTSTART:20261203T230000Z\r\n');

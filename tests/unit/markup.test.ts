@@ -41,11 +41,8 @@ describe('markup', () => {
     expect(html).toMatch(/<h1[^>]*>C3 Showcase: the Creative Computing class showcase\. Thursday, December 3, 2026, 5:00–6:30 PM\. Grand Atrium, Meadows School of the Arts, SMU\.<\/h1>/);
   });
 
-  it('puts the date, time and place on the sealed doors, her card and the event panel', () => {
-    for (const cls of ['door__dl', 'card__plate', 'event']) {
-      const at = html.indexOf(`class="${cls}`) >= 0 ? html.indexOf(`class="${cls}`) : html.indexOf(` ${cls}"`);
-      expect(at, cls).toBeGreaterThan(-1);
-    }
+  it('puts the date, time and place on the sealed doors, under her card and in the event panel', () => {
+    for (const cls of ['door__dl', 'sheet__when', 'event']) expect(html, cls).toMatch(new RegExp(`class="[^"]*\\b${cls}\\b`));
     expect(count(/12\.03\.26/g)).toBeGreaterThanOrEqual(5);
     expect(count(/5:00–6:30 PM/g)).toBeGreaterThanOrEqual(5);
     expect(count(/Grand Atrium/g)).toBeGreaterThanOrEqual(5);

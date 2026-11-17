@@ -192,6 +192,36 @@ test.describe('reduced motion', () => {
   });
 });
 
+test.describe('a phone with the browser toolbars up (390 × 664)', () => {
+  test.use({ viewport: { width: 390, height: 664 } });
+  test('the sealed doors still show the date and place, and open on her face, uncovered', async ({ page }, info) => {
+    test.skip(info.project.name !== 'phone', 'phone layout');
+    await boot(page);
+    for (const side of ['l', 'r']) {
+      const box = await page.locator(`.door--${side} .door__dl`).boundingBox();
+      expect(box!.y + box!.height, side).toBeLessThanOrEqual(664);
+    }
+    await page.locator('.seal').tap();
+    await expect.poll(async () => (await caseState(page)).state).toBe('open');
+    await page.waitForTimeout(1700);
+    // Her face and her hands, in her painting's pixels, are on screen with nothing over them.
+    for (const [x, y] of [[425, 592], [425, 660]] as const) {
+      const hit = await page.locator('[data-stage]').evaluate(
+        (stage, [sx, sy]) => {
+          const r = stage.getBoundingClientRect();
+          const k = r.width / 853;
+          const el = document.elementFromPoint(r.left + sx! * k, r.top + sy! * k);
+          return { y: r.top + sy! * k, inCard: !!el?.closest('[data-card]'), cls: el?.className };
+        },
+        [x, y],
+      );
+      expect(hit.inCard, JSON.stringify(hit)).toBe(true);
+      expect(hit.y).toBeLessThan(664);
+    }
+    await expect(page.locator('.sheet__when')).toBeVisible();
+  });
+});
+
 test('holding her on a phone shows the X-ray', async ({ page }, info) => {
   test.skip(info.project.name !== 'phone', 'touch');
   await boot(page);

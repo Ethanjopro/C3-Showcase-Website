@@ -49,6 +49,19 @@ html[data-booted] .stage {
   z-index: 1;
 }
 
+/* Where a tall card shows her ground above the painting, its top edge melts into it */
+.stage::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  width: 853px;
+  height: 30px;
+  background: linear-gradient(var(--her-grey), transparent);
+  pointer-events: none;
+}
+
 /* The rig's two canvases. main.ts sizes them: one canvas pixel per screen pixel. */
 .rig {
   pointer-events: none;
@@ -279,27 +292,6 @@ html[data-booted] .stage {
 .lens__ticks {
   stroke: var(--silver);
   stroke-width: 1.5;
-}
-
-/* Phone: when and where, on a plate at the foot of her card */
-.card__plate {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 30;
-  display: none;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 18px;
-  padding: 10px 14px 12px;
-  background: rgba(6, 10, 18, 0.88);
-  box-shadow: 0 -1px 0 var(--silver-dim);
-  pointer-events: none;
-  --big: 34px;
-}
-
-.card__plate .cap {
-  color: var(--mute);
 }
 
 /* Under the X-ray her own outline is a ghost; the drawing of what's inside leads */

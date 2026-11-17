@@ -28,14 +28,12 @@
   --silver-dim: #7c8080;
   /* The back of the panel (channels) and the doors: deeper than the page */
   --dark: #060a12;
-  --dark-2: #0d131e;
   --dtext: #ece6d6;
   --dmute: #9aa49e;
   --drule: #232c3b;
   --ext-text: #e6e1d4;
   --ext-mute: #8f9893;
   --red: #b8313a;
-  --red-bright: #d24a50;
   --red-deep: #822a29;
   --her-grey: #090e19;
 
@@ -249,11 +247,10 @@ button {
   display: flex;
   align-items: center;
   min-height: 22px;
-  font-family: var(--mono);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   line-height: 1.3;
-  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 html[data-event='after'] .count .dot {

@@ -20,7 +20,7 @@ Website for the C3 Showcase, the Creative Computing class showcase. The look com
 - Commit, push, open a pull request and merge it yourself when a piece of work is done and checked. The owner prefers Claude to handle versioning.
 
 ## Check your work
-- After any visual change: build, capture the site at 390×844 and 1440×900 (`npm run shots`: every state, sealed to the poster channel), look at the screenshots next to her painting and the mockups, and say what's different. Show evidence instead of asserting success. `?still=<degrees>` pins the halo for repeatable captures.
+- After any visual change: build, capture the site at 390×844, 390×664 and 1440×900 (`npm run shots`: every state, sealed to the poster channel; 390×664 is what an iPhone shows with Safari's toolbars up, which is how a poster-scanner first sees it), look at the screenshots next to her painting and the mockups, and say what's different. Show evidence instead of asserting success. `?still=<degrees>` pins the halo for repeatable captures.
 - `npm run check` (types and unit tests) and `npm run test:e2e` (Playwright, both sizes: keyboard path, reduced motion, axe, layout shift, nothing from `reference/` shipping) must pass.
 - Before merging a feature, run the `design-reviewer` subagent, fix its Must-fix findings, then run `/code-review`.
 - Cloud machines render animation in software: judge correctness there, judge smoothness on a real device.

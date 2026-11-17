@@ -32,6 +32,23 @@ export function googleCalendarUrl(e: EventInfo): string {
 
 const icsText = (s: string) => s.replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1').replace(/\n/g, '\\n');
 
+/** Calendar files keep lines to 75 bytes: longer ones carry on, on a line starting with a space. */
+function fold(line: string): string {
+  const bytes = new TextEncoder();
+  let out = '';
+  let len = 0;
+  for (const ch of line) {
+    const n = bytes.encode(ch).length;
+    if (len + n > 75) {
+      out += '\r\n ';
+      len = 1;
+    }
+    out += ch;
+    len += n;
+  }
+  return out;
+}
+
 /** The event as an .ics file, for Apple Calendar and Outlook. */
 export function icsFile(e: EventInfo): string {
   return (
@@ -52,7 +69,9 @@ export function icsFile(e: EventInfo): string {
       `URL:${e.url}`,
       'END:VEVENT',
       'END:VCALENDAR',
-    ].join('\r\n') + '\r\n'
+    ]
+      .map(fold)
+      .join('\r\n') + '\r\n'
   );
 }
 
@@ -81,7 +100,7 @@ export interface Countdown {
 
 /** What to say about how far off the showcase is. Times are milliseconds since the epoch. */
 export function countdown(now: number, start: number, end: number): Countdown {
-  if (now >= end) return { text: 'This year’s showcase has ended. Thank you for coming.', state: 'after' };
+  if (now >= end) return { text: 'Ended. Thanks for coming.', state: 'after' };
   if (now >= start) return { text: 'Happening now', state: 'now' };
   const mins = Math.ceil((start - now) / 60_000);
   const days = Math.floor(mins / 1440);

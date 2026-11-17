@@ -121,7 +121,7 @@ function feeds(c: Content): string {
 
 function keys(c: Content): string {
   const rows = c.channels
-    .map((ch, i) => `<li><a class="key" href="#${ch.id}" data-key="${i}">${feedShot(i)}<span class="key__txt"><span class="key__name"><span class="key__num" aria-hidden="true">${num(i)}</span>${esc(ch.name)}</span><span class="key__desc">${esc(ch.desc)}</span></span></a></li>`)
+    .map((ch, i) => `<li><a class="key" href="#${ch.id}" data-key="${i}">${feedShot(i)}<span class="key__txt"><span class="key__num" aria-hidden="true">${num(i)}</span><span class="vh">${esc(ch.name)}: </span>${esc(ch.desc)}</span></a></li>`)
     .join('');
   return `<nav class="keys" aria-label="Channels"><ol>${rows}</ol></nav>`;
 }
@@ -162,17 +162,17 @@ function titleLines(ch: Channel, widths: Widths): string {
 }
 
 /** When and where, side by side: the two facts everything else hangs off. */
-function whenWhere(c: Content, cls: string, full: boolean): string {
-  return `<div class="dateloc ${cls}">
-<div><p class="cap">When</p><p class="big">${esc(c.date)}</p><p class="dl__note">${full ? `${esc(c.dateLong)}<br>` : ''}${esc(c.time)}</p></div>
-<div><p class="cap">Where</p><p class="big big--long">${esc(c.location)}</p><p class="dl__note">${full ? `${esc(c.venue)}${c.rooms ? `<br>Also in the ${esc(c.rooms)}` : ''}` : esc(c.area)}</p></div>
+function whenWhere(c: Content): string {
+  return `<div class="dateloc dateloc--ch">
+<div><p class="cap">When</p><p class="big">${esc(c.date)}</p><p class="dl__note">${esc(c.dateLong)}<br>${esc(c.time)}</p></div>
+<div><p class="cap">Where</p><p class="big big--long">${esc(c.location)}</p><p class="dl__note">${esc(c.venue)}${c.rooms ? `<br>Also in the ${esc(c.rooms)}` : ''}</p></div>
 </div>`;
 }
 
 function channelBody(c: Content, ch: Channel): string {
   switch (ch.id) {
     case 'info':
-      return `${whenWhere(c, 'dateloc--ch', true)}
+      return `${whenWhere(c)}
 ${count('ch__count')}
 <p class="body">${esc(c.about)}</p>
 <div class="acts"><a class="btn btn--solid" href="#attend">${attendLabel(c)}</a>${c.mapUrl ? out(c.mapUrl, 'Open in maps', 'btn btn--line') : ''}</div>
@@ -199,7 +199,6 @@ ${out(googleCalendarUrl(c), 'Add to Google Calendar', `btn ${c.rsvpUrl ? 'btn--l
 <div class="poster__txt">
 ${isTBA(c.artist) ? '' : `<p class="cap">Poster art by</p><p class="credit">${esc(c.artist)}</p>\n`}<a class="btn btn--solid" href="${POSTER_FILE}" download>Download the poster</a>
 <p class="cap ch__kicker">Site by</p><p class="credit">${esc(c.builtBy)}</p>
-<p class="body body--dim">Type: Noto Serif Display, by Google. IBM Plex Mono and Sans, by Mike Abbink for IBM.</p>
 </div>
 </div>`;
     default:
@@ -247,9 +246,9 @@ ${door(c, 'l')}
 <div class="card" data-card>
 <div class="card__view">${stage(c, s)}</div>
 ${lensRing()}
-${whenWhere(c, 'card__plate', false)}
 </div>
 <div class="sheet">
+<div class="dateloc sheet__when"><div><p class="big">${esc(c.date)}</p><p class="dl__note">${esc(c.time)}</p></div><div><p class="big big--long">${esc(c.location)}</p><p class="dl__note">${esc(c.area)}</p></div></div>
 ${count('sheet__count')}
 <p class="sheet__hint" data-hint>Tap a camera to tune in. Press and hold her picture to see inside.</p>
 ${keys(c)}

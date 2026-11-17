@@ -115,7 +115,7 @@ export interface RigOpts {
 const BODY = ['#0a0f1a', '#121a29', '#1c2637', '#2a364b', '#3b4960'];
 const INK = '#0b101b';
 const LINE = '#c3c6c3';
-const RED = '#d24a50';
+const RED = '#b8313a'; // --red: the site's one red
 const shade = (light: number) => BODY[Math.max(0, Math.min(BODY.length - 1, Math.round(light * (BODY.length - 1))))]!;
 
 /** Draws one half of the rig: 'back' is everything behind her head, 'front' the rest. */

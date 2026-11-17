@@ -148,7 +148,8 @@ function renderHalo(force = false): void {
   ps.forEach((p, i) => {
     const el = cams[i] as HTMLAnchorElement;
     el.style.transform = `translate3d(${(p.x - CAM_BOX.w / 2).toFixed(2)}px,${(p.y - CAM_BOX.h / 2).toFixed(2)}px,0) scale(${(p.scale * size).toFixed(4)})`;
-    const z = i === hover ? 15 : p.depth < 0 ? 4 : 10 + Math.round(p.depth * 3);
+    // Behind her head a camera stays behind it, hovered or not: its drawing is on the back canvas.
+    const z = p.depth < 0 ? 4 : i === hover ? 15 : 10 + Math.round(p.depth * 3);
     if (force || lastZ[i] !== z) {
       el.style.zIndex = String(z);
       lastZ[i] = z;
@@ -602,6 +603,17 @@ function onMedia(): void {
 }
 reduceQ.addEventListener('change', onMedia);
 deskQ.addEventListener('change', onMedia);
+// Dragged to a sharper or coarser screen: redraw the rig at its pixel size.
+(function watchDensity(): void {
+  matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener(
+    'change',
+    () => {
+      layout();
+      watchDensity();
+    },
+    { once: true },
+  );
+})();
 new ResizeObserver(() => layout()).observe(card);
 
 renderCount();
