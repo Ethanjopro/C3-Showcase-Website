@@ -451,6 +451,7 @@ function remember(open: boolean): void {
 let cutAnim: Animation | null = null;
 function staticCut(): void {
   if (reduce || typeof cut.animate !== 'function') return;
+  cut.dataset.n = String(Number(cut.dataset.n ?? 0) + 1); // how many have played (for tests)
   cutAnim?.cancel();
   cutAnim = cut.animate([{ opacity: 0.6 }, { opacity: 0.35, offset: 0.4 }, { opacity: 0 }], { duration: 340, easing: 'linear' });
 }
