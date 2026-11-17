@@ -32,7 +32,7 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 
 ## Decided
 
-- **2026-11-17 (built):** the halo turns faster (22 s a turn, was 40) and always passes in front of her wings (still behind her head and hair).
+- **2026-11-17 (built):** the halo always passes in front of her wings (still behind her head and hair). The ring at her hands bobs twice as fast (1.3 s each way). The halo above her head keeps its 40 s turn (briefly 22 s by mistake: Ethan meant the ring at her hands).
 
 - **2026-11-17 (built):** the ring at her hands floats up and down a few pixels, and her wings beat faster (3.2 s each way, was 5.2) and a little wider. Answers #28 in passing: her ring stays her own, it just moves.
 
