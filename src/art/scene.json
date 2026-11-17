@@ -11,7 +11,6 @@
     "aimDrop": 150
   },
   "front": { "$comment": "The band of her painting cut out and laid over the wires: her title and the top of her frame. It stops above her wing tips.", "x": 0, "y": 0, "w": 853, "h": 280 },
-  "title": { "$comment": "Her title lettering inside that band: where the passing light is drawn.", "x": 56, "y": 84, "w": 740, "h": 160 },
   "parts": {
     "$comment": "Pieces of her that move, cut from her painting by `npm run art`. For each: 'box' [x, y, w, h] holds the whole piece; 'root' is the line where it joins the rest of her (it turns about the middle of that line, and fades in over 'feather' pixels from it); 'tip' is any point on the piece's side of that line; 'swing' is how far it turns, in degrees, over 'seconds' and back; 'delay' offsets its beat.",
     "list": [

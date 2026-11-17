@@ -519,15 +519,16 @@ function showChannel(id: string, turnOver: boolean, focus: boolean): void {
   stopCardTurn();
   if (!turnOver || reduce || typeof back.animate !== 'function') return show();
   turningTo = { id, focus };
+  const P = `perspective(${getComputedStyle(caseEl).getPropertyValue('--depth').trim() || '1400px'})`;
   const ease = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || 'ease';
-  const away = back.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-90deg)' }], { duration: TURN_MS / 2, easing: ease('--ease-turn-in'), fill: 'forwards' });
+  const away = back.animate([{ transform: `${P} rotateY(0deg)` }, { transform: `${P} rotateY(-90deg)` }], { duration: TURN_MS / 2, easing: ease('--ease-turn-in'), fill: 'forwards' });
   cardTurn = away;
   away.finished
     .then(() => {
       if (cardTurn !== away) return;
       show();
       staticCut();
-      cardTurn = back.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: TURN_MS / 2, easing: ease('--ease-turn-out') });
+      cardTurn = back.animate([{ transform: `${P} rotateY(90deg)` }, { transform: `${P} rotateY(0deg)` }], { duration: TURN_MS / 2, easing: ease('--ease-turn-out') });
       away.cancel();
     })
     .catch(() => undefined); // cancelled: a newer choice took over

@@ -29,9 +29,22 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--drule) transparent;
-  /* Words fade out at the bottom edge, so it's clear there's more to scroll */
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
+}
+
+/* Words fade out at the bottom edge of the scroller, so it's clear there's more to scroll */
+.tc__foot {
+  position: relative;
+}
+
+.tc__foot::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, var(--dark));
+  pointer-events: none;
 }
 
 .tc__foot {
