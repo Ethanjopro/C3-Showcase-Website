@@ -45,10 +45,22 @@ export interface Content extends EventInfo {
   channels: Channel[];
 }
 
+/** A piece of her that moves (a wing): cut out by `npm run art`, turned by CSS. */
+export interface Part {
+  id: string;
+  box: [number, number, number, number];
+  root: [[number, number], [number, number]];
+  swing: [number, number];
+  seconds: number;
+  delay: number;
+}
+
 export interface Scene {
   size: [number, number];
   halo: Halo;
   front: { x: number; y: number; w: number; h: number };
+  title: { x: number; y: number; w: number; h: number };
+  parts: { list: Part[] };
   face: { x: number; y: number };
   chest: { x: number; y: number };
 }
@@ -81,13 +93,27 @@ function stage(c: Content, s: Scene): string {
     .map((ch, i) => `<a class="cam" href="#${ch.id}" data-cam="${i}" tabindex="-1" aria-hidden="true" style="width:${CAM_BOX.w}px;height:${CAM_BOX.h}px"><span class="cam__tag">${num(i)}</span></a>`)
     .join('');
   const F = s.front;
+  const at = (p: Part) => `left:${p.box[0]}px;top:${p.box[1]}px`;
+  const size = (p: Part) => `width="${p.box[2]}" height="${p.box[3]}" alt="" draggable="false" decoding="async"`;
+  // What shows where a piece has moved aside, then (above the back of the halo) the pieces.
+  const unders = s.parts.list.map((p) => `<img class="under" src="${ART}under-${p.id}.webp" ${size(p)} style="${at(p)}">`).join('');
+  const parts = s.parts.list
+    .map((p) => {
+      // It turns about the middle of the line where it joins her.
+      const pivot = [(p.root[0][0] + p.root[1][0]) / 2 - p.box[0], (p.root[0][1] + p.root[1][1]) / 2 - p.box[1]];
+      return `<img class="part" src="${ART}part-${p.id}.webp" ${size(p)} style="${at(p)};transform-origin:${pivot[0]}px ${pivot[1]}px;--from:${p.swing[0]}deg;--to:${p.swing[1]}deg;--beat:${p.seconds}s;--lag:${p.delay}s">`;
+    })
+    .join('');
   return `<div class="stage" data-stage style="width:${W}px;height:${H}px">
 <img class="stage__her" src="${ART}her.webp" alt="Her poster art, framed in silver on a night-blue ground under the C3 Showcase title: a red-haired girl with small white wings, hands pressed together in prayer and a small ring held at them, in a great ruffled cream dress. Above her head turns a halo of ${countWord(c.channels.length).toLowerCase()} cameras, each hung on a wire and pointed at her." width="${W}" height="${H}" fetchpriority="high" draggable="false">
+${unders}
 <canvas class="rig rig--back" aria-hidden="true"></canvas>
 ${cams}
 <div class="stage__occ" aria-hidden="true"></div>
+${parts}
 <canvas class="rig rig--front" aria-hidden="true"></canvas>
 <img class="stage__front" src="${ART}front.webp" alt="" width="${F.w}" height="${F.h}" style="left:${F.x}px;top:${F.y}px" draggable="false" decoding="async">
+<span class="glint" aria-hidden="true" style="left:${s.title.x}px;top:${s.title.y}px;width:${s.title.w}px;height:${s.title.h}px;--mx:${F.x - s.title.x}px;--my:${F.y - s.title.y}px;--mw:${F.w}px;--mh:${F.h}px"></span>
 <div class="xr" aria-hidden="true"><div class="xr__in"><img data-xray alt="" width="${W}" height="${H}" decoding="async"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${organs()}</svg></div><span class="xr__scan"></span></div>
 </div>`;
 }
@@ -150,9 +176,9 @@ function door(c: Content, side: 'l' | 'r'): string {
 <p class="cap door__label">${L ? 'Creative' : 'Computing'}</p>
 <div class="door__c3"><img class="door__c3art" src="${ART}mark.webp" alt="" width="293" height="221" decoding="async"></div>
 <img class="door__word" src="${ART}word-${side}.webp" alt="" width="${L ? 316 : 290}" height="144" decoding="async">
-<div class="door__tape"><span class="cap">See what’s inside</span></div>
-<p class="cap door__open"><span class="door__handle"></span><span class="door__open-t">${L ? '<span class="when-phone">Tap to</span><span class="when-desk">Click to</span>' : 'open'}</span></p>
-<div class="door__dl"><p class="cap">${L ? 'Date' : 'Location'}</p><p class="big${L ? '' : ' big--long'}">${esc(L ? c.date : c.location)}</p><p class="dl__note">${esc(L ? c.time : c.area)}</p></div>
+<div class="door__tape"><span class="cap"><span class="when-phone">Tap</span><span class="when-desk">Click</span> to see what’s inside</span></div>
+<span class="door__handle"></span>
+<div class="door__dl"><p class="cap">${L ? 'When' : 'Where'}</p><p class="big">${esc(L ? c.date : c.location)}</p><p class="dl__note">${esc(L ? c.time : c.area)}</p></div>
 </div>
 </div>`;
 }
@@ -233,8 +259,8 @@ export function renderCase(c: Content, s: Scene, widths: Widths): string {
 <p class="bar__name">C3 Showcase</p>
 ${c.followUrl ? `${out(c.followUrl, esc(c.followLabel), 'bar__cta bar__follow')}` : ''}<a class="bar__cta" href="#attend">${attendLabel(c)}</a>
 </header>
-<main class="case" id="case" data-state="sealed" data-view="hub" data-channel="${c.channels[0]!.id}">
-<script>/* Before first paint: open on a channel from the URL, or open if this visit already opened the case. */(function(m){var h=location.hash.slice(1);var ids=${JSON.stringify(c.channels.map((ch) => ch.id))};try{if(sessionStorage.getItem('c3.open')==='1')m.dataset.state='open';}catch(e){}if(ids.indexOf(h)>=0){m.dataset.state='open';m.dataset.view='channel';m.dataset.channel=h;}})(document.currentScript.parentNode);</script>
+<main class="case" id="case" data-state="sealed" data-view="hub" data-channel="${c.channels[0]!.id}" data-shown="${c.channels[0]!.id}">
+<script>/* Before first paint: open on a channel from the URL, or open if this visit already opened the case. */(function(m){var h=location.hash.slice(1);var ids=${JSON.stringify(c.channels.map((ch) => ch.id))};try{if(sessionStorage.getItem('c3.open')==='1')m.dataset.state='open';}catch(e){}if(ids.indexOf(h)>=0){m.dataset.state='open';m.dataset.view='channel';m.dataset.channel=m.dataset.shown=h;}})(document.currentScript.parentNode);</script>
 <h1 class="vh">${esc(c.title)}: ${esc(c.tagline.replace(/^The /, 'the '))}. ${esc(c.dateSpoken)}, ${esc(c.time)}. ${esc(c.location)}, ${esc(c.venue)}.</h1>
 <div class="frame" aria-hidden="true"><span class="frame__ruler frame__ruler--l"></span><span class="frame__ruler frame__ruler--r"></span><p class="cap frame__cap frame__cap--l">${esc(c.title)} · Creative Computing · SMU Meadows</p><p class="cap frame__cap frame__cap--r">${esc(c.date)} · ${esc(c.time)} · ${esc(c.location)}</p><span class="frame__hinge frame__hinge--lt"></span><span class="frame__hinge frame__hinge--lb"></span><span class="frame__hinge frame__hinge--rt"></span><span class="frame__hinge frame__hinge--rb"></span></div>
 <div class="wing wing--l">

@@ -30,7 +30,7 @@ describe('markup', () => {
 
   it('shows a channel only through CSS that knows its id', () => {
     const css = readFileSync(new URL('../../src/styles/channels.css', import.meta.url), 'utf8');
-    for (const ch of c.channels) expect(css).toContain(`.case[data-channel='${ch.id}'] .ch[data-ch='${ch.id}']`);
+    for (const ch of c.channels) expect(css).toContain(`.case[data-shown='${ch.id}'] .ch[data-ch='${ch.id}']`);
   });
 
   it('never gives a channel section the id its hash uses (no jump-scrolling)', () => {

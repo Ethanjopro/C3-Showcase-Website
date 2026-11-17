@@ -28,9 +28,15 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 | 25 | **A larger export** of her painting (it's 853 × 1280, a little soft on big screens and phones with sharp displays), and if she can, a mask of her head, hair and wings (the halo passes behind them; ours is cut by hand). | Any time | 853 × 1280, hand-cut mask |
 | 31 | **The cooler-blue version** of her painting she sent (426 × 640): an alternative colourway, or just a preview? A full-size export can swap in for `art-src/her.webp`. | Any time | The warm version |
 | 28 | **The ring at her hands.** Is that her halo (taken off, or a second one)? If so, the site could play on it. | Any time | Left as painted |
-| 10 | For character motion later: separate layers for her head, hair, wings, hands and dress. | Later | No character motion |
+| 10 | For more character motion: separate layers for her head, hair, hands and dress (her wings already move; we cut them from her painting). | Later | Wings only |
 
 ## Decided
+
+- **2026-11-17 (built): Ethan's four notes on the quality pass.**
+  - The halo slows right down for a hovered camera instead of stopping.
+  - Turning the panel: each face now makes its own half turn and is hidden outright when away (her poster could show through, mirrored, mid-change in some browsers). From one channel to another the card turns over to the new one.
+  - She moves: her wings are cut from her painting and rise and settle slowly; a light crosses her title now and then. Off under reduced motion.
+  - The closed doors are calmer and mirrored: "Tap to see what's inside" on the tape replaces "Tap to | open", and When / Where are the same three lines at the same sizes either side of the seam.
 
 - **2026-11-17 (built): the quality pass.** Ethan asked for the site to be about the event, for the stand-ins to be replaced with our own drawings, and for it to read more easily.
   - Four channels, all about the event: Info (when and where), Attend (save the date), Work (what you'll see), Poster (her poster and the credits). Inside, Source, the make-your-own-copy toy and the fake booths are gone, and so is every made-up readout (augmentation, the pump trace, timecodes, "Specimen 01", the radar). They're in git history (before PR #17) if wanted back.

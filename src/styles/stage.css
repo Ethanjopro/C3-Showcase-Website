@@ -1,8 +1,8 @@
 /* Her painting and the halo. The stage is drawn in her painting's own pixels
    (853 x 1280) and scaled to fit its card by main.ts (--s). Layers, back to front:
-   her; the back half of the rig (a canvas: ring, wires, cameras); her head and
-   wings again (masked); the front half of the rig; her title and frame again;
-   the X-ray. Each camera's link and number tag ride on top of its drawing. */
+   her; the ground under her wings; the back half of the rig (a canvas: ring, wires,
+   cameras); her head and hair again (masked); her wings, moving; the front half of
+   the rig; her title and frame again, and the light that crosses them; the X-ray. Each camera's link and number tag ride on top of its drawing. */
 
 .card {
   position: relative;
@@ -83,6 +83,61 @@ html[data-booted] .stage {
   background: url('../art/her.webp') 0 0 / 100% 100% no-repeat;
   -webkit-mask: url('../art/occluder.webp') 0 0 / 100% 100% no-repeat;
   mask: url('../art/occluder.webp') 0 0 / 100% 100% no-repeat;
+}
+
+/* Her wings, cut out of her painting (scene.json "parts"), rise and settle a few degrees
+   about where they join her, slowly, like breathing. Under each is the ground it uncovers. */
+.under {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.part {
+  z-index: 6;
+  pointer-events: none;
+  will-change: transform;
+  animation: flap var(--beat, 5s) ease-in-out var(--lag, 0s) infinite alternate;
+}
+
+@keyframes flap {
+  from {
+    transform: rotate(var(--from, -2deg));
+  }
+  to {
+    transform: rotate(var(--to, 2deg));
+  }
+}
+
+/* Now and then a light crosses her title, as if the case had glass. It is masked to her
+   own lettering, so it only ever brightens her marks. */
+.glint {
+  z-index: 21;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask: url('../art/front.webp') var(--mx) var(--my) / var(--mw) var(--mh) no-repeat;
+  mask: url('../art/front.webp') var(--mx) var(--my) / var(--mw) var(--mh) no-repeat;
+}
+
+.glint::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.75) 50%, transparent 80%);
+  transform: translateX(-110%);
+  animation: glint 9s cubic-bezier(0.4, 0, 0.3, 1) 2.5s infinite;
+}
+
+@keyframes glint {
+  0% {
+    transform: translateX(-110%);
+  }
+  16%,
+  100% {
+    transform: translateX(345%);
+  }
 }
 
 /* Her title and the top of her frame, cut out of her painting and laid back over the
@@ -253,9 +308,18 @@ html[data-booted] .stage {
   }
 }
 
+/* ?still pins everything for repeatable screenshots: her wings at rest, no passing light */
+html[data-still] .part,
+html[data-still] .glint::before {
+  animation: none;
+}
+
 /* Nothing animates where nobody can see it */
 .xr:not([data-on]) *,
-.case[data-state='sealed'] * {
+.case[data-view='channel'] .stage *,
+.case[data-view='channel'] .stage *::before,
+.case[data-state='sealed'] *,
+.case[data-state='sealed'] *::before {
   animation-play-state: paused !important;
 }
 

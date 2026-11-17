@@ -98,19 +98,42 @@
   position: relative;
   z-index: 1;
   transform-style: preserve-3d;
-  transition: transform var(--t-turn) var(--ease-turn);
 }
 
-.case[data-view='channel'] .panel {
-  transform: rotateY(180deg);
-}
-
+/* The panel's two faces: her, and the channels. Turning it over is two half turns:
+   the face in view swings away edge-on, then the other swings in. A face that is
+   away is hidden outright (not just turned), so nothing on it can show through. */
 .face {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+  transition:
+    transform calc(var(--t-turn) / 2) var(--ease-turn-out) calc(var(--t-turn) / 2),
+    visibility 0s linear calc(var(--t-turn) / 2);
+}
+
+.face--back,
+.case[data-view='channel'] .face--front {
+  visibility: hidden;
+  transition:
+    transform calc(var(--t-turn) / 2) var(--ease-turn-in),
+    visibility 0s linear calc(var(--t-turn) / 2);
+}
+
+.face--back {
+  transform: rotateY(90deg);
+}
+
+.case[data-view='channel'] .face--front {
+  transform: rotateY(-90deg);
+}
+
+.case[data-view='channel'] .face--back {
+  visibility: visible;
+  transform: none;
+  transition:
+    transform calc(var(--t-turn) / 2) var(--ease-turn-out) calc(var(--t-turn) / 2),
+    visibility 0s linear calc(var(--t-turn) / 2);
 }
 
 .face--front {
@@ -126,10 +149,6 @@
 .case[data-state='sealed'] .face--front {
   height: var(--sealed-h);
   min-height: 0;
-}
-
-.face--back {
-  transform: rotateY(180deg);
 }
 
 .card {
@@ -504,7 +523,8 @@
 /* ---------- Reduced motion: nothing turns, swings or flickers ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .panel,
+  .face,
+  .case[data-view='channel'] .face,
   .wing,
   .case:not([data-state='sealed']) .wing,
   .shot__ns,
@@ -514,6 +534,8 @@
   }
 
   .count .dot,
+  .part,
+  .glint::before,
   .o-pump,
   .o-blades,
   .o-bellows,
