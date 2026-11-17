@@ -255,6 +255,16 @@ test.describe('a phone with the browser toolbars up (390 × 664)', () => {
   });
 });
 
+test('on a phone, the open case ends under the channel buttons: nothing blank below', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'phone layout');
+  await boot(page);
+  await page.locator('.seal').tap();
+  await expect(page.locator('#case')).toHaveAttribute('data-doors-gone', '', { timeout: 3000 });
+  await expect(page.locator('.wing--l')).toBeHidden();
+  const gap = await page.evaluate(() => document.documentElement.scrollHeight - document.querySelector('.keys')!.getBoundingClientRect().bottom - scrollY);
+  expect(gap).toBeLessThanOrEqual(24);
+});
+
 test('holding her on a phone shows the X-ray', async ({ page }, info) => {
   test.skip(info.project.name !== 'phone', 'touch');
   await boot(page);
