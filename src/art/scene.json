@@ -16,7 +16,7 @@
     { "file": "camera-05", "w": 102, "h": 69, "base": 270 },
     { "file": "camera-06", "w": 105, "h": 63, "base": 30 }
   ],
-  "lettering": { "x": 106, "y": 104, "w": 640, "h": 160 },
+  "front": { "$comment": "The band of her painting cut out and laid over the wires: her title and the top of her frame.", "x": 0, "y": 0, "w": 853, "h": 320 },
   "face": { "x": 425, "y": 592 },
   "chest": { "x": 425, "y": 742 },
   "occluderBelow": 660

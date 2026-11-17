@@ -18,7 +18,7 @@ Everything waiting on Ethan or the artist, in one place.
 | 20 | **"Read the code on GitHub"** on the Source channel: the repo is private, so the link is hidden (`sourceUrl` is empty). Make the repo public and fill `sourceUrl`, or leave it hidden. | Any time | Hidden |
 | 21 | **Cables:** in the mockups the cameras' cables hung down across her; the build hangs each camera from a wire going up out of frame (a stage rig), so nothing crosses her face. OK, or back to hanging down? | Any time | Wires go up |
 | 22 | **Projects:** the channel shows eight numbered booth screens ("Booth 01" …) and a teaser line. Real titles and links when the class has them (`projects` in `site.json`). | After the show | Teaser |
-| 26 | **Her painting, recoloured.** It now ships graded into the site's palette (plum lines, lavender greys, paper-white dress) by `art-src/grade.json`; her file is untouched. Happy with it, and is she? `"strength": 0` in that file, then `npm run art`, puts her colours back exactly. | Any time | Graded |
+| 26 | ~~**Her painting, recoloured.**~~ Superseded 2026-11-17: her final poster ships in her own palette and the site was re-themed to match. Was: **Her painting, recoloured.** It now ships graded into the site's palette (plum lines, lavender greys, paper-white dress) by `art-src/grade.json`; her file is untouched. Happy with it, and is she? `"strength": 0` in that file, then `npm run art`, puts her colours back exactly. | Any time | Graded |
 | 27 | **The pump readout** (the red heartbeat line and "72 bpm") and the augmentation percentage: two testers found them a little generic. Keep, tone down, or replace with something of hers? | Any time | Kept |
 
 ## Open: ask her (on hold: Ethan will ask when he's ready)
@@ -31,11 +31,15 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 | 23 | **Her halo.** Ours (a ring of six cameras cut from her draft) stands in until she draws hers. Best as layers: the ring's back and front halves, and each camera on its own. | When she finishes it | Ours |
 | 24 | **The inside.** The X-ray is her painting inverted, with placeholder machine parts drawn over it (optics, core chip, bellows, rib plates, a red pump, spine bus, cell). Her own drawing of what's inside would replace the parts. | Any time | Placeholder parts |
 | 25 | **A larger export** of her painting (it's 853 × 1280, a little soft on big screens and phones with sharp displays), and if she can, a mask of her head, hair and wings (the halo passes behind them; ours is cut by hand). | Any time | 853 × 1280, hand-cut mask |
+| 30 | **Her name for the credits** (`artist` in `site.json`): Credits still says "Drawn by · TBA". | Launch | TBA |
+| 31 | **The cooler-blue version** of her painting she sent (426 × 640): an alternative colourway, or just a preview? A full-size export can swap in for `art-src/her.webp`. | Any time | The warm version |
 | 10 | For character motion later: separate layers for her head, hair, wings, hands and dress. | Later | No character motion |
 | 28 | **The ring at her hands.** Her painting already has a small dark ring held at her hands. Is that her halo (taken off, or a second one)? If so, the site could play on it: say, our camera halo settling into her hands when the case closes. | Any time | Left as painted |
 | 29 | **A stranger X-ray.** Testers liked the X-ray but wanted it weirder. Her own drawing of what's inside her (OWNER #24) is the best way there. | Any time | Placeholder parts |
 
 ## Decided
+
+- **2026-11-17 (built): her final poster and title.** Her final painting replaces the grey one (same composition, so the halo, masks and camera paths still fit). Her title is cut out and laid over the wires; the doors carry her C3 mark and her SHOWCASE split SHOW | CASE at the seam. The whole site moved to her palette: night blue, her frame's silver, cream type, her red. Date and place follow her poster: 12.03.26, 5:00–6:30 PM, Grand Atrium, Meadows. Her poster with the details is a download on RSVP and Credits. The X-ray is now her edges glowing on black (inverting a dark painting gave a white film). Not used: the smaller, cooler-blue version of the painting (kept in `reference/final/`), and the poem lines on her poster (they stay hers, in the download).
 
 - **2026-11-11 (built), from six tester personas:** what they agreed on and what fits the case.
   - The date and place say "TBA" while they're still "0.0.0", and Info says they're coming soon (screen readers hear "to be announced").

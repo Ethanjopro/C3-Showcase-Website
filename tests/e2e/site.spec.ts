@@ -221,6 +221,9 @@ test('nothing from reference/ ships, and the page stays light', async ({}, info)
   for (const f of files) expect(refs.has(readFileSync(f).subarray(0, 4096).toString('base64')), f).toBe(false);
   const html = readFileSync(path.join(dist, 'index.html'), 'utf8');
   expect(html).not.toContain('reference/');
-  const total = files.filter((f) => !/\.woff$/.test(f)).reduce((n, f) => n + statSync(f).size, 0);
+  // What a visit loads: not the share image or her poster download, which load only when asked for.
+  const total = files
+    .filter((f) => !/\.woff$|og\.jpg$|c3-showcase-poster\.webp$/.test(f))
+    .reduce((n, f) => n + statSync(f).size, 0);
   expect(total).toBeLessThan(1_000_000);
 });

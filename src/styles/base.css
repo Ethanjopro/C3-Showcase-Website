@@ -1,5 +1,6 @@
-/* Tokens, reset and the small shared pieces. Palette taken from her painting:
-   lavender greys, plum black, and one red that only ever means "live". */
+/* Tokens, reset and the small shared pieces. Palette taken from her finished poster:
+   her navy-black ground, the silver of her frame, her cream, and her red (lifted a
+   little for screens) that only ever means "live". */
 
 /* The title face: only its Latin file ships (the package's other subsets aren't needed). */
 @font-face {
@@ -12,24 +13,31 @@
 }
 
 :root {
-  --paper: #dedde1;
-  --inner: #f1eff2;
-  --inner-2: #e8e5ea;
-  --ink: #17151a;
-  --mute: #5d5862;
-  --rule: #d3cfd6;
-  --dark: #141216;
-  --dark-2: #1c1a20;
-  --dtext: #eeeaee;
-  --dmute: #9a94a0;
-  --drule: #36313b;
-  --ext-text: #ece7eb;
-  --ext-mute: #8e8794;
-  --plum: #3a2731;
-  --body: #e2dade;
-  --red: #c8102e;
-  --red-bright: #e0233f;
-  --her-grey: #736c77;
+  /* The page and the panels inside the doors: her ground, a step up each time */
+  --paper: #0a0f1a;
+  --inner: #0e1420;
+  --inner-2: #161e2c;
+  /* Text on them: her cream, and a sage grey from her dress shadows */
+  --ink: #ece6d6;
+  --mute: #9aa49e;
+  --rule: #263041;
+  /* Text sitting on an --ink (cream) block, like a chosen feed */
+  --on-ink: #0a0f1a;
+  /* Her frame */
+  --silver: #c3c6c3;
+  --silver-dim: #7c8080;
+  /* The back of the panel (channels) and the doors: deeper than the page */
+  --dark: #060a12;
+  --dark-2: #0d131e;
+  --dtext: #ece6d6;
+  --dmute: #9aa49e;
+  --drule: #232c3b;
+  --ext-text: #e6e1d4;
+  --ext-mute: #8f9893;
+  --red: #b8313a;
+  --red-bright: #d24a50;
+  --red-deep: #822a29;
+  --her-grey: #090e19;
 
   --serif: 'Noto Serif Display Variable', 'Noto Serif Display', 'Didot', 'Bodoni 72', serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -40,7 +48,7 @@
   --t-door: 1500ms;
   --t-turn: 950ms;
 
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 *,
@@ -148,6 +156,10 @@ button {
   opacity: 0.85;
 }
 
+.dl__note--time {
+  white-space: nowrap;
+}
+
 .dl__note::first-letter {
   text-transform: uppercase;
 }
@@ -228,24 +240,25 @@ button {
 
 .btn--line:hover {
   background: var(--ink);
-  color: var(--dtext);
+  color: var(--on-ink);
   border-color: var(--ink);
 }
 
 .btn--solid {
   background: var(--ink);
   border-color: var(--ink);
-  color: var(--dtext);
+  color: var(--on-ink);
 }
 
 .btn--solid:hover {
-  background: var(--plum);
+  background: var(--silver);
+  border-color: var(--silver);
 }
 
 .chip {
   padding: 2px 5px;
   background: var(--ink);
-  color: var(--dtext);
+  color: var(--on-ink);
   font-family: var(--mono);
   font-size: 9px;
   font-weight: 500;
@@ -259,7 +272,7 @@ button {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: repeating-linear-gradient(to bottom, rgba(23, 21, 26, 0.09) 0 1px, transparent 1px 3px);
+  background-image: repeating-linear-gradient(to bottom, rgba(6, 10, 18, 0.16) 0 1px, transparent 1px 3px);
 }
 
 .scan--dark {
@@ -289,7 +302,7 @@ button {
   position: relative;
   height: 5px;
   margin-top: 6px;
-  background: #d9d5dc;
+  background: var(--rule);
 }
 
 .meter__fill {
@@ -341,8 +354,8 @@ button {
   content: '';
   position: absolute;
   inset: 0;
-  background-color: var(--ink);
-  opacity: 0.88;
+  background-color: var(--silver-dim);
+  opacity: 0.8;
   -webkit-mask: url('../art/static.webp') center / cover;
   mask: url('../art/static.webp') center / cover;
 }

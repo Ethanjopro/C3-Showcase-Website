@@ -32,7 +32,7 @@ describe('markup', () => {
   it('says what, when and where in the heading', () => {
     const dated = renderCase({ ...c, date: '4.12.26', dateSpoken: '', location: 'Room 101', rooms: '', time: '' }, s, W);
     expect(dated).toMatch(/<h1[^>]*>C3 Showcase[^<]*Date 4\.12\.26[^<]*Location Room 101/);
-    expect(html).toMatch(/<h1[^>]*>[^<]*Date Thursday, December 3, 2026\. 5–6:30 PM[^<]*Location Grand Atrium, plus the Jordan Gallery and Dean&#39;s Gallery/);
+    expect(html).toMatch(/<h1[^>]*>[^<]*Date Thursday, December 3, 2026\. 5:00–6:30 PM[^<]*Location Grand Atrium, Meadows, with the Jordan Gallery and Dean&#39;s Gallery/);
   });
 
   it('says "to be announced" while a value is still her placeholder, and not after', () => {
@@ -48,8 +48,8 @@ describe('markup', () => {
   });
 
   it('shows the time under the date and the rooms under the place', () => {
-    expect(html).toContain('<p class="dl__note">5–6:30 PM</p>');
-    expect(html).toContain('<p class="dl__note">plus the Jordan Gallery and Dean&#39;s Gallery</p>');
+    expect(html).toContain('<p class="dl__note dl__note--time">5:00–6:30 PM</p>');
+    expect(html).toContain('<p class="dl__note">Meadows, with the Jordan Gallery and Dean&#39;s Gallery</p>');
   });
 
   it('keeps the moving cameras out of the tab order and the accessible tree (the feeds and keys carry them)', () => {

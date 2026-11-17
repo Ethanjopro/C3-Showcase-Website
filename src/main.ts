@@ -15,7 +15,6 @@ import './styles/layout.css';
 import scene from './art/scene.json';
 import content from './content/site.json';
 import herUrl from './art/her.webp?url';
-import titleUrl from './art/title.svg?url';
 import xrayUrl from './art/her-xray.webp?url';
 import { advance, aim, frontAngle, frontIndex, poses, shortestTurn, wire, type Pose } from './halo.ts';
 import { copyNumber, marksOf, saveCopy, seedOf } from './copy.ts';
@@ -604,7 +603,7 @@ nameInput.addEventListener('input', () => {
 });
 $('[data-save]').addEventListener('click', async () => {
   copyStatus.textContent = 'Making your poster…';
-  const ok = await saveCopy({ name: nameInput.value.trim(), date: content.date, her: herUrl, title: titleUrl }).catch(() => false);
+  const ok = await saveCopy({ name: nameInput.value.trim(), date: content.date, her: herUrl }).catch(() => false);
   copyStatus.textContent = ok ? 'Saved. Look in your downloads.' : 'That didn’t save. Try once more?';
 });
 
