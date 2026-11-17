@@ -99,6 +99,20 @@ html[data-booted] .stage {
   animation: flap var(--beat, 5s) ease-in-out var(--lag, 0s) infinite alternate;
 }
 
+.part--bob {
+  animation-name: bob;
+}
+
+/* The ring at her hands rises and sinks, a few pixels, as if it floated there */
+@keyframes bob {
+  from {
+    transform: translateY(var(--from, -3px));
+  }
+  to {
+    transform: translateY(var(--to, 3px));
+  }
+}
+
 @keyframes flap {
   from {
     transform: rotate(var(--from, -2deg));

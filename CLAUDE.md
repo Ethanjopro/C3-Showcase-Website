@@ -11,7 +11,7 @@ Website for the C3 Showcase, the Creative Computing class showcase. The look com
 - `src/markup.ts` renders the whole page into `index.html` at build time (via `scripts/vite/case-html.ts`), from `src/content/site.json` (words) and `src/art/scene.json` (where things sit on her painting). One DOM serves both layouts; `src/styles/layout.css` turns it into the phone case or the desktop case.
 - `src/main.ts` wires it up: the turning halo (`src/halo.ts` for where the cameras are, `src/rig.ts` for drawing the ring, wires and cameras on two canvases), the doors, hash routing (`#info`, `#attend`, `#work`, `#poster`, and `#halo` for her), the X-ray (`src/organs.ts` is the drawing inside her), the feeds and the countdown.
 - `src/event.ts` works out everything from the event's `start` and `end` in `site.json`: both calendar links, the `.ics` file the build writes, the countdown, and the schema.org data in the page head.
-- `npm run art` rebuilds `src/art/` from `art-src/`. Re-run it after replacing any of her files, or after changing `parts` (her wings: where each is cut and how far it turns) or `front` in `scene.json`.
+- `npm run art` rebuilds `src/art/` from `art-src/`. Re-run it after replacing any of her files, or after changing `parts` (her wings and the ring at her hands: where each is cut and how it moves) or `front` in `scene.json`.
 
 ## Working rules
 - Static site, deployed to GitHub Pages from `main` by `.github/workflows/deploy.yml`. Keep `npm run build` writing the site to `dist/`.

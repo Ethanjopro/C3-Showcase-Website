@@ -49,8 +49,10 @@ export interface Content extends EventInfo {
 export interface Part {
   id: string;
   box: [number, number, number, number];
-  root: [[number, number], [number, number]];
-  swing: [number, number];
+  /** A wing turns about its root; the ring bobs up and down instead. */
+  root?: [[number, number], [number, number]];
+  swing?: [number, number];
+  bob?: [number, number];
   seconds: number;
   delay: number;
 }
@@ -98,9 +100,12 @@ function stage(c: Content, s: Scene): string {
   const unders = s.parts.list.map((p) => `<img class="under" src="${ART}under-${p.id}.webp" ${size(p)} style="${at(p)}">`).join('');
   const parts = s.parts.list
     .map((p) => {
-      // It turns about the middle of the line where it joins her.
-      const pivot = [(p.root[0][0] + p.root[1][0]) / 2 - p.box[0], (p.root[0][1] + p.root[1][1]) / 2 - p.box[1]];
-      return `<img class="part" src="${ART}part-${p.id}.webp" ${size(p)} style="${at(p)};transform-origin:${pivot[0]}px ${pivot[1]}px;--from:${p.swing[0]}deg;--to:${p.swing[1]}deg;--beat:${p.seconds}s;--lag:${p.delay}s">`;
+      const beat = `--beat:${p.seconds}s;--lag:${p.delay}s`;
+      if (p.bob) return `<img class="part part--bob" src="${ART}part-${p.id}.webp" ${size(p)} style="${at(p)};--from:${p.bob[0]}px;--to:${p.bob[1]}px;${beat}">`;
+      // A wing turns about the middle of the line where it joins her.
+      const root = p.root!;
+      const pivot = [(root[0][0] + root[1][0]) / 2 - p.box[0], (root[0][1] + root[1][1]) / 2 - p.box[1]];
+      return `<img class="part" src="${ART}part-${p.id}.webp" ${size(p)} style="${at(p)};transform-origin:${pivot[0]}px ${pivot[1]}px;--from:${p.swing![0]}deg;--to:${p.swing![1]}deg;${beat}">`;
     })
     .join('');
   return `<div class="stage" data-stage style="width:${W}px;height:${H}px">
