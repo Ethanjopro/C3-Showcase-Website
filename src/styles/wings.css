@@ -260,8 +260,8 @@
   margin-top: 2px;
 }
 
-/* The full list of rooms lives on the Info channel; the panel keeps the place's name */
-.subject__dl .dl__note:not(.dl__note--time) {
+/* The full list of rooms lives on the Info channel; the panel keeps the place and its area */
+.subject__dl .dl__note:not(.dl__note--time, .dl__note--area) {
   display: none;
 }
 
@@ -413,6 +413,11 @@
 
 /* Narrow doors (small laptops): tighter feeds, the essentials only */
 @container (max-width: 279px) {
+  /* Too narrow for date and place side by side: stack them */
+  .subject__dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
   .feed__desc,
   .wing__foot,
   .subject .tba,
@@ -432,6 +437,10 @@
 @container (max-width: 259px) {
   .subject__augv {
     font-size: 20px;
+  }
+  .subject__aug .row-between {
+    flex-direction: column;
+    gap: 2px;
   }
   .wing__live {
     position: static;

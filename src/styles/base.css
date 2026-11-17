@@ -160,6 +160,11 @@ button {
   white-space: nowrap;
 }
 
+/* Area is for the doors and side panel; the card plate and Info show the fuller rooms line */
+.card__plate .dl__note--area {
+  display: none;
+}
+
 .dl__note::first-letter {
   text-transform: uppercase;
 }

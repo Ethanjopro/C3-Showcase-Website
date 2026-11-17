@@ -24,7 +24,9 @@ export interface Content {
   location: string;
   /** Shown under the date, e.g. "5–6:30 PM". Optional. */
   time?: string;
-  /** Every room, shown under the location. Optional. */
+  /** A short line under the location on the doors and side panel, e.g. "Meadows". Optional. */
+  area?: string;
+  /** Every room, shown under the location on Info and her card. Optional. */
   rooms?: string;
   about: string;
   rsvpUrl: string;
@@ -151,7 +153,7 @@ const note = (v?: string, cls = '') => (v?.trim() ? `<p class="dl__note${cls}">$
 const roomsNote = (c: Content) => note(c.rooms);
 
 const dateLoc = (c: Content, cls: string) =>
-  `<div class="${cls}"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time, ' dl__note--time')}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${roomsNote(c)}</div></div>`;
+  `<div class="${cls}"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time, ' dl__note--time')}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${note(c.area, ' dl__note--area')}${roomsNote(c)}</div></div>`;
 
 const ekg = (cls = '') =>
   `<div class="ekg ${cls}" aria-hidden="true"><p class="cap ekg__l">Pump</p><p class="cap ekg__r">72 bpm</p><svg viewBox="0 0 672 70" preserveAspectRatio="none"><path class="ekg__line" d="${ekgPath()}"/></svg><span class="scan scan--dark"></span></div>`;
@@ -210,7 +212,7 @@ function door(c: Content, side: 'l' | 'r'): string {
 <img class="door__word" src="${ART}word-${side}.webp" alt="" width="${L ? 313 : 293}" height="144" decoding="async">
 <div class="door__tape"><span class="cap">See what’s inside</span></div>
 <p class="cap door__open"><span class="door__handle"></span><span class="door__open-t">${L ? '<span class="when-phone">Tap to</span><span class="when-desk">Click to</span>' : 'open'}</span></p>
-<div class="door__dl">${capFor(L ? 'Date' : 'Location', L ? c.date : c.location)}<p class="big">${fit(L ? c.date : c.location)}</p>${L ? note(c.time, ' dl__note--time') : ''}</div>
+<div class="door__dl">${capFor(L ? 'Date' : 'Location', L ? c.date : c.location)}<p class="big">${fit(L ? c.date : c.location)}</p>${L ? note(c.time, ' dl__note--time') : note(c.area, ' dl__note--area')}</div>
 </div>
 </div>`;
 }

@@ -26,7 +26,7 @@ const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = doc
 const pad = (n: number, w = 2) => String(Math.floor(n)).padStart(w, '0');
 const ids = content.channels.map((c) => c.id);
 const halo = scene.halo;
-const [SW] = scene.size as [number, number];
+const [SW, SH] = scene.size as [number, number];
 
 const caseEl = $('#case');
 const card = $('[data-card]');
@@ -61,6 +61,9 @@ let ps: Pose[] = poses(halo, scene.cameras, angle);
 let live = frontIndex(ps);
 const t0 = performance.now();
 let scale = 0.4572;
+// When her card is taller than her painting (some desktop shapes), the painting sits at the
+// bottom (her dress meets the edge) and her night-blue ground fills above: sy card pixels.
+let sy = 0;
 // X-ray: where the lens or band points, in her painting's pixels
 let mx = scene.chest.x;
 let my = scene.chest.y;
@@ -79,7 +82,9 @@ const camMult = () => (desk ? 1 : 1.13);
 
 function layout(): void {
   scale = card.clientWidth / SW;
+  sy = Math.max(0, Math.round(card.clientHeight - SH * scale));
   stage.style.setProperty('--s', String(scale));
+  stage.style.setProperty('--sy', `${sy}px`);
   xr.style.setProperty('--lfs', (desk ? 11 / scale : 10 / scale).toFixed(1) + 'px');
   const fig = $('.xray__svg');
   if (fig) {
@@ -231,7 +236,7 @@ function renderXray(): void {
     xr.style.width = xr.style.height = `${2 * R}px`;
     xr.style.transform = `translate3d(${(mx - R).toFixed(1)}px,${(my - R).toFixed(1)}px,0)`;
     xrIn.style.transform = `translate3d(${(R - mx).toFixed(1)}px,${(R - my).toFixed(1)}px,0)`;
-    lens.style.transform = `translate3d(${(mx * scale - 120).toFixed(1)}px,${(my * scale - 120).toFixed(1)}px,0)`;
+    lens.style.transform = `translate3d(${(mx * scale - 120).toFixed(1)}px,${(my * scale + sy - 120).toFixed(1)}px,0)`;
     xr.style.boxShadow = '';
     const on = hub && pointerIn && hover < 0;
     flag(xr, 'data-on', on);
@@ -245,23 +250,23 @@ function renderXray(): void {
     xr.style.width = `${SW}px`;
     xr.style.height = `${bh}px`;
     xr.style.transform = `translate3d(0,${top.toFixed(1)}px,0)`;
-    xr.style.boxShadow = `inset 0 ${1.5 / scale}px 0 #eeeaee, inset 0 ${-1.5 / scale}px 0 #eeeaee`;
+    xr.style.boxShadow = `inset 0 ${1.5 / scale}px 0 #ece6d6, inset 0 ${-1.5 / scale}px 0 #ece6d6`;
     xrIn.style.transform = `translate3d(0,${(-top).toFixed(1)}px,0)`;
     flag(xr, 'data-on', hub && scanning);
     flag(lens, 'data-on', false);
     bandLabel.style.display = hub && scanning ? 'flex' : 'none';
-    bandLabel.style.transform = `translateY(${(top * scale).toFixed(1)}px)`;
+    bandLabel.style.transform = `translateY(${(top * scale + sy).toFixed(1)}px)`;
     setText('[data-depth]', String(Math.round(20 + (my * scale) / 10)));
   }
 }
 
 function toStage(e: { clientX: number; clientY: number }): { x: number; y: number } {
   const r = card.getBoundingClientRect();
-  return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
+  return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top - sy) / scale };
 }
 
 function clampToCard(y: number, half: number): number {
-  const maxY = card.clientHeight / scale - half;
+  const maxY = (card.clientHeight - sy) / scale - half;
   return Math.max(half, Math.min(maxY, y));
 }
 

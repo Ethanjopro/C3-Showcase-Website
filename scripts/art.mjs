@@ -95,8 +95,10 @@ const BODY = { r: 0xc9, g: 0xcc, b: 0xc9 };
   const alpha = await sharp(Buffer.from(hard), { raw: { width: info.width, height: info.height, channels: 1 } })
     .dilate(1)
     .blur(0.8)
+    .extractChannel(0) // sharp hands back three channels after these; keep one
     .raw()
     .toBuffer();
+  if (alpha.length !== n) throw new Error(`front: alpha is ${alpha.length} bytes, expected ${n}`);
   const rgba = Buffer.alloc(n * 4);
   for (let i = 0; i < n; i++) {
     rgba.set([data[i * 3], data[i * 3 + 1], data[i * 3 + 2], alpha[i]], i * 4);
@@ -141,8 +143,9 @@ for (const f of (await readdir(path.join(SRC, 'cameras'))).filter((n) => n.endsW
   // The two halves of the word share one height, so SHOW and CASE sit on one baseline.
   const word = (left, right, file) =>
     sharp(title).extract({ left, top: 196, width: right - left, height: 144 }).webp({ quality: 92, alphaQuality: 100, effort: 6 }).toFile(path.join(OUT, file));
-  await word(462, 775, 'word-l.webp');
-  await word(775, 1068, 'word-r.webp');
+  // Cut at 778: columns 773-777 are the W's top serif, which stays with SHOW.
+  await word(462, 778, 'word-l.webp');
+  await word(778, 1068, 'word-r.webp');
 }
 
 // Her poster with the event details: shipped as is, to download.
