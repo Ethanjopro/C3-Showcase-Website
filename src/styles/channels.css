@@ -143,6 +143,14 @@
   --big: clamp(44px, 12cqw, 64px);
 }
 
+/* The narrowest phones: when above where, so the place isn't squeezed into a sliver */
+@container (max-width: 320px) {
+  .dateloc--ch {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
 /* The work: what kinds of thing are on show, as a list you can read from across a room */
 .kinds {
   margin: 22px 0 0;
