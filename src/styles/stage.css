@@ -1,6 +1,6 @@
 /* Her painting and the halo. The stage is drawn in her painting's own pixels
    (853 x 1280) and scaled to fit its card by main.ts (--s). Layers, back to front:
-   her; the ground under her wings; her wings, moving; the back half of the rig (a
+   her; her body again, floating; the ground under her wings; her wings, moving; the back half of the rig (a
    canvas: ring, wires, cameras); her head and hair again (masked); the ring at her
    hands, moving; the front half of the rig; her title and frame again; the X-ray. Each camera's link and number tag ride on top of its drawing. */
 
@@ -85,6 +85,37 @@ html[data-booted] .stage {
   mask: url('../art/occluder.webp') 0 0 / 100% 100% no-repeat;
 }
 
+/* Her whole body floats: everything of her painting below the title band, a few pixels down
+   and back up (scene.json "float"). The band stays still, so her title and the top of her
+   frame never double; the moving layer's top edge fades in, so there's no seam. The pieces
+   cut from her (wings, ring, the ground under them, her head mask) ride along with it, by
+   the separate `translate` property so their own motion still runs in `transform`. */
+.stage__body {
+  z-index: 1;
+  width: 853px;
+  pointer-events: none;
+  background-image: url('../art/her.webp');
+  background-size: 853px 1280px;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--feather, 60px));
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--feather, 60px));
+}
+
+.stage__body,
+.under,
+.stage__occ {
+  animation: float var(--float, 3.4s) ease-in-out infinite alternate;
+}
+
+@keyframes float {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 var(--drop, 6px);
+  }
+}
+
 /* Her wings, cut out of her painting (scene.json "parts"), rise and settle a few degrees
    about where they join her, slowly, like breathing. Under each is the ground it uncovers. */
 .under {
@@ -98,12 +129,14 @@ html[data-booted] .stage {
   z-index: 2;
   pointer-events: none;
   will-change: transform;
-  animation: flap var(--beat, 5s) ease-in-out var(--lag, 0s) infinite alternate;
+  animation:
+    flap var(--beat, 5s) ease-in-out var(--lag, 0s) infinite alternate,
+    float var(--float, 3.4s) ease-in-out infinite alternate;
 }
 
 .part--bob {
   z-index: 6;
-  animation-name: bob;
+  animation-name: bob, float;
 }
 
 /* The ring at her hands rises and sinks, a few pixels, as if it floated there */
@@ -294,7 +327,10 @@ html[data-booted] .stage {
 }
 
 /* ?still pins everything for repeatable screenshots: her wings at rest */
-html[data-still] .part {
+html[data-still] .part,
+html[data-still] .stage__body,
+html[data-still] .under,
+html[data-still] .stage__occ {
   animation: none;
 }
 
