@@ -1,5 +1,5 @@
-// The case: her halo turning, the doors, the channels, the X-ray and the live
-// readouts. The markup is already on the page (src/markup.ts); this wires it up.
+// The case: her halo turning, the doors, the channels, the X-ray and the
+// countdown. The markup is already on the page (src/markup.ts); this wires it up.
 
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';
@@ -14,33 +14,35 @@ import './styles/layout.css';
 
 import scene from './art/scene.json';
 import content from './content/site.json';
-import herUrl from './art/her.webp?url';
 import xrayUrl from './art/her-xray.webp?url';
-import { advance, aim, frontAngle, frontIndex, poses, shortestTurn, wire, type Pose } from './halo.ts';
-import { copyNumber, marksOf, saveCopy, seedOf } from './copy.ts';
+import { advance, aim, bases, CAM_BOX, frontAngle, frontIndex, poses, shortestTurn, type Pose } from './halo.ts';
+import { drawRig } from './rig.ts';
+import { countdown } from './event.ts';
 
 type View = 'hub' | 'channel';
 
 const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel) as T;
 const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => [...root.querySelectorAll<T>(sel)];
 const pad = (n: number, w = 2) => String(Math.floor(n)).padStart(w, '0');
+const wrap = (deg: number) => ((deg % 360) + 360) % 360;
 const ids = content.channels.map((c) => c.id);
 const halo = scene.halo;
+const camBases = bases(ids.length);
 const [SW, SH] = scene.size as [number, number];
 
 const caseEl = $('#case');
 const card = $('[data-card]');
 const stage = $('[data-stage]');
 const cams = $$<HTMLAnchorElement>('.cam');
-const wiresBack = $$<SVGLineElement>('.wires--back line');
-const wiresFront = $$<SVGLineElement>('.wires--front line');
+const rigBack = $<HTMLCanvasElement>('.rig--back');
+const rigFront = $<HTMLCanvasElement>('.rig--front');
+const ctxBack = rigBack.getContext('2d');
+const ctxFront = rigFront.getContext('2d');
 const xr = $('.xr');
 const xrIn = $('.xr__in');
 const lens = $<SVGSVGElement>('.lens');
-const bandLabel = $('.card__band-label');
 const feeds = $$<HTMLAnchorElement>('.feed');
 const keys = $$<HTMLAnchorElement>('.key');
-const radar = $$<SVGCircleElement>('[data-radar]');
 const flash = $('.tc__flash');
 const nextLink = $<HTMLAnchorElement>('[data-next]');
 const hint = $('[data-hint]');
@@ -57,12 +59,12 @@ let desk = deskQ.matches;
 // ---------- State ----------
 let angle = still ? Number(stillParam) : halo.startAngle;
 let hover = -1;
-let ps: Pose[] = poses(halo, scene.cameras, angle);
+let ps: Pose[] = poses(halo, camBases, angle);
 let live = frontIndex(ps);
-const t0 = performance.now();
+// Her painting's pixels to screen pixels, and how far down the card she sits: when the card
+// is taller than her painting (some desktop shapes) her dress meets the bottom edge and her
+// night-blue ground fills the space above.
 let scale = 0.4572;
-// When her card is taller than her painting (some desktop shapes), the painting sits at the
-// bottom (her dress meets the edge) and her night-blue ground fills above: sy card pixels.
 let sy = 0;
 // X-ray: where the lens or band points, in her painting's pixels
 let mx = scene.chest.x;
@@ -74,28 +76,8 @@ let turn: { from: number; by: number; t0: number; ms: number } | null = null;
 
 const state = () => caseEl.dataset.state as 'sealed' | 'open';
 const view = () => caseEl.dataset.view as View;
-const channel = () => caseEl.dataset.channel ?? 'info';
+const channel = () => caseEl.dataset.channel ?? ids[0]!;
 const chIndex = () => Math.max(0, ids.indexOf(channel()));
-
-// ---------- Layout ----------
-const camMult = () => (desk ? 1 : 1.13);
-
-function layout(): void {
-  scale = card.clientWidth / SW;
-  sy = Math.max(0, Math.round(card.clientHeight - SH * scale));
-  stage.style.setProperty('--s', String(scale));
-  stage.style.setProperty('--sy', `${sy}px`);
-  xr.style.setProperty('--lfs', (desk ? 11 / scale : 10 / scale).toFixed(1) + 'px');
-  const fig = $('.xray__svg');
-  if (fig) {
-    const k = Math.min(fig.clientWidth / 560, fig.clientHeight / 680) || 1;
-    fig.style.setProperty('--lfs', (11 / k).toFixed(1) + 'px');
-  }
-  measureShots();
-  renderHalo(true);
-  renderXray();
-  renderShots();
-}
 
 // Write an attribute only when it changes: these run many times a second.
 const flag = (el: Element, name: string, on: boolean) => {
@@ -106,26 +88,67 @@ const attr = (el: Element, name: string, value: string | null) => {
     if (el.hasAttribute(name)) el.removeAttribute(name);
   } else if (el.getAttribute(name) !== value) el.setAttribute(name, value);
 };
+// The page never adds or removes these elements, so look each selector up once.
+const found = new Map<string, HTMLElement[]>();
+const all = (sel: string): HTMLElement[] => {
+  let els = found.get(sel);
+  if (!els) found.set(sel, (els = $$(sel)));
+  return els;
+};
+function setText(sel: string, text: string): void {
+  for (const el of all(sel)) if (el.textContent !== text) el.textContent = text;
+}
+
+// ---------- Layout ----------
+const camSize = () => (desk ? halo.cameraSize : halo.cameraSizePhone);
+// The rig's canvases cover her painting from the card's top edge down to just under the halo.
+const RIG_BOTTOM = halo.cy + halo.ry + 150;
+let rigK = 1;
+let rigTop = 0;
+
+function layout(): void {
+  scale = card.clientWidth / SW;
+  sy = Math.max(0, Math.round(card.clientHeight - SH * scale));
+  stage.style.setProperty('--s', String(scale));
+  stage.style.setProperty('--sy', `${sy}px`);
+  xr.style.setProperty('--lfs', (desk ? 11 / scale : 10 / scale).toFixed(1) + 'px');
+  // One canvas pixel per screen pixel, so the drawing stays crisp at any size.
+  rigK = scale * Math.min(window.devicePixelRatio || 1, 3);
+  rigTop = -Math.ceil(sy / scale);
+  const h = RIG_BOTTOM - rigTop;
+  for (const c of [rigBack, rigFront]) {
+    const [w, hh] = [Math.round(SW * rigK), Math.round(h * rigK)];
+    if (c.width !== w || c.height !== hh) {
+      c.width = w;
+      c.height = hh;
+    }
+    c.style.width = `${SW}px`;
+    c.style.height = `${h}px`;
+    c.style.top = `${rigTop}px`;
+  }
+  measureShots();
+  renderHalo(true);
+  renderXray();
+  renderShots();
+}
 
 // ---------- The halo ----------
 const lastZ: number[] = [];
 const lastLive: boolean[] = [];
 
 function renderHalo(force = false): void {
-  ps = poses(halo, scene.cameras, angle, hover);
+  ps = poses(halo, camBases, angle, hover);
   const nextLive = hover >= 0 ? hover : view() === 'channel' ? chIndex() : frontIndex(ps);
   const liveChanged = nextLive !== live;
   live = nextLive;
-  // Cameras and wires are only drawn while her side of the panel shows (or turns away).
+  // The rig is only drawn while her side of the panel shows (or turns away).
   if (view() === 'channel' && !force && !turn) return;
-  const m = camMult();
+  const size = camSize();
+  // The link and number tag of each camera ride on top of its drawing.
   ps.forEach((p, i) => {
     const el = cams[i] as HTMLAnchorElement;
-    const art = scene.cameras[i]!;
-    const w = art.w * halo.cameraScale;
-    const h = art.h * halo.cameraScale;
-    el.style.transform = `translate3d(${(p.x - w / 2).toFixed(2)}px,${(p.y - h / 2).toFixed(2)}px,0) scale(${(p.scale * m).toFixed(4)}) rotate(${p.rotate.toFixed(2)}deg)`;
-    const z = i === hover ? 15 : p.depth < 0 ? 3 + Math.round((p.depth + 1) * 2) : 10 + Math.round(p.depth * 3);
+    el.style.transform = `translate3d(${(p.x - CAM_BOX.w / 2).toFixed(2)}px,${(p.y - CAM_BOX.h / 2).toFixed(2)}px,0) scale(${(p.scale * size).toFixed(4)})`;
+    const z = i === hover ? 15 : p.depth < 0 ? 4 : 10 + Math.round(p.depth * 3);
     if (force || lastZ[i] !== z) {
       el.style.zIndex = String(z);
       lastZ[i] = z;
@@ -135,66 +158,26 @@ function renderHalo(force = false): void {
       el.toggleAttribute('data-live', isLive);
       lastLive[i] = isLive;
     }
-    const [x1, y1, x2, y2] = wire(halo, p, h * m);
-    const on = p.depth < 0 ? wiresBack[i]! : wiresFront[i]!;
-    const off = p.depth < 0 ? wiresFront[i]! : wiresBack[i]!;
-    on.setAttribute('x1', x1.toFixed(1));
-    on.setAttribute('y1', y1.toFixed(1));
-    on.setAttribute('x2', x2.toFixed(1));
-    on.setAttribute('y2', String(y2));
-    flag(on, 'data-on', true);
-    flag(on, 'data-live', isLive);
-    flag(off, 'data-on', false);
-    flag(off, 'data-live', false);
   });
+  const o = { halo, poses: ps, turn: angle, live, size, k: rigK, origin: [0, rigTop] as [number, number] };
+  if (ctxBack) drawRig(ctxBack, 'back', o);
+  if (ctxFront) drawRig(ctxFront, 'front', o);
   if (liveChanged || force) renderLists();
 }
 
-// ---------- Feeds, keys, radar ----------
+// ---------- Feeds and keys ----------
 function renderLists(): void {
   const inCh = view() === 'channel';
   const ci = chIndex();
   ps.forEach((p, i) => {
-    const onDisplay = inCh && i === ci;
     for (const el of [feeds[i], keys[i]]) {
       if (!el) continue;
       flag(el, 'data-live', i === live);
-      flag(el, 'data-obstructed', p.obstructed);
       flag(el, 'data-hover', i === hover);
-      attr(el, 'aria-current', onDisplay ? 'page' : null);
+      attr(el, 'aria-current', inCh && i === ci ? 'page' : null);
     }
-    setText(`[data-state-of="${i}"]`, `${pad(i + 1)} · ${onDisplay ? 'On display' : p.obstructed ? 'Behind her' : i === live ? 'On air' : 'Live'}`);
     for (const shot of all(`.shot[data-shot="${i}"]`)) flag(shot, 'data-obstructed', p.obstructed);
-    // The radar only shows in the desktop subject panel at the hub.
-    const dot = radar[i];
-    if (dot && desk && !inCh) {
-      attr(dot, 'cx', (38 + (29 * (p.x - halo.cx)) / halo.rx).toFixed(1));
-      attr(dot, 'cy', (38 + (29 * (p.y - halo.cy)) / halo.ry).toFixed(1));
-      attr(dot, 'r', i === live ? '4.5' : '3');
-      flag(dot, 'data-live', i === live);
-      flag(dot, 'data-obstructed', p.obstructed);
-    }
   });
-  const inView = ps.filter((p) => !p.obstructed).length;
-  setText('[data-cams]', String(inView));
-  setText('[data-cams-of]', `${inView}/6`);
-  setText('[data-front-num]', pad(live + 1));
-  setText('[data-front-name]', content.channels[live]?.name ?? '');
-  const cam = ps[ci];
-  for (const shot of all('.shot[data-shot="-1"]')) flag(shot, 'data-obstructed', !!cam?.obstructed);
-  setText('[data-cam-state]', cam?.obstructed ? 'Behind her' : 'On air');
-}
-
-// The page never adds or removes these elements, so look each selector up once.
-const found = new Map<string, HTMLElement[]>();
-const all = (sel: string): HTMLElement[] => {
-  let els = found.get(sel);
-  if (!els) found.set(sel, (els = $$(sel)));
-  return els;
-};
-
-function setText(sel: string, text: string): void {
-  for (const el of all(sel)) if (el.textContent !== text) el.textContent = text;
 }
 
 // A feed is a crop of her painting, pointed at her face from where its camera sits.
@@ -202,21 +185,17 @@ const shotBoxes = new Map<HTMLElement, { w: number; h: number; img: HTMLElement 
 function measureShots(): void {
   shotBoxes.clear();
   for (const shot of $$('.shot')) {
-    const img = $('.shot__img', shot);
     if (shot.offsetParent === null) continue;
-    shotBoxes.set(shot, { w: shot.clientWidth, h: shot.clientHeight, img });
+    shotBoxes.set(shot, { w: shot.clientWidth, h: shot.clientHeight, img: $('.shot__img', shot) });
   }
 }
 
 function renderShots(): void {
-  const ci = chIndex();
   for (const [shot, box] of shotBoxes) {
-    const i = Number(shot.dataset.shot);
-    const p = ps[i < 0 ? ci : i];
+    const p = ps[Number(shot.dataset.shot)];
     if (!p || !box.w) continue;
-    // How much of her each kind of feed shows across, in her pixels.
-    const across = i < 0 ? 250 : box.w < 60 ? 200 : 280;
-    const zoom = box.w / across;
+    // How much of her each feed shows across, in her pixels.
+    const zoom = box.w / (box.w < 60 ? 200 : 280);
     const a = aim(halo, scene.face, p);
     box.img.style.backgroundSize = `${(SW * zoom).toFixed(1)}px auto`;
     box.img.style.backgroundPosition = `${(box.w / 2 - a.x * zoom).toFixed(1)}px ${(box.h / 2 - a.y * zoom).toFixed(1)}px`;
@@ -227,7 +206,7 @@ function renderShots(): void {
 const BAND = 176;
 // The halo lives above this line (in her pixels). The X-ray stays below it, so it
 // never covers a camera you're reaching for.
-const HALO_LINE = halo.cy + halo.ry + 50;
+const HALO_LINE = halo.cy + halo.ry + 60;
 function renderXray(): void {
   const hub = view() === 'hub' && state() === 'open';
   if (desk) {
@@ -242,7 +221,6 @@ function renderXray(): void {
     flag(xr, 'data-on', on);
     flag(lens, 'data-on', on);
     flag(card, 'data-lens', on);
-    bandLabel.style.display = '';
   } else {
     const bh = BAND / scale;
     const top = my - bh / 2;
@@ -254,9 +232,6 @@ function renderXray(): void {
     xrIn.style.transform = `translate3d(0,${(-top).toFixed(1)}px,0)`;
     flag(xr, 'data-on', hub && scanning);
     flag(lens, 'data-on', false);
-    bandLabel.style.display = hub && scanning ? 'flex' : 'none';
-    bandLabel.style.transform = `translateY(${(top * scale + sy).toFixed(1)}px)`;
-    setText('[data-depth]', String(Math.round(20 + (my * scale) / 10)));
   }
 }
 
@@ -355,7 +330,6 @@ card.addEventListener('contextmenu', (e) => {
 
 function syncHint(): void {
   hint.textContent = scanning ? 'Drag to move the X-ray.' : hintText;
-  renderStatus();
 }
 
 // ---------- Hover: a camera, its feed or its key lifts the camera and stops the turn ----------
@@ -380,38 +354,11 @@ function setHover(i: number): void {
   }),
 );
 
-// ---------- Readouts ----------
-function timecode(ms: number): string {
-  const s = ms / 1000;
-  return `${pad(s / 3600)}:${pad((s / 60) % 60)}:${pad(s % 60)}:${pad((ms % 1000) / 40)}`;
-}
-
-let lastSlow = -Infinity;
-function renderReadouts(now: number): void {
-  const el = now - t0;
-  const tc = timecode(el);
-  setText('[data-tc]', tc);
-  if (now - lastSlow > 300) {
-    lastSlow = now;
-    const aug = 74.2 + (el / 1000) * 0.003;
-    setText('[data-aug]', aug.toFixed(2));
-    setText('[data-aug-pct]', aug.toFixed(2) + '%');
-    for (const b of all('[data-aug-bar]')) b.style.width = `${Math.min(aug, 100).toFixed(2)}%`;
-    setText('[data-deg]', `${pad(angle, 3)}°`);
-  }
-  renderStatus(tc);
-}
-
-function renderStatus(tc = timecode(performance.now() - t0)): void {
-  const s = state() === 'sealed' ? 'Sealed' : view() === 'channel' ? `On air ${tc}` : scanning ? 'Scanning' : `Rec ${tc}`;
-  setText('[data-status]', s);
-}
-
 // ---------- Tuning in: the channel's camera swings round to the front and holds ----------
 function bringToFront(i: number, instant: boolean): void {
-  const cam = scene.cameras[i];
-  if (!cam) return;
-  const to = frontAngle(cam);
+  const base = camBases[i];
+  if (base === undefined) return;
+  const to = frontAngle(base);
   const by = shortestTurn(angle, to);
   if (instant || reduce || Math.abs(by) < 0.5) {
     turn = null;
@@ -433,25 +380,23 @@ function frame(now: number): void {
   if (state() === 'sealed') return;
   if (turn) {
     const k = Math.max(0, Math.min(1, (now - turn.t0) / turn.ms));
-    const eased = 1 - (1 - k) ** 3;
-    angle = (((turn.from + turn.by * eased) % 360) + 360) % 360;
+    angle = wrap(turn.from + turn.by * (1 - (1 - k) ** 3));
     if (k >= 1) {
-      angle = (((turn.from + turn.by) % 360) + 360) % 360;
+      angle = wrap(turn.from + turn.by);
       turn = null;
     }
   } else if (hover < 0 && view() === 'hub') {
     angle = advance(angle, dt, halo.turnSeconds);
   }
-  const moved = angle !== lastAngle;
+  // Held still (a channel on air, a hovered camera): nothing to redraw.
+  if (angle === lastAngle) return;
   lastAngle = angle;
   renderHalo();
-  // Held still (a channel on air, a hovered camera): the feeds don't change, so skip them.
-  if (moved && (turn || now - lastShots > 66)) {
+  if (turn || now - lastShots > 66) {
     lastShots = now;
     renderShots();
     renderLists();
   }
-  renderReadouts(now);
 }
 
 function start(): void {
@@ -463,7 +408,21 @@ function stop(): void {
   cancelAnimationFrame(raf);
   raf = 0;
 }
-document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+
+// ---------- The countdown: the one live reading, and a real one ----------
+const startsAt = Date.parse(content.start);
+const endsAt = Date.parse(content.end);
+function renderCount(): void {
+  const c = countdown(Date.now(), startsAt, endsAt);
+  setText('[data-count]', c.text);
+  document.documentElement.dataset.event = c.state;
+}
+setInterval(renderCount, 30_000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return stop();
+  renderCount();
+  start();
+});
 
 // ---------- The case: doors, channels, routing ----------
 const front = $('.face--front');
@@ -495,7 +454,6 @@ function setChannelBits(id: string): void {
   setText('[data-ch-num]', pad(i + 1));
   const next = content.channels[(i + 1) % ids.length]!;
   nextLink.href = `#${next.id}`;
-  setText('[data-next-num]', pad(((i + 1) % ids.length) + 1));
   setText('[data-next-name]', next.name);
 }
 
@@ -514,7 +472,7 @@ function focusSoon(el: HTMLElement | null | undefined): void {
 // Her X-ray is the biggest image and stays hidden until the case is open: load it then.
 function loadXray(): void {
   for (const el of $$('[data-xray]')) {
-    el.setAttribute(el instanceof HTMLImageElement ? 'src' : 'href', xrayUrl);
+    el.setAttribute('src', xrayUrl);
     el.removeAttribute('data-xray');
   }
 }
@@ -525,7 +483,6 @@ function openDoors(focus = true): void {
   remember(true);
   loadXray();
   applyInert();
-  renderStatus();
   layout();
   start();
   if (focus) focusSoon((desk ? feeds[0] : keys[0]) ?? null);
@@ -538,7 +495,6 @@ function closeDoors(): void {
   remember(false);
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   applyInert();
-  renderStatus();
   focusSoon($('.seal'));
 }
 
@@ -556,8 +512,7 @@ function route(user: boolean): void {
     if (!user || !wasChannel || prev !== h) bringToFront(ids.indexOf(h), !user);
     if (wasChannel && prev !== h) staticCut();
     if (user) focusSoon(document.getElementById(`ch-${h}-t`));
-    const sc = $('.tc__scroll');
-    if (sc) sc.scrollTop = 0;
+    $('.tc__scroll').scrollTop = 0;
   } else if (view() === 'channel') {
     const prev = chIndex();
     caseEl.dataset.view = 'hub';
@@ -565,17 +520,15 @@ function route(user: boolean): void {
   }
   if (state() === 'open') loadXray();
   applyInert();
-  renderHalo(true);
-  renderLists();
+  lastAngle = NaN; // the halo may have jumped: draw it afresh
   layout();
-  lastSlow = -Infinity; // the halo may have jumped: refresh the slow readouts now
-  renderReadouts(performance.now());
+  renderLists();
   start();
 }
 
 window.addEventListener('hashchange', () => route(true));
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && view() === 'channel' && !(e.target as Element).closest('input')) location.hash = 'halo';
+  if (e.key === 'Escape' && view() === 'channel') location.hash = 'halo';
 });
 // A keyboard press (detail 0) moves focus to the first channel; a click leaves it be.
 $('.seal').addEventListener('click', (e) => openDoors(e.detail === 0));
@@ -589,27 +542,21 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ---------- RSVP: your own copy ----------
-const nameInput = $<HTMLInputElement>('#copy-name');
-const marksSvg = $('[data-marks]');
-function renderCopy(): void {
-  const name = nameInput.value.trim();
-  const seed = seedOf(name || 'C3');
-  setText('[data-copy-name]', (name || 'Your name').toUpperCase());
-  setText('[data-copy-no]', copyNumber(seed));
-  marksSvg.innerHTML = marksOf(seed)
-    .map((m) => `<rect x="${m.x}" y="${m.y}" width="${m.w}" height="2.5"/>`)
-    .join('');
-}
-const copyStatus = $('[data-copy-status]');
-nameInput.addEventListener('input', () => {
-  renderCopy();
-  copyStatus.textContent = '';
-});
-$('[data-save]').addEventListener('click', async () => {
-  copyStatus.textContent = 'Making your poster…';
-  const ok = await saveCopy({ name: nameInput.value.trim(), date: content.date, her: herUrl }).catch(() => false);
-  copyStatus.textContent = ok ? 'Saved. Look in your downloads.' : 'That didn’t save. Try once more?';
+// ---------- Send it to a friend: the share sheet where there is one, else copy the link ----------
+const shareStatus = $('[data-share-status]');
+$('[data-share]').addEventListener('click', async () => {
+  const data = { title: content.title, text: `${content.title}: ${content.dateLong}, ${content.time}, ${content.location}.`, url: content.url };
+  shareStatus.textContent = '';
+  try {
+    if (typeof navigator.share === 'function') await navigator.share(data);
+    else {
+      await navigator.clipboard.writeText(`${data.text} ${data.url}`);
+      shareStatus.textContent = 'Link copied. Paste it to a friend.';
+    }
+  } catch (err) {
+    // Closing the share sheet isn't a failure; anything else, show the link to copy by hand.
+    if ((err as Error).name !== 'AbortError') shareStatus.textContent = `Copy this link: ${content.url}`;
+  }
 });
 
 // ---------- Phone: swipe a channel sideways for the next or the one before ----------
@@ -619,8 +566,7 @@ tc.addEventListener(
   'touchstart',
   (e) => {
     const t = e.touches[0];
-    const onOwnScroller = (e.target as Element).closest('input, .code');
-    swipeFrom = !desk && t && e.touches.length === 1 && !onOwnScroller ? { x: t.clientX, y: t.clientY } : null;
+    swipeFrom = !desk && t && e.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null;
   },
   { passive: true },
 );
@@ -647,7 +593,7 @@ function onMedia(): void {
   if (reduce) {
     stop();
     // A swing in progress lands at once.
-    if (turn) angle = (((turn.from + turn.by) % 360) + 360) % 360;
+    if (turn) angle = wrap(turn.from + turn.by);
     turn = null;
     mx = scene.chest.x;
     my = scene.chest.y;
@@ -657,14 +603,8 @@ function onMedia(): void {
 reduceQ.addEventListener('change', onMedia);
 deskQ.addEventListener('change', onMedia);
 new ResizeObserver(() => layout()).observe(card);
-const fig = $('.xray');
-if (fig) new ResizeObserver(() => layout()).observe(fig);
 
-renderCopy();
+renderCount();
 setChannelBits(channel());
 route(false);
-applyInert();
-layout();
-renderReadouts(performance.now());
 document.documentElement.dataset.booted = '';
-start();

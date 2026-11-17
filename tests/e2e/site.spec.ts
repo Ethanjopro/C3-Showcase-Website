@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-const CHANNELS = ['info', 'rsvp', 'projects', 'inside', 'source', 'credits'];
+const CHANNELS = ['info', 'attend', 'work', 'poster'];
 
 async function boot(page: Page, url = './') {
   const errors: string[] = [];
@@ -20,7 +20,8 @@ const caseState = (page: Page) =>
 test('arrives sealed, saying what, when and where, and opens with one tap', async ({ page }) => {
   const errors = await boot(page);
   await expect(page.locator('h1')).toContainText('C3 Showcase');
-  await expect(page.locator('h1')).toContainText(/Date \S+.*Location \S+/);
+  await expect(page.locator('h1')).toContainText('Thursday, December 3, 2026');
+  await expect(page.locator('h1')).toContainText('Grand Atrium');
   await expect(page.locator('.door--l .door__dl .big')).toBeVisible();
   expect((await caseState(page)).state).toBe('sealed');
   await page.locator('.seal').click();
@@ -28,18 +29,32 @@ test('arrives sealed, saying what, when and where, and opens with one tap', asyn
   expect(errors).toEqual([]);
 });
 
-test('RSVP is one tap away even while sealed', async ({ page }) => {
+test('saving the date is one tap away even while sealed', async ({ page }) => {
   await boot(page);
-  await page.locator('.bar__rsvp').click();
-  await expect.poll(async () => (await caseState(page)).channel).toBe('rsvp');
+  await page.locator('.bar__cta').click();
+  await expect.poll(async () => (await caseState(page)).channel).toBe('attend');
   expect((await caseState(page)).view).toBe('channel');
-  await expect(page.locator('#ch-rsvp-t')).toBeFocused();
+  await expect(page.locator('#ch-attend-t')).toBeFocused();
+  // Both calendars get the real time: 5:00 PM in Dallas is 23:00 UTC.
+  await expect(page.locator('#ch-attend a[href*="calendar.google.com"]')).toHaveAttribute('href', /dates=20261203T230000Z%2F20261204T003000Z/);
+  const ics = await page.request.get(new URL('c3-showcase.ics', page.url()).href);
+  expect(ics.ok()).toBe(true);
+  expect(await ics.text()).toContain('DTSTART:20261203T230000Z');
+});
+
+test('the countdown says how far off the show is', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-17T12:00:00-06:00') });
+  await boot(page, './#info');
+  await expect(page.locator('#ch-info [data-count]')).toHaveText('16 days to go');
+  await page.clock.setFixedTime(new Date('2026-12-03T17:30:00-06:00'));
+  await page.clock.runFor(31_000);
+  await expect(page.locator('#ch-info [data-count]')).toHaveText('Happening now');
 });
 
 test('keyboard: open the case, tune in, and come back', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'keyboard path checked at desktop size');
   await boot(page);
-  await page.keyboard.press('Tab'); // RSVP
+  await page.keyboard.press('Tab'); // Save the date
   await page.keyboard.press('Tab'); // the sealed case
   await expect(page.locator('.seal')).toBeFocused();
   await page.keyboard.press('Enter');
@@ -47,7 +62,7 @@ test('keyboard: open the case, tune in, and come back', async ({ page }, info) =
   await page.keyboard.press('Tab');
   await expect(page.locator('.feed').nth(1)).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#ch-rsvp-t')).toBeFocused();
+  await expect(page.locator('#ch-attend-t')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect.poll(async () => (await caseState(page)).view).toBe('hub');
   await expect(page.locator('.feed').nth(1)).toBeFocused();
@@ -62,7 +77,22 @@ test('every channel has a page of its own, reachable by its link', async ({ page
     await expect(page.locator(`#ch-${id} h2`)).toHaveCount(1);
   }
   await page.goBack();
-  await expect.poll(async () => (await caseState(page)).channel).toBe('source');
+  await expect.poll(async () => (await caseState(page)).channel).toBe('work');
+});
+
+test('the halo is drawn: a ring and cameras on both sides of her', async ({ page }) => {
+  await boot(page);
+  await page.locator('.seal').click();
+  await page.waitForTimeout(300);
+  for (const half of ['back', 'front']) {
+    const inked = await page.locator(`.rig--${half}`).evaluate((c: HTMLCanvasElement) => {
+      const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 4) if (d[i]! > 0) n++;
+      return n / (c.width * c.height);
+    });
+    expect(inked, half).toBeGreaterThan(0.003);
+  }
 });
 
 test('the halo turns, and stops for a hovered or focused camera', async ({ page }, info) => {
@@ -85,14 +115,13 @@ test('tuning in swings that channel\'s camera round to the front, so its feed is
   await page.locator('.seal').click();
   const list = info.project.name === 'desktop' ? '.feed' : '.key';
   const attr = info.project.name === 'desktop' ? 'data-feed' : 'data-key';
-  for (const i of [3, 0]) {
+  for (const i of [2, 0]) {
     await page.locator(list).nth(i).click();
     await expect.poll(async () => (await caseState(page)).view).toBe('channel');
     // The swing takes about a second; then the camera holds at the front.
     await expect(page.locator(`${list}[${attr}="${i}"]`)).toHaveAttribute('data-live', '', { timeout: 3000 });
     await page.waitForTimeout(1300);
-    await expect(page.locator(`${list}[${attr}="${i}"]`)).not.toHaveAttribute('data-obstructed');
-    await expect(page.locator('.shot[data-shot="-1"]').first()).not.toHaveAttribute('data-obstructed');
+    await expect(page.locator(`${list}[${attr}="${i}"] .shot`)).not.toHaveAttribute('data-obstructed');
     await page.locator('.tc__back').click();
     await expect.poll(async () => (await caseState(page)).view).toBe('hub');
     // Back at the hub, it's still the camera at the front.
@@ -101,16 +130,15 @@ test('tuning in swings that channel\'s camera round to the front, so its feed is
 });
 
 test('a deep link lands with its camera already at the front', async ({ page }) => {
-  // Projects' camera starts behind her head; arriving on its channel brings it round at once.
-  await boot(page, './#projects');
-  await expect(page.locator('.shot[data-shot="-1"]').first()).not.toHaveAttribute('data-obstructed');
+  // The third camera starts behind her head; arriving on its channel brings it round at once.
+  await boot(page, './#work');
   await expect(page.locator('.key[data-key="2"]')).toHaveAttribute('data-live', '');
-  await expect(page.locator('.key[data-key="2"]')).not.toHaveAttribute('data-obstructed');
+  await expect(page.locator('.key[data-key="2"] .shot')).not.toHaveAttribute('data-obstructed');
 });
 
 test('on a phone, swiping a channel sideways goes to the next or the one before', async ({ page }, info) => {
   test.skip(info.project.name !== 'phone', 'touch');
-  await boot(page, './#rsvp');
+  await boot(page, './#attend');
   const swipe = (x0: number, x1: number) =>
     page.locator('.tc').evaluate(
       (tc, [a, b]) => {
@@ -121,21 +149,32 @@ test('on a phone, swiping a channel sideways goes to the next or the one before'
       [x0, x1],
     );
   await swipe(320, 80);
-  await expect.poll(async () => (await caseState(page)).channel).toBe('projects');
+  await expect.poll(async () => (await caseState(page)).channel).toBe('work');
   await swipe(80, 320);
-  await expect.poll(async () => (await caseState(page)).channel).toBe('rsvp');
+  await expect.poll(async () => (await caseState(page)).channel).toBe('attend');
   await swipe(200, 230); // too short: stays put
   await page.waitForTimeout(200);
-  expect((await caseState(page)).channel).toBe('rsvp');
+  expect((await caseState(page)).channel).toBe('attend');
 });
 
-test('saving your poster downloads it and says so', async ({ page }) => {
-  await boot(page, './#rsvp');
-  await page.locator('#copy-name').fill('Ada');
+test('sending it to a friend copies the link where there is no share sheet', async ({ page, context }, info) => {
+  test.skip(info.project.name !== 'desktop', 'the clipboard path is the desktop one');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await boot(page, './#attend');
+  await page.evaluate(() => Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }));
+  await page.locator('[data-share]').click();
+  await expect(page.locator('[data-share-status]')).toHaveText(/Link copied/);
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('ethanjopro.github.io/C3-Showcase-Website');
+});
+
+test('her poster is there to look at and to download', async ({ page }) => {
+  await boot(page, './#poster');
+  const img = page.locator('#ch-poster .poster__img');
+  await expect(img).toBeVisible();
+  await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth)).toBe(853);
   const download = page.waitForEvent('download');
-  await page.locator('[data-save]').click();
-  expect((await download).suggestedFilename()).toBe('c3-showcase-ada.png');
-  await expect(page.locator('[data-copy-status]')).toHaveText(/Saved/);
+  await page.locator('#ch-poster a[download]').click();
+  expect((await download).suggestedFilename()).toBe('c3-showcase-poster.webp');
 });
 
 test.describe('reduced motion', () => {
@@ -148,8 +187,8 @@ test.describe('reduced motion', () => {
     await page.waitForTimeout(500);
     expect(await cam.evaluate((el: HTMLElement) => el.style.transform)).toBe(t1);
     expect(await page.locator('.panel').evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s');
-    await page.goto('./#inside');
-    await expect(page.locator('#ch-inside')).toBeVisible();
+    await page.goto('./#poster');
+    await expect(page.locator('#ch-poster')).toBeVisible();
   });
 });
 
@@ -178,7 +217,7 @@ test('no accessibility violations: sealed, open, and a channel', async ({ page }
   await page.locator('.seal').click();
   await page.waitForTimeout(1700);
   await check();
-  await page.goto('./#rsvp');
+  await page.goto('./#attend');
   await page.waitForTimeout(1200);
   await check();
 });

@@ -154,11 +154,9 @@
 }
 
 .door__dl {
-  /* Both doors' blocks are the same height, so everything above them lines up at the seam
-     whatever each one holds (a long place name, a line under the date or not). */
-  box-sizing: content-box;
-  /* cap (0.75rem) + big + note (0.9375rem), in rem so it grows with the reader's text size */
-  min-height: calc(0.75rem * 1.4 + 0.9 * clamp(34px, 16cqw, 54px) + 0.9375rem * 1.3 + 6px);
+  /* Both doors' blocks are built the same (label, big line, small line) and so stand the
+     same height, which keeps everything above them level across the seam. */
+  --big: clamp(34px, 16cqw, 54px);
   padding-inline: 10cqw;
 }
 
@@ -167,8 +165,11 @@
 }
 
 .door__dl .big {
-  font-size: clamp(34px, 16cqw, 54px);
   color: var(--ext-text);
+}
+
+.door__dl .dl__note {
+  white-space: nowrap;
 }
 
 .when-desk {

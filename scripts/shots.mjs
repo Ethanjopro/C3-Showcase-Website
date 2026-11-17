@@ -1,11 +1,11 @@
 // npm run shots: build, serve dist/, and capture every state of the case at
 // 390 x 844 and 1440 x 900 into .shots/ (CLAUDE.md "Check your work").
 //
-//   .shots/<state>@<width>.png       sealed, open, scan (phone), info … credits
+//   .shots/<state>@<width>.png       sealed, open, scan (phone), info … poster
 //   .shots/<state>-reduced@<width>.png  the same with prefers-reduced-motion
 //
 // Flags: --no-build (reuse dist/), and state names to capture only those,
-// e.g. `npm run shots -- open inside`.
+// e.g. `npm run shots -- open info`.
 
 import { build, preview } from 'vite';
 import { chromium } from '@playwright/test';
@@ -29,14 +29,12 @@ const STATES = [
   { name: 'sealed', hash: '' },
   { name: 'open', hash: '', open: true },
   { name: 'scan', hash: '', open: true, widths: [390], act: async (page) => page.mouse.move(195, 380) },
-  { name: 'hover', hash: '', open: true, widths: [1440], act: async (page) => page.hover('.feed[data-feed="3"]') },
+  { name: 'hover', hash: '', open: true, widths: [1440], act: async (page) => page.hover('.feed[data-feed="2"]') },
   { name: 'lens', hash: '', open: true, widths: [1440], act: async (page) => page.mouse.move(720, 560) },
   { name: 'info', hash: '#info' },
-  { name: 'rsvp', hash: '#rsvp', act: async (page) => page.fill('#copy-name', 'Ethan') },
-  { name: 'projects', hash: '#projects' },
-  { name: 'inside', hash: '#inside' },
-  { name: 'source', hash: '#source' },
-  { name: 'credits', hash: '#credits' },
+  { name: 'attend', hash: '#attend' },
+  { name: 'work', hash: '#work' },
+  { name: 'poster', hash: '#poster' },
 ];
 
 if (!args.includes('--no-build')) await build({ root: ROOT, logLevel: 'warn' });

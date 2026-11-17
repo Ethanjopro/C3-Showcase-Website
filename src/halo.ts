@@ -1,5 +1,5 @@
-// The halo: six cameras riding an ellipse above her head. Pure math, no DOM, so
-// it can be unit-tested and shared by the stage, the feeds and the radar.
+// The halo: one camera per channel riding an ellipse above her head. Pure math,
+// no DOM, so it can be unit-tested and shared by the rig, the stage and the feeds.
 
 export interface Halo {
   cx: number;
@@ -8,26 +8,20 @@ export interface Halo {
   ry: number;
   turnSeconds: number;
   startAngle: number;
-  cameraScale: number;
-}
-
-export interface CameraArt {
-  file: string;
-  w: number;
-  h: number;
-  /** Where this camera sits on the ring at angle 0, in degrees (90 = front). */
-  base: number;
+  cameraSize: number;
+  cameraSizePhone: number;
+  aimDrop: number;
 }
 
 export interface Pose {
   index: number;
+  /** The camera's angle on the ring in degrees: 90 is the front, 270 behind her. */
+  angle: number;
   x: number;
   y: number;
   /** sin of the camera's angle: 1 at the front, -1 at the back. */
   depth: number;
   scale: number;
-  /** Small tilt that follows the ring's curve. */
-  rotate: number;
   /** Far enough behind her head that its feed is blocked. */
   obstructed: boolean;
 }
@@ -36,26 +30,34 @@ export interface Pose {
 export const OBSTRUCTED_BELOW = -0.35;
 export const HOVER_LIFT = 1.22;
 
+/** The hit box of a camera on her painting, in her pixels (the drawing itself is on a canvas). */
+export const CAM_BOX = { w: 104, h: 76 };
+
 /** How far above her painting the wires run (the card clips them). */
 export const WIRE_TOP = -700;
 
-export function pose(halo: Halo, cam: CameraArt, index: number, angle: number, lifted = false): Pose {
-  const a = ((cam.base + angle) * Math.PI) / 180;
+const wrap = (deg: number) => ((deg % 360) + 360) % 360;
+
+/** Where each of `n` cameras sits on the ring at angle 0: evenly spaced, the first at the front. */
+export const bases = (n: number): number[] => Array.from({ length: n }, (_, i) => wrap(90 + (i * 360) / n));
+
+export function pose(halo: Halo, base: number, index: number, angle: number, lifted = false): Pose {
+  const deg = wrap(base + angle);
+  const a = (deg * Math.PI) / 180;
   const depth = Math.sin(a);
-  const scale = (0.8 + (0.24 * (depth + 1)) / 2) * (lifted ? HOVER_LIFT : 1);
   return {
     index,
+    angle: deg,
     x: halo.cx + halo.rx * Math.cos(a),
     y: halo.cy + halo.ry * depth,
     depth,
-    scale,
-    rotate: -6 * Math.cos(a),
+    scale: (0.8 + (0.24 * (depth + 1)) / 2) * (lifted ? HOVER_LIFT : 1),
     obstructed: depth < OBSTRUCTED_BELOW,
   };
 }
 
-export function poses(halo: Halo, cams: CameraArt[], angle: number, lifted = -1): Pose[] {
-  return cams.map((c, i) => pose(halo, c, i, angle, i === lifted));
+export function poses(halo: Halo, camBases: number[], angle: number, lifted = -1): Pose[] {
+  return camBases.map((b, i) => pose(halo, b, i, angle, i === lifted));
 }
 
 /** The camera nearest the front: the one on air when nothing is hovered. */
@@ -65,33 +67,18 @@ export function frontIndex(ps: Pose[]): number {
   return best;
 }
 
-/** The halo angle that brings this camera round to the front. In [0, 360). */
-export function frontAngle(cam: CameraArt): number {
-  return (((90 - cam.base) % 360) + 360) % 360;
-}
+/** The halo angle that brings the camera at `base` round to the front. In [0, 360). */
+export const frontAngle = (base: number): number => wrap(90 - base);
 
 /** The shorter way round from one angle to another, in degrees: (-180, 180]. */
 export function shortestTurn(from: number, to: number): number {
-  const d = (((to - from) % 360) + 360) % 360;
+  const d = wrap(to - from);
   return d > 180 ? d - 360 : d;
 }
 
 /** Next angle after `dt` seconds of turning. Kept in [0, 360). */
 export function advance(angle: number, dt: number, turnSeconds: number): number {
-  return (((angle + (dt * 360) / turnSeconds) % 360) + 360) % 360;
-}
-
-/**
- * The suspension wire: from the top of the camera straight up past the top of
- * her painting, splaying out a little like a stage rig.
- */
-export function wire(halo: Halo, p: Pose, camHeight: number): [number, number, number, number] {
-  const top = p.y - camHeight * p.scale * 0.36;
-  // Splayed out a little: through (cx + 1.32 (x - cx), -40), carried on up to WIRE_TOP so it
-  // still reaches the card's top edge when her painting sits lower in a tall card.
-  const x40 = halo.cx + (p.x - halo.cx) * 1.32;
-  const t = (top - WIRE_TOP) / (top + 40);
-  return [p.x, top, p.x + (x40 - p.x) * t, WIRE_TOP];
+  return wrap(angle + (dt * 360) / turnSeconds);
 }
 
 /**

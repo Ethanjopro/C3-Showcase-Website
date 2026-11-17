@@ -1,28 +1,36 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import site from '../../src/content/site.json';
 import scene from '../../src/art/scene.json';
 import widths from '../../src/content/title-widths.json';
 import { esc, renderCase, type Content, type Scene } from '../../src/markup.ts';
+import { describe as describePage } from '../../scripts/vite/case-html.ts';
 import { emWidth, fitFraction } from '../../src/fit.ts';
 
 const c = site as unknown as Content;
 const s = scene as unknown as Scene;
 const W = widths.widths as Record<string, number>;
 const html = renderCase(c, s, W);
-const count = (re: RegExp) => (html.match(re) ?? []).length;
+const count = (re: RegExp, text = html) => (text.match(re) ?? []).length;
+const text = (h: string) => h.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ');
 
 describe('markup', () => {
   it('has one camera, feed, key and channel per channel', () => {
-    expect(c.channels).toHaveLength(6);
-    expect(s.cameras).toHaveLength(6);
-    expect(count(/class="cam"/g)).toBe(6);
-    expect(count(/class="feed"/g)).toBe(6);
-    expect(count(/class="key"/g)).toBe(6);
-    expect(count(/<section class="ch"/g)).toBe(6);
+    const n = c.channels.length;
+    expect(n).toBe(4);
+    expect(count(/class="cam"/g)).toBe(n);
+    expect(count(/class="feed"/g)).toBe(n);
+    expect(count(/class="key"/g)).toBe(n);
+    expect(count(/<section class="ch"/g)).toBe(n);
   });
 
   it('links every channel the same way from the halo, the feeds and the keys', () => {
     for (const ch of c.channels) expect(count(new RegExp(`href="#${ch.id}"`, 'g'))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('shows a channel only through CSS that knows its id', () => {
+    const css = readFileSync(new URL('../../src/styles/channels.css', import.meta.url), 'utf8');
+    for (const ch of c.channels) expect(css).toContain(`.case[data-channel='${ch.id}'] .ch[data-ch='${ch.id}']`);
   });
 
   it('never gives a channel section the id its hash uses (no jump-scrolling)', () => {
@@ -30,66 +38,85 @@ describe('markup', () => {
   });
 
   it('says what, when and where in the heading', () => {
-    const dated = renderCase({ ...c, date: '4.12.26', dateSpoken: '', location: 'Room 101', rooms: '', time: '' }, s, W);
-    expect(dated).toMatch(/<h1[^>]*>C3 Showcase[^<]*Date 4\.12\.26[^<]*Location Room 101/);
-    expect(html).toMatch(/<h1[^>]*>[^<]*Date Thursday, December 3, 2026\. 5:00–6:30 PM[^<]*Location Grand Atrium, Meadows, with the Jordan Gallery and Dean&#39;s Gallery/);
+    expect(html).toMatch(/<h1[^>]*>C3 Showcase: the Creative Computing class showcase\. Thursday, December 3, 2026, 5:00–6:30 PM\. Grand Atrium, Meadows School of the Arts, SMU\.<\/h1>/);
   });
 
-  it('says "to be announced" while a value is still her placeholder, and not after', () => {
-    const tba = renderCase({ ...c, date: '0.0.0', location: '0.0.0' }, s, W);
-    expect(tba).toMatch(/<h1[^>]*>[^<]*Date to be announced[^<]*Location to be announced/);
-    expect(tba).toContain('coming soon');
-    expect(tba).toContain(' · TBA');
-    const dated = renderCase({ ...c, date: '4.12.26', location: 'Room 101', artist: 'Her Name' }, s, W);
-    expect(dated).not.toContain('TBA');
-    expect(dated).not.toContain('to be announced');
-    expect(dated).not.toContain('coming soon');
-    expect(dated).toContain('Her Name, ');
+  it('puts the date, time and place on the sealed doors, her card and the event panel', () => {
+    for (const cls of ['door__dl', 'card__plate', 'event']) {
+      const at = html.indexOf(`class="${cls}`) >= 0 ? html.indexOf(`class="${cls}`) : html.indexOf(` ${cls}"`);
+      expect(at, cls).toBeGreaterThan(-1);
+    }
+    expect(count(/12\.03\.26/g)).toBeGreaterThanOrEqual(5);
+    expect(count(/5:00–6:30 PM/g)).toBeGreaterThanOrEqual(5);
+    expect(count(/Grand Atrium/g)).toBeGreaterThanOrEqual(5);
   });
 
-  it('shows the time under the date and the rooms under the place', () => {
-    expect(html).toContain('<p class="dl__note dl__note--time">5:00–6:30 PM</p>');
-    expect(html).toContain('<p class="dl__note">Meadows, with the Jordan Gallery and Dean&#39;s Gallery</p>');
+  it('describes the page for a link preview in one line', () => {
+    expect(describePage(c)).toBe('The Creative Computing class showcase. Thursday, December 3, 2026, 5:00–6:30 PM. Grand Atrium, Meadows School of the Arts, SMU.');
   });
 
   it('keeps the moving cameras out of the tab order and the accessible tree (the feeds and keys carry them)', () => {
-    expect(count(/<a class="cam"[^>]*tabindex="-1" aria-hidden="true"/g)).toBe(6);
+    expect(count(/<a class="cam"[^>]*tabindex="-1" aria-hidden="true"/g)).toBe(c.channels.length);
+    expect(count(/<canvas[^>]*aria-hidden="true"/g)).toBe(2);
+  });
+
+  it('offers a way to save the date without an RSVP link, and an RSVP button once there is one', () => {
+    expect(c.rsvpUrl).toBe('');
+    expect(html).toContain('Add to Google Calendar');
+    expect(html).toContain('href="c3-showcase.ics"');
+    expect(html).not.toContain('>RSVP<');
+    expect(html).toContain('class="bar__cta" href="#attend">Save the date</a>');
+    const withRsvp = renderCase({ ...c, rsvpUrl: 'https://example.com/rsvp' }, s, W);
+    expect(withRsvp).toContain('href="https://example.com/rsvp"');
+    expect(withRsvp).toContain('class="bar__cta" href="#attend">RSVP</a>');
   });
 
   it('hides links whose URL is empty', () => {
-    expect(c.rsvpUrl).toBe('');
-    expect(renderCase({ ...c, calendarUrl: '' }, s, W)).not.toContain('Add to calendar');
-    expect(html).toContain('Add to calendar');
-    expect(html).not.toContain('Read the code on GitHub');
-    expect(html).toContain(c.rsvpSoon);
-    const withUrls = renderCase({ ...c, rsvpUrl: 'https://example.com/rsvp', sourceUrl: 'https://example.com/src' }, s, W);
-    expect(withUrls).toContain('href="https://example.com/rsvp"');
-    expect(withUrls).toContain('Read the code on GitHub');
+    expect(html).toContain('Open in maps');
+    expect(renderCase({ ...c, mapUrl: '' }, s, W)).not.toContain('Open in maps');
     expect(html).not.toContain('bar__follow');
-    expect(renderCase({ ...c, followUrl: 'https://example.com/f' }, s, W)).toContain('class="cap bar__rsvp bar__follow" href="https://example.com/f"');
+    expect(renderCase({ ...c, followUrl: 'https://example.com/f' }, s, W)).toContain('bar__follow');
+  });
+
+  it('opens outside links in a new tab without handing over the page', () => {
+    const outside = html.match(/<a [^>]*href="https?:[^>]*>/g) ?? [];
+    expect(outside.length).toBeGreaterThan(2);
+    for (const a of outside) expect(a).toMatch(/target="_blank" rel="noopener"/);
+  });
+
+  it('leaves the poster credit off until her name is in, then shows it', () => {
+    expect(c.artist).toBe('0.0.0');
+    expect(html).not.toContain('Poster art by');
+    expect(text(html)).not.toContain('0.0.0');
+    expect(renderCase({ ...c, artist: 'Her Name' }, s, W)).toMatch(/Poster art by<\/p><p class="credit">Her Name</);
+  });
+
+  it('lists the class\'s projects once there are some', () => {
+    expect(html).not.toContain('class="projects"');
+    const withWork = renderCase({ ...c, work: { ...c.work, projects: [{ title: 'Battle Ball', by: 'A. Student', url: 'https://example.com/b' }, { title: 'No Link' }] } }, s, W);
+    expect(withWork).toContain('class="projects"');
+    expect(withWork).toContain('href="https://example.com/b"');
+    expect(withWork).toContain('<span class="projects__title">No Link</span>');
+  });
+
+  it('says nothing the event does not: no made-up readouts', () => {
+    const t = text(html).toLowerCase();
+    for (const word of ['augmentation', 'bpm', 'specimen', 'rec 00', 'booth 0', 'sync']) expect(t, word).not.toContain(word);
   });
 
   it('escapes content', () => {
-    expect(esc('<a href="x">&\'</a>')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;');
-    expect(renderCase({ ...c, date: '<b>' }, s, W)).not.toContain('<b>');
+    expect(esc(`<a href="x">Tom & 'Jerry'</a>`)).toBe('&lt;a href=&quot;x&quot;&gt;Tom &amp; &#39;Jerry&#39;&lt;/a&gt;');
+    expect(renderCase({ ...c, about: '<img src=x onerror=alert(1)>' }, s, W)).not.toContain('<img src=x');
   });
 
-  it('leaves her X-ray to load when the case opens', () => {
-    expect(html).not.toContain('her-xray');
-    expect(count(/data-xray/g)).toBe(2);
-  });
-
-  it('only points at art in src/art', () => {
-    const refs = html.match(/\/src\/art\/[\w.-]+/g) ?? [];
-    expect(refs.length).toBeGreaterThan(0);
-    expect(html).not.toContain('reference/');
-  });
-});
-
-describe('title fitting', () => {
-  it('fills the column with long lines and caps short ones', () => {
-    expect(fitFraction('AND WHERE', W) * emWidth('AND WHERE', W)).toBeCloseTo(0.985, 2);
-    expect(fitFraction('OFF', W)).toBe(0.36);
-    for (const ch of c.channels) for (const line of ch.title) expect(fitFraction(line, W) * emWidth(line, W)).toBeLessThanOrEqual(1);
+  it('sizes every channel title to fit its line', () => {
+    for (const ch of c.channels) {
+      for (const line of ch.title) {
+        const k = fitFraction(line, W);
+        expect(k * emWidth(line, W)).toBeLessThanOrEqual(1);
+        expect(k).toBeLessThanOrEqual(0.36);
+        for (const chr of line) expect(W[chr], `width of "${chr}"`).toBeDefined();
+      }
+    }
   });
 });

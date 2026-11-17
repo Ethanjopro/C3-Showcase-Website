@@ -1,8 +1,8 @@
-/* Her painting and our halo. The stage is drawn in her painting's own pixels
+/* Her painting and the halo. The stage is drawn in her painting's own pixels
    (853 x 1280) and scaled to fit its card by main.ts (--s). Layers, back to front:
-   her, back wires, back of the ring, cameras behind her, her head and wings again
-   (masked), front of the ring, front wires, cameras in front, her title and frame
-   again, the X-ray. */
+   her; the back half of the rig (a canvas: ring, wires, cameras); her head and
+   wings again (masked); the front half of the rig; her title and frame again;
+   the X-ray. Each camera's link and number tag ride on top of its drawing. */
 
 .card {
   position: relative;
@@ -47,58 +47,19 @@ html[data-booted] .stage {
   width: 853px;
   height: 1280px;
   z-index: 1;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
-.wires {
-  z-index: 2;
-  overflow: visible;
+/* The rig's two canvases. main.ts sizes them: one canvas pixel per screen pixel. */
+.rig {
   pointer-events: none;
 }
 
-.wires--front {
-  z-index: 8;
-}
-
-.wires line {
-  stroke: var(--silver);
-  stroke-width: 1.6;
-  opacity: 0;
-}
-
-.wires line[data-on] {
-  opacity: 0.4;
-}
-
-.wires line[data-live] {
-  stroke: var(--red);
-  stroke-width: 3;
-  opacity: 1;
-}
-
-.ring {
+.rig--back {
   z-index: 3;
-  pointer-events: none;
 }
 
-.ring--front {
-  z-index: 7;
-}
-
-.ring path {
-  fill: none;
-  stroke-linecap: round;
-}
-
-.ring__body {
-  stroke: #8e9390;
-  stroke-width: 10;
-}
-
-.ring__glint {
-  stroke: #eef0ec;
-  stroke-width: 2.6;
+.rig--front {
+  z-index: 9;
 }
 
 .stage__occ {
@@ -118,7 +79,9 @@ html[data-booted] .stage {
   pointer-events: none;
 }
 
-/* A camera on the halo. main.ts moves it every frame. */
+/* A camera's link: an invisible box over its drawing, carrying its number.
+   main.ts moves it every frame. A little larger than the drawing, because a
+   small moving target needs the room (layout.css trims it on desktop). */
 .cam {
   display: block;
   z-index: 10;
@@ -128,46 +91,31 @@ html[data-booted] .stage {
   -webkit-tap-highlight-color: transparent;
 }
 
-.cam img {
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
+.cam::before {
+  content: '';
+  position: absolute;
+  inset: -20px -14px;
 }
 
 .cam__tag {
   position: absolute;
   left: 50%;
-  top: 52%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  padding: 0.1em 0.35em;
-  border-radius: 2px;
-  background: #0e131f;
-  color: var(--ink);
+  padding: 0.1em 0.36em;
+  background: var(--ink);
+  color: var(--on-ink);
   font-family: var(--mono);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: 0.04em;
-  transition: background-color 160ms linear;
+  transition: background-color 160ms linear, color 160ms linear;
 }
 
 .cam[data-live] .cam__tag {
   background: var(--red);
-}
-
-/* A camera is a small, moving target: give it a bigger, invisible hit area
-   (in her pixels; layout.css makes it a little smaller on desktop). */
-.cam::before {
-  content: '';
-  position: absolute;
-  inset: -22px -16px;
-}
-
-.cam:focus-visible {
-  outline: 4px solid var(--red);
-  outline-offset: 6px;
+  color: var(--ink);
 }
 
 /* The X-ray: a lens on desktop, a band on phone. main.ts places the window
@@ -213,7 +161,7 @@ html[data-booted] .stage {
   letter-spacing: 0.06em;
 }
 
-/* A dark halo so labels stay readable where they cross her light lines */
+/* A dark edge so labels stay readable where they cross her light lines */
 .o-labels text {
   paint-order: stroke;
   stroke: #03060c;
@@ -221,9 +169,79 @@ html[data-booted] .stage {
   stroke-linejoin: round;
 }
 
+/* Her parts move, gently, unless motion is reduced */
+.o-pump {
+  animation: pump 0.833s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.o-blades {
+  animation: spin 0.9s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.o-bellows {
+  animation: breathe 5.7s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+}
+
+.o-optic {
+  animation: optic 9s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.o-optic--b {
+  animation-delay: -0.9s;
+  animation-direction: reverse;
+}
+
+@keyframes pump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.14);
+  }
+  24% {
+    transform: scale(1.02);
+  }
+  30% {
+    transform: scale(1.06);
+  }
+  45% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    transform: scaleY(1.05);
+  }
+}
+
+@keyframes optic {
+  0%,
+  100% {
+    transform: rotate(-20deg);
+  }
+  50% {
+    transform: rotate(20deg);
+  }
+}
+
 /* Nothing animates where nobody can see it */
 .xr:not([data-on]) *,
-.case:not([data-view='channel']) .ch *,
 .case[data-state='sealed'] * {
   animation-play-state: paused !important;
 }
@@ -247,7 +265,7 @@ html[data-booted] .stage {
 
 .lens__edge {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--silver);
   stroke-width: 2.5;
 }
 
@@ -259,79 +277,32 @@ html[data-booted] .stage {
 }
 
 .lens__ticks {
-  stroke: var(--ink);
+  stroke: var(--silver);
   stroke-width: 1.5;
 }
 
-.lens__plate {
-  fill: var(--dark);
-}
-
-.lens__dot {
-  fill: var(--red);
-}
-
-.lens text {
-  fill: var(--dtext);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.9px;
-}
-
-.card__ruler {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 14px;
-  z-index: 30;
-  pointer-events: none;
-  opacity: 0.7;
-  background:
-    repeating-linear-gradient(to bottom, var(--silver-dim) 0 1px, transparent 1px 50px) left top / 14px 100% no-repeat,
-    repeating-linear-gradient(to bottom, var(--silver-dim) 0 1px, transparent 1px 10px) left top / 7px 100% no-repeat;
-}
-
-.card__band-label {
+/* Phone: when and where, on a plate at the foot of her card */
+.card__plate {
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
-  z-index: 31;
-  display: none;
-  justify-content: space-between;
-  padding: 8px 12px;
-  color: var(--dtext);
-  pointer-events: none;
-}
-
-.card__band-label .cap {
-  font-size: 11px;
-}
-
-.dateloc.card__plate {
-  position: absolute;
-  left: 22px;
-  bottom: 16px;
+  bottom: 0;
   z-index: 30;
   display: none;
-  gap: 20px;
-  padding: 7px 12px 4px;
-  background: rgba(6, 10, 18, 0.9);
-  box-shadow: 0 0 0 1px var(--silver-dim);
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  padding: 10px 14px 12px;
+  background: rgba(6, 10, 18, 0.88);
+  box-shadow: 0 -1px 0 var(--silver-dim);
   pointer-events: none;
+  --big: 34px;
 }
 
 .card__plate .cap {
   color: var(--mute);
-  font-size: 11px;
 }
 
-.card__plate > :first-child {
-  flex: none;
-}
-
-.card__plate .big {
-  font-size: 34px;
+/* Under the X-ray her own outline is a ghost; the drawing of what's inside leads */
+.xr__in img {
+  opacity: 0.42;
 }

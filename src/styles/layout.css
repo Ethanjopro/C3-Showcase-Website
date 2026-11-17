@@ -1,10 +1,10 @@
 /* Two layouts from one DOM, and the case's three states.
    Phone (default): a status bar, her card over the channel keys, two door leaves
    that swing open, and the card turning over to a channel.
-   Desktop (>= 1024 px): the doors open to either side of her and hold the feeds
-   and the subject; the middle panel turns to a channel.
+   Desktop (>= 1024 px): the doors open to either side of her and hold the channels
+   and the event; the middle panel turns to a channel.
    States live on .case: data-state = sealed | open, data-view = hub | channel,
-   data-channel = info | rsvp | ... */
+   data-channel = info | attend | work | poster */
 
 /* ---------- Phone ---------- */
 
@@ -12,12 +12,10 @@
   position: sticky;
   top: 0;
   z-index: 60;
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-columns: 1fr;
+  display: flex;
   align-items: center;
-  gap: 12px;
-  height: 44px;
+  gap: 8px;
+  height: 48px;
   max-width: 520px;
   margin: 0 auto;
   padding: 0 8px 0 14px;
@@ -26,26 +24,54 @@
   background-size: 256px 256px;
 }
 
-.bar__status {
-  display: flex;
-  align-items: center;
+.bar__name {
+  margin-right: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.bar__rsvp {
+/* The one action that matters: come. A solid button, a thumb tall. */
+.bar__cta {
+  position: relative;
   display: flex;
   align-items: center;
-  min-height: 44px;
-  padding: 0 6px;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: var(--mono);
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.bar__cta::before {
+  /* a full 44 px of touch around the 36 px button */
+  content: '';
+  position: absolute;
+  inset: 2px 0;
+}
+
+.bar__cta:hover {
+  background: var(--silver);
+}
+
+.bar__follow {
+  background: none;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--silver-dim);
 }
 
 .case {
   position: relative;
   width: 100%;
   max-width: 520px;
-  height: max(calc(100svh - 44px), 620px);
+  height: max(calc(100svh - 48px), 620px);
   margin: 0 auto;
   /* The opened doors swing out past the screen's edges; don't let them make it scroll. */
   overflow: hidden;
@@ -95,22 +121,14 @@
   box-shadow: inset 0 -1px 0 var(--silver-dim);
 }
 
-.dateloc.card__plate {
-  display: flex;
+.card__plate {
+  display: grid;
 }
 
 .sheet {
   display: block;
   flex: none;
   padding: 12px 14px 16px;
-}
-
-.sheet .row-between .cap {
-  color: var(--mute);
-}
-
-.sheet .mono {
-  font-size: 15px;
 }
 
 /* Door leaves over her card */
@@ -154,113 +172,6 @@
 
 .seal {
   inset: 0;
-}
-
-/* Phone title card */
-.tc__top {
-  display: grid;
-  grid-template-columns: 1fr 140px;
-  gap: 14px;
-  padding: 14px 18px 0;
-}
-
-.tc__route,
-.tc__air {
-  display: none;
-}
-
-.tc__phone {
-  display: block;
-}
-
-.tc__phone .cap {
-  font-size: 11px;
-}
-
-.tc__ch {
-  margin-top: 8px;
-  font-family: var(--serif);
-  font-stretch: 62.5%;
-  font-weight: 800;
-  font-size: 62px;
-  line-height: 0.88;
-}
-
-.tc__phone .ch__rule {
-  width: 44px;
-  margin: 4px 0 16px;
-}
-
-.tc__aug {
-  margin: 2px 0 8px;
-  font-size: 22px;
-}
-
-.tc__feed {
-  display: block;
-  height: 186px;
-  box-shadow: 0 0 0 2px var(--red);
-}
-
-.tc__feed .shot {
-  width: 100%;
-  height: 100%;
-}
-
-.tc__feed .hud {
-  inset: 8px;
-}
-
-.tc__feed .live__tag {
-  left: 6px;
-  bottom: 6px;
-  font-size: 9px;
-  padding: 1px 4px;
-}
-
-.tc__scroll {
-  padding: 22px 18px 44px;
-}
-
-.tc__foot {
-  gap: 8px;
-  padding: 10px 18px 16px;
-  border-top: 0;
-}
-
-.tc__foot .lk {
-  flex: 1;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 8px;
-  border: 1px solid var(--dtext);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  text-align: center;
-}
-
-.tc__next {
-  background: var(--dtext);
-  color: var(--dark);
-}
-
-.tc__next-k {
-  /* "Next:" is read out, but there's no room to show it on a phone */
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-.tc__next:hover {
-  background: #fff;
-}
-
-.tc__back:hover {
-  background: var(--dark-2);
 }
 
 /* ---------- Desktop ---------- */
@@ -308,20 +219,12 @@
     background: none;
   }
 
-  .bar__name,
-  .bar__status {
+  .bar__name {
     display: none;
   }
 
-  .bar__rsvp {
-    padding: 0 12px;
-    background: var(--ink);
-    color: var(--on-ink);
-    text-decoration: none;
-  }
-
-  .bar__rsvp:hover {
-    background: var(--silver);
+  .bar__cta {
+    min-height: 44px;
   }
 
   body {
@@ -363,7 +266,7 @@
     box-shadow: inset 0 0 0 1px var(--silver-dim);
   }
 
-  .dateloc.card__plate,
+  .card__plate,
   .sheet {
     display: none;
   }
@@ -387,7 +290,7 @@
   }
 
   .wing__in {
-    display: block;
+    display: flex;
   }
 
   .wing__out {
@@ -531,37 +434,27 @@
 
   /* Desktop title card */
   .tc__top {
-    display: flex;
-    justify-content: space-between;
     padding: 32px 40px 0;
   }
 
-  .tc__route,
-  .tc__air {
-    display: block;
-  }
-
-  .feeds {
-    display: flex;
-  }
-
-  .tc__phone,
-  .tc__feed {
-    display: none;
-  }
-
   .tc__scroll {
-    padding: 24px 40px 40px;
+    padding: 22px 40px 40px;
   }
 
   .cam::before {
-    inset: -14px -10px;
+    inset: -12px -8px;
   }
 
   .tc__foot {
-    margin: 0 40px 12px;
-    padding: 6px 0 0;
+    justify-content: space-between;
+    margin: 0 40px 16px;
+    padding: 14px 0 0;
     border-top: 1px solid var(--drule);
+  }
+
+  .tc__foot .btn {
+    flex: none;
+    padding: 0 18px;
   }
 
   .tc__next-k {
@@ -570,17 +463,6 @@
     height: auto;
     overflow: visible;
     clip: auto;
-  }
-
-  .tc__foot .lk {
-    flex: none;
-    min-height: 44px;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--dtext);
-    font-size: 13px;
-    text-decoration: underline;
   }
 }
 
@@ -603,7 +485,7 @@
     transition: none !important;
   }
 
-  .ekg svg,
+  .count .dot,
   .o-pump,
   .o-blades,
   .o-bellows,
