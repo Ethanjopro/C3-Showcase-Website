@@ -30,9 +30,9 @@ describe('markup', () => {
   });
 
   it('says what, when and where in the heading', () => {
-    const dated = renderCase({ ...c, date: '4.12.26', location: 'Room 101', rooms: '', time: '' }, s, W);
+    const dated = renderCase({ ...c, date: '4.12.26', dateSpoken: '', location: 'Room 101', rooms: '', time: '' }, s, W);
     expect(dated).toMatch(/<h1[^>]*>C3 Showcase[^<]*Date 4\.12\.26[^<]*Location Room 101/);
-    expect(html).toMatch(/<h1[^>]*>[^<]*5–6:30 PM[^<]*Location Grand Atrium, plus the Jordan Gallery and Dean&#39;s Gallery/);
+    expect(html).toMatch(/<h1[^>]*>[^<]*Date Thursday, December 3, 2026\. 5–6:30 PM[^<]*Location Grand Atrium, plus the Jordan Gallery and Dean&#39;s Gallery/);
   });
 
   it('says "to be announced" while a value is still her placeholder, and not after', () => {
@@ -58,7 +58,8 @@ describe('markup', () => {
 
   it('hides links whose URL is empty', () => {
     expect(c.rsvpUrl).toBe('');
-    expect(html).not.toContain('Add to calendar');
+    expect(renderCase({ ...c, calendarUrl: '' }, s, W)).not.toContain('Add to calendar');
+    expect(html).toContain('Add to calendar');
     expect(html).not.toContain('Read the code on GitHub');
     expect(html).toContain(c.rsvpSoon);
     const withUrls = renderCase({ ...c, rsvpUrl: 'https://example.com/rsvp', sourceUrl: 'https://example.com/src' }, s, W);
