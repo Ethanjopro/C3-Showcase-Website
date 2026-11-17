@@ -143,14 +143,30 @@ const occ = await sharp(path.join(SRC, 'occluder.png')).ensureAlpha().raw().toBu
   };
   for (const part of scene.parts.list) {
     const [bx, by, w, h] = part.box;
-    const [[x1, y1], [x2, y2]] = part.root;
+    const px = (x, y) => ((by + y) * her.info.width + bx + x) * 3;
+    let mask = new Float32Array(w * h);
+    if (part.band) {
+      // The ring at her hands: its band, drawn as two tilted ellipses, less where it passes
+      // behind her. It has no root (it moves whole), so every pixel is fully on its side.
+      const [cx, cy, ro, qo, ri, qi, tilt] = part.band;
+      const a = (tilt * Math.PI) / 180;
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++) {
+          const [X, Y] = [bx + x, by + y];
+          const u = (X - cx) * Math.cos(a) + (Y - cy) * Math.sin(a);
+          const v = -(X - cx) * Math.sin(a) + (Y - cy) * Math.cos(a);
+          const inBand = (u / ro) ** 2 + (v / qo) ** 2 <= 1 && (u / ri) ** 2 + (v / qi) ** 2 >= 1;
+          const hidden = (part.hide ?? []).some(([x0, y0, x1, y1]) => X >= x0 && X < x1 && Y >= y0 && Y < y1);
+          if (inBand && !hidden) mask[y * w + x] = 1;
+        }
+    }
+    const [[x1, y1], [x2, y2]] = part.root ?? [[0, -1e6], [1, -1e6]];
     // Signed distance from the root line, positive on the piece's side.
     const len = Math.hypot(x2 - x1, y2 - y1);
-    const side = Math.sign((x2 - x1) * (part.tip[1] - y1) - (y2 - y1) * (part.tip[0] - x1)) || 1;
-    const dist = (x, y) => (side * ((x2 - x1) * (y - y1) - (y2 - y1) * (x - x1))) / len;
-    const px = (x, y) => ((by + y) * her.info.width + bx + x) * 3;
-    // The piece: everything lighter or redder than her night-blue ground, on its side of the root.
-    let mask = new Float32Array(w * h);
+    const side = part.root ? Math.sign((x2 - x1) * (part.tip[1] - y1) - (y2 - y1) * (part.tip[0] - x1)) || 1 : 1;
+    const dist = part.root ? (x, y) => (side * ((x2 - x1) * (y - y1) - (y2 - y1) * (x - x1))) / len : () => 1e6;
+    // A wing: everything lighter or redder than her night-blue ground, on its side of the root.
+    if (!part.band)
     for (let y = 0; y < h; y++)
       for (let x = 0; x < w; x++) {
         const i = px(x, y);
@@ -158,10 +174,10 @@ const occ = await sharp(path.join(SRC, 'occluder.png')).ensureAlpha().raw().toBu
         const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
         if (dist(bx + x, by + y) > 0 && (lum > 44 || (r - b > 28 && r > 60))) mask[y * w + x] = 1;
       }
-    mask = pass(pass(mask, w, h, 3, 'max'), w, h, 3, 'min'); // close the gaps between feathers
+    if (!part.band) mask = pass(pass(mask, w, h, 3, 'max'), w, h, 3, 'min'); // close the gaps between feathers
     // Fill any dark pocket wholly inside the piece (a shadow between feathers): whatever
     // of the box can't be reached from its edge without crossing the piece is part of it.
-    {
+    if (!part.band) {
       const outside = new Uint8Array(w * h);
       const todo = [];
       const visit = (x, y) => {
@@ -182,8 +198,10 @@ const occ = await sharp(path.join(SRC, 'occluder.png')).ensureAlpha().raw().toBu
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!outside[y * w + x] && dist(bx + x, by + y) > 0) mask[y * w + x] = 1;
     }
     const piece = pass(pass(mask, w, h, 1, 'max'), w, h, 1, 'mean');
-    const hole = pass(pass(mask, w, h, 4, 'max'), w, h, 1, 'mean');
-    const F = part.feather;
+    // A wing's hole is grown so its ground patch overlaps the painted wing generously; the
+    // ring's is the band itself, since what's around it is her, not ground.
+    const hole = part.band ? pass(mask, w, h, 1, 'mean') : pass(pass(mask, w, h, 4, 'max'), w, h, 1, 'mean');
+    const F = part.feather ?? 30; // a ring has no root, so its distance is huge and this never bites
     const rgba = Buffer.alloc(w * h * 4);
     const under = Buffer.alloc(w * h * 4);
     // Her ground, grown inward from the edge of the hole until it is smooth.
@@ -193,8 +211,27 @@ const occ = await sharp(path.join(SRC, 'occluder.png')).ensureAlpha().raw().toBu
       for (let x = 0; x < w; x++) {
         const j = y * w + x;
         open[j] = hole[j] > 0.02 && dist(bx + x, by + y) > 0 ? 1 : 0;
-        for (let c = 0; c < 3; c++) fill[j * 3 + c] = open[j] ? [9, 14, 25][c] : her.data[px(x, y) + c];
+        // A wing's hole starts from her ground; the ring's from the paint around it.
+        for (let c = 0; c < 3; c++) fill[j * 3 + c] = open[j] && !part.band ? [9, 14, 25][c] : her.data[px(x, y) + c];
       }
+    // The ring moves up and down, so what it uncovers is a sliver along its top or bottom
+    // edge: fill each hole pixel with the paint just above or below it (the nearer), which
+    // keeps her flat, hard-edged shapes instead of smearing them.
+    if (part.band) {
+      for (let x = 0; x < w; x++)
+        for (let y = 0; y < h; y++) {
+          const j = y * w + x;
+          if (!open[j]) continue;
+          let up = y;
+          while (up >= 0 && open[up * w + x]) up--;
+          let down = y;
+          while (down < h && open[down * w + x]) down++;
+          const from = up < 0 ? down : down >= h ? up : y - up <= down - y ? up : down;
+          if (from < 0 || from >= h) continue;
+          for (let c = 0; c < 3; c++) fill[j * 3 + c] = her.data[px(x, from) + c];
+        }
+    }
+    if (!part.band)
     for (let it = 0; it < 300; it++)
       for (let y = 1; y < h - 1; y++)
         for (let x = 1; x < w - 1; x++) {
