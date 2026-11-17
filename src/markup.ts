@@ -279,8 +279,6 @@ ${lensRing()}
 </div>
 <div class="sheet">
 <div class="dateloc sheet__when"><div><p class="big">${esc(c.date)}</p><p class="dl__note">${esc(c.time)}</p></div><div><p class="big big--long">${esc(c.location)}</p><p class="dl__note">${esc(c.area)}</p></div></div>
-${count('sheet__count')}
-<p class="sheet__hint" data-hint>Tap a camera to tune in. Press and hold her picture to see inside.</p>
 ${keys(c)}
 </div>
 </div>

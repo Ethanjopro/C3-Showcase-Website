@@ -45,8 +45,6 @@ const feeds = $$<HTMLAnchorElement>('.feed');
 const keys = $$<HTMLAnchorElement>('.key');
 const cut = $('.cut');
 const nextLink = $<HTMLAnchorElement>('[data-next]');
-const hint = $('[data-hint]');
-const hintText = hint.textContent ?? '';
 
 const reduceQ = matchMedia('(prefers-reduced-motion: reduce)');
 const deskQ = matchMedia('(min-width: 1024px)');
@@ -268,10 +266,8 @@ card.addEventListener('pointermove', (e) => {
     my = Math.max(HALO_LINE + R, clampToCard(p.y, R * 0.6));
   } else {
     // A mouse on the phone layout scans as it moves, below the halo.
-    const was = scanning;
     scanning = p.y > HALO_LINE;
     my = bandY(p.y);
-    if (was !== scanning) syncHint();
   }
   renderXray();
 });
@@ -281,7 +277,6 @@ card.addEventListener('pointerleave', (e) => {
   pointerIn = false;
   if (!desk) {
     scanning = false;
-    syncHint();
   }
   renderXray();
 });
@@ -300,7 +295,6 @@ card.addEventListener(
     holdTimer = window.setTimeout(() => {
       scanning = true;
       my = bandY(toStage(touchStart).y);
-      syncHint();
       renderXray();
     }, 160);
   },
@@ -325,7 +319,6 @@ const endTouch = () => {
   clearTimeout(holdTimer);
   if (!scanning) return;
   scanning = false;
-  syncHint();
   renderXray();
 };
 card.addEventListener('touchend', endTouch);
@@ -334,9 +327,6 @@ card.addEventListener('contextmenu', (e) => {
   if (scanning) e.preventDefault();
 });
 
-function syncHint(): void {
-  hint.textContent = scanning ? 'Drag to move the X-ray.' : hintText;
-}
 
 // ---------- Hover: a camera, its feed or its key lifts the camera and slows the turn ----------
 function setHover(i: number): void {

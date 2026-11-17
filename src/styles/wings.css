@@ -244,15 +244,6 @@
   margin-top: 4px;
 }
 
-.sheet__hint {
-  /* two lines kept, so her card doesn't resize when the hint changes mid-gesture */
-  min-height: calc(2 * 1.35em);
-  margin-top: 6px;
-  font-size: 16px;
-  line-height: 1.35;
-  color: var(--mute);
-}
-
 .keys ol {
   display: grid;
   grid-template-columns: 1fr 1fr;
