@@ -19,6 +19,8 @@ export interface Content {
   description: string;
   url: string;
   date: string;
+  /** The date in words, for screen readers and the page heading. Optional. */
+  dateSpoken?: string;
   location: string;
   /** Shown under the date, e.g. "5–6:30 PM". Optional. */
   time?: string;
@@ -315,7 +317,7 @@ ${c.followUrl ? `<a class="cap bar__rsvp bar__follow" href="${esc(c.followUrl)}"
 </header>
 <main class="case" id="case" data-state="sealed" data-view="hub" data-channel="info">
 <script>/* Before first paint: open on a channel from the URL, or open if this visit already opened the case. */(function(m){var h=location.hash.slice(1);var ids=${JSON.stringify(c.channels.map((ch) => ch.id))};try{if(sessionStorage.getItem('c3.open')==='1')m.dataset.state='open';}catch(e){}if(ids.indexOf(h)>=0){m.dataset.state='open';m.dataset.view='channel';m.dataset.channel=h;}})(document.currentScript.parentNode);</script>
-<h1 class="vh">C3 Showcase: the Creative Computing class showcase. Date ${isTBA(c.date) ? 'to be announced' : esc(c.date)}. ${c.time?.trim() ? ` ${esc(c.time)}.` : ''} Location ${isTBA(c.location) ? 'to be announced' : esc(c.location)}${c.rooms?.trim() ? `, ${esc(c.rooms)}` : ''}.</h1>
+<h1 class="vh">C3 Showcase: the Creative Computing class showcase. Date ${isTBA(c.date) ? 'to be announced' : esc(c.dateSpoken?.trim() || c.date)}.${c.time?.trim() ? ` ${esc(c.time)}.` : ''} Location ${isTBA(c.location) ? 'to be announced' : esc(c.location)}${c.rooms?.trim() ? `, ${esc(c.rooms)}` : ''}.</h1>
 <div class="frame" aria-hidden="true"><span class="frame__ruler frame__ruler--l"></span><span class="frame__ruler frame__ruler--r"></span><p class="cap frame__cap frame__cap--l">C3 Showcase · Specimen 01 · On display</p><p class="cap frame__cap frame__cap--r">Rec <span data-tc>00:00:00:00</span> · Halo <span data-deg>015°</span> · Augmentation <span data-aug>74.20</span>%</p><span class="frame__hinge frame__hinge--lt"></span><span class="frame__hinge frame__hinge--lb"></span><span class="frame__hinge frame__hinge--rt"></span><span class="frame__hinge frame__hinge--rb"></span></div>
 <div class="wing wing--l">
 ${feeds(c)}
