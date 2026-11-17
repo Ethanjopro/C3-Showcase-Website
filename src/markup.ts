@@ -24,7 +24,9 @@ export interface Content {
   location: string;
   /** Shown under the date, e.g. "5–6:30 PM". Optional. */
   time?: string;
-  /** Every room, shown under the location. Optional. */
+  /** A short line under the location on the doors and side panel, e.g. "Meadows". Optional. */
+  area?: string;
+  /** Every room, shown under the location on Info and her card. Optional. */
   rooms?: string;
   about: string;
   rsvpUrl: string;
@@ -45,13 +47,15 @@ export interface Scene {
   size: [number, number];
   halo: Halo;
   cameras: CameraArt[];
-  lettering: { x: number; y: number; w: number; h: number };
+  front: { x: number; y: number; w: number; h: number };
   face: { x: number; y: number };
   chest: { x: number; y: number };
   occluderBelow: number;
 }
 
 const ART = '/src/art/';
+/** Her poster with the event details, in public/ (npm run art copies it there). */
+const POSTER = 'c3-showcase-poster.webp';
 
 export function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
@@ -71,7 +75,7 @@ const capFor = (label: string, v: string) =>
 const bigFor = (v: string, cls = 'big') => `<p class="${cls}"${isTBA(v) ? ' aria-hidden="true"' : ''}>${fit(v)}</p>`;
 
 /** Long values (a room name, not "0.0.0") set smaller inside their big slot so they fit the column. */
-const fit = (v: string) => (v.trim().length > 7 ? `<span class="big__long">${esc(v)}</span>` : esc(v));
+const fit = (v: string) => (v.trim().length > 8 ? `<span class="big__long">${esc(v)}</span>` : esc(v));
 
 /** A link if there's a URL, nothing otherwise (empty URLs hide their links). */
 const maybeLink = (url: string, text: string, cls = 'lk') => (url ? `<a class="${cls}" href="${esc(url)}" rel="noopener">${text}</a>` : '');
@@ -94,16 +98,16 @@ function stage(c: Content, s: Scene): string {
       return `<a class="cam" href="#${ch.id}" data-cam="${i}" tabindex="-1" aria-hidden="true" style="width:${w}px;height:${hh}px"><img src="${ART}${cam.file}.webp" alt="" draggable="false" decoding="async"><span class="cam__tag">${num(i)}</span></a>`;
     })
     .join('');
-  const L = s.lettering;
+  const F = s.front;
   return `<div class="stage" data-stage style="width:${W}px;height:${H}px">
-<img class="stage__her" src="${ART}her.webp" alt="Her poster art: a dark-haired girl with small grey wings, hands pressed together in prayer, in a great ruffled white dress on grey. Above her head a halo of six cameras turns, each hung on a wire." width="${W}" height="${H}" fetchpriority="high" draggable="false">
+<img class="stage__her" src="${ART}her.webp" alt="Her poster art, framed in silver on a night-blue ground under the C3 Showcase title: a red-haired girl with small white wings, hands pressed together in prayer and a small ring held at them, in a great ruffled cream dress. Above her head a halo of six cameras turns, each hung on a wire." width="${W}" height="${H}" fetchpriority="high" draggable="false">
 ${svg('wires wires--back', wires)}
 ${svg('ring ring--back', ring(1))}
 ${cams}
 <div class="stage__occ" aria-hidden="true"></div>
 ${svg('ring ring--front', ring(0))}
 ${svg('wires wires--front', wires)}
-<div class="stage__title" aria-hidden="true" style="left:${L.x}px;top:${L.y}px;width:${L.w}px;height:${L.h}px"></div>
+<img class="stage__front" src="${ART}front.webp" alt="" width="${F.w}" height="${F.h}" style="left:${F.x}px;top:${F.y}px" draggable="false" decoding="async">
 <div class="xr" aria-hidden="true"><div class="xr__in"><img data-xray alt="" width="${W}" height="${H}" decoding="async"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${organs()}</svg></div><span class="xr__scan"></span></div>
 </div>`;
 }
@@ -145,11 +149,11 @@ function keys(c: Content): string {
 }
 
 /** A small line under a big value (the time, the rooms); nothing when empty. */
-const note = (v?: string) => (v?.trim() ? `<p class="dl__note">${esc(v)}</p>` : '');
+const note = (v?: string, cls = '') => (v?.trim() ? `<p class="dl__note${cls}">${esc(v)}</p>` : '');
 const roomsNote = (c: Content) => note(c.rooms);
 
 const dateLoc = (c: Content, cls: string) =>
-  `<div class="${cls}"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time)}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${roomsNote(c)}</div></div>`;
+  `<div class="${cls}"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time, ' dl__note--time')}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${note(c.area, ' dl__note--area')}${roomsNote(c)}</div></div>`;
 
 const ekg = (cls = '') =>
   `<div class="ekg ${cls}" aria-hidden="true"><p class="cap ekg__l">Pump</p><p class="cap ekg__r">72 bpm</p><svg viewBox="0 0 672 70" preserveAspectRatio="none"><path class="ekg__line" d="${ekgPath()}"/></svg><span class="scan scan--dark"></span></div>`;
@@ -200,21 +204,15 @@ ${dateLoc(c, 'dateloc subject__dl')}
 
 function door(c: Content, side: 'l' | 'r'): string {
   const L = side === 'l';
-  const dots = [90, 150, 210, 270, 330, 30]
-    .map((a) => {
-      const r = (a * Math.PI) / 180;
-      return `<circle cx="${(225 + 214 * Math.cos(r)).toFixed(1)}" cy="${(150 + 68 * Math.sin(r)).toFixed(1)}" r="${a === 90 ? 5 : 3.4}" class="${a === 90 ? 'orbit__live' : 'orbit__cam'}"/>`;
-    })
-    .join('');
   return `<div class="wing__out door door--${side}">
 <span class="door__panel" aria-hidden="true"></span>
 <div class="door__col" aria-hidden="true">
 <p class="cap door__label">${L ? 'Creative' : 'Computing'}</p>
-<div class="door__c3"><span class="door__c3art"></span><svg class="orbit" viewBox="0 0 450 270" preserveAspectRatio="none"><ellipse cx="225" cy="150" rx="214" ry="68"/>${dots}</svg></div>
-<p class="door__word">${L ? 'SHOW' : 'CASE'}</p>
+<div class="door__c3"><img class="door__c3art" src="${ART}mark.webp" alt="" width="293" height="221" decoding="async"></div>
+<img class="door__word" src="${ART}word-${side}.webp" alt="" width="${L ? 313 : 293}" height="144" decoding="async">
 <div class="door__tape"><span class="cap">See what’s inside</span></div>
 <p class="cap door__open"><span class="door__handle"></span><span class="door__open-t">${L ? '<span class="when-phone">Tap to</span><span class="when-desk">Click to</span>' : 'open'}</span></p>
-<div class="door__dl">${capFor(L ? 'Date' : 'Location', L ? c.date : c.location)}<p class="big">${fit(L ? c.date : c.location)}</p>${L ? note(c.time) : ''}</div>
+<div class="door__dl">${capFor(L ? 'Date' : 'Location', L ? c.date : c.location)}<p class="big">${fit(L ? c.date : c.location)}</p>${L ? note(c.time, ' dl__note--time') : note(c.area, ' dl__note--area')}</div>
 </div>
 </div>`;
 }
@@ -238,17 +236,18 @@ function channelBody(c: Content, ch: Channel, s: Scene): string {
   const [W, H] = s.size;
   switch (ch.id) {
     case 'info':
-      return `<div class="dateloc dateloc--ch"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time)}${isTBA(c.date) ? '' : maybeLink(c.calendarUrl, 'Add to calendar →')}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${roomsNote(c)}${isTBA(c.location) ? '' : maybeLink(c.mapUrl, 'Open in maps →')}</div></div>
+      return `<div class="dateloc dateloc--ch"><div>${capFor('Date', c.date)}${bigFor(c.date)}${note(c.time, ' dl__note--time')}${isTBA(c.date) ? '' : maybeLink(c.calendarUrl, 'Add to calendar →')}</div><div>${capFor('Location', c.location)}${bigFor(c.location)}${roomsNote(c)}${isTBA(c.location) ? '' : maybeLink(c.mapUrl, 'Open in maps →')}</div></div>
 ${comingSoon(c)}<p class="body">${esc(c.about)}</p>
 <a class="lk" href="#rsvp">RSVP on Ch 02 →</a>
 ${maybeLink(c.followUrl, `${esc(c.followLabel)} the showcase →`)}`;
     case 'rsvp':
       return `${c.rsvpUrl ? `<a class="rsvp" href="${esc(c.rsvpUrl)}" rel="noopener"><span class="rsvp__word">RSVP</span><span>Get on the list ${dot()}</span></a>` : `<p class="rsvp rsvp--soon"><span class="rsvp__word">RSVP</span><span>${esc(c.rsvpSoon)}</span></p>`}
-<p class="cap ch__kicker">${c.rsvpUrl ? 'Then make your own poster' : 'While you wait, make your own poster'}</p>
-<p class="body">Type your name. It goes into the small print and the red marks grow from it, so no two posters match.</p>
+<a class="lk" href="${POSTER}" download="c3-showcase-poster.webp">Download her poster →</a>
+<p class="cap ch__kicker">${c.rsvpUrl ? 'Then make your own copy' : 'While you wait, make your own copy'}</p>
+<p class="body">Type your name. It goes into the small print and the red marks grow from it, so no two copies match.</p>
 <div class="copy">
-<div class="copy__form"><label class="cap copy__label" for="copy-name">Your name</label><input class="copy__input" id="copy-name" name="name" type="text" maxlength="18" autocomplete="given-name" spellcheck="false" value=""><button class="btn btn--line btn--light copy__save" type="button" data-save>Save my poster</button><p class="copy__status" role="status" data-copy-status></p></div>
-<figure class="copy__card" aria-label="Your poster, with your name in the small print"><img src="${ART}her.webp" alt="" width="${W}" height="${H}" decoding="async"><span class="copy__title"></span><svg class="copy__marks" viewBox="0 0 150 243" preserveAspectRatio="none" aria-hidden="true" data-marks></svg><figcaption class="copy__foot"><span class="copy__name" data-copy-name>YOUR NAME</span><span class="copy__no">COPY <span data-copy-no>000000</span> · ${esc(c.date)}</span></figcaption></figure>
+<div class="copy__form"><label class="cap copy__label" for="copy-name">Your name</label><input class="copy__input" id="copy-name" name="name" type="text" maxlength="18" autocomplete="given-name" spellcheck="false" value=""><button class="btn btn--line btn--light copy__save" type="button" data-save>Save my copy</button><p class="copy__status" role="status" data-copy-status></p></div>
+<figure class="copy__card" aria-label="Your copy of her poster, with your name in the small print"><img src="${ART}her.webp" alt="" width="${W}" height="${H}" decoding="async"><svg class="copy__marks" viewBox="0 0 150 243" preserveAspectRatio="none" aria-hidden="true" data-marks></svg><figcaption class="copy__foot"><span class="copy__name" data-copy-name>YOUR NAME</span><span class="copy__no">COPY <span data-copy-no>000000</span> · ${esc(c.date)}</span></figcaption></figure>
 </div>`;
     case 'projects':
       return `<p class="body ch__teaser">${esc(c.projects.teaser)}</p>
@@ -256,7 +255,7 @@ ${maybeLink(c.followUrl, `${esc(c.followLabel)} the showcase →`)}`;
     case 'inside':
       return `<figure class="xray">
 <div class="xray__box">
-<svg class="xray__svg" viewBox="150 378 560 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="An X-ray of her: her drawing inverted, with machine parts drawn inside it: optics for eyes, a core chip, servos at the jaw, bellows for lungs, rib plates, a red pump for a heart, a spine bus and a power cell.">
+<svg class="xray__svg" viewBox="150 378 560 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="An X-ray of her: the edges of her drawing glowing on black, with machine parts drawn inside it: optics for eyes, a core chip, servos at the jaw, bellows for lungs, rib plates, a red pump for a heart, a spine bus and a power cell.">
 <image data-xray x="0" y="0" width="${W}" height="${H}"/>${organs()}</svg>
 <span class="hud" aria-hidden="true"></span><span class="scan scan--dark" aria-hidden="true"></span>
 </div>
@@ -272,10 +271,11 @@ for (const cam of halo) {
   behind = sin a &lt; 0
   scale = 0.8 + 0.24 · (sin a + 1) / 2
 }</code></pre>
-<p class="body">Hand-built: TypeScript, CSS 3D transforms and her painting. No frameworks, no WebGL. The X-ray is her drawing with its light and dark swapped.</p>
+<p class="body">Hand-built: TypeScript, CSS 3D transforms and her painting. No frameworks, no WebGL. The X-ray is her drawing's edges, lit like film.</p>
 ${maybeLink(c.sourceUrl, 'Read the code on GitHub →')}`;
     case 'credits':
       return `${capFor('Drawn by', c.artist)}${bigFor(c.artist, 'credit credit--big')}
+<a class="lk" href="${POSTER}" download="c3-showcase-poster.webp">Download her poster →</a>
 <p class="cap ch__kicker">Built by</p><p class="credit">${esc(c.builtBy)}</p>
 <p class="body body--dim">Type: Noto Serif Display, by Google. IBM Plex Mono and Sans, by Mike Abbink for IBM.</p>`;
     default:

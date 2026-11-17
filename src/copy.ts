@@ -38,7 +38,7 @@ function load(src: string): Promise<HTMLImageElement> {
 }
 
 /** Draws the copy at 1080 px wide and downloads it as a PNG. Resolves true once handed to the browser. */
-export async function saveCopy(opts: { name: string; date: string; her: string; title: string }): Promise<boolean> {
+export async function saveCopy(opts: { name: string; date: string; her: string }): Promise<boolean> {
   const W = 1080;
   const H = Math.round((W * 181) / 112);
   const k = W / 150;
@@ -47,41 +47,22 @@ export async function saveCopy(opts: { name: string; date: string; her: string; 
   canvas.height = H;
   const g = canvas.getContext('2d');
   if (!g) return false;
-  const [her, title] = await Promise.all([load(opts.her), load(opts.title)]);
-  g.fillStyle = '#dcdbde';
+  // Her painting carries her title and frame, so it is drawn as it is.
+  const her = await load(opts.her);
+  g.fillStyle = '#090e19';
   g.fillRect(0, 0, W, H);
   g.drawImage(her, 0, 0, W, (W * her.naturalHeight) / her.naturalWidth);
 
-  // Her lettering, tinted: draw it on its own canvas, then fill through it.
-  const tw = Math.round(W * 0.76);
-  const th = Math.round(H * 0.13);
-  const t = document.createElement('canvas');
-  t.width = tw;
-  t.height = th;
-  const tg = t.getContext('2d');
-  if (tg) {
-    // An SVG with only a viewBox can report 0 x 0 (Firefox): fall back to its 4:1 shape.
-    const nw = title.naturalWidth || 1080;
-    const nh = title.naturalHeight || 270;
-    const s = Math.min(tw / nw, th / nh);
-    const dw = nw * s;
-    const dh = nh * s;
-    tg.drawImage(title, (tw - dw) / 2, (th - dh) / 2, dw, dh);
-    tg.globalCompositeOperation = 'source-in';
-    tg.fillStyle = '#24171f';
-    tg.fillRect(0, 0, tw, th);
-    g.drawImage(t, W * 0.12, H * 0.08);
-  }
-
   const seed = seedOf(opts.name || 'C3'); // same fallback as the preview
-  g.fillStyle = '#c8102e';
+  g.fillStyle = '#b8313a';
   for (const m of marksOf(seed)) g.fillRect(m.x * k, (m.y * H) / 243, m.w * k, 2.5 * k);
 
   const footH = Math.round(H * 0.075);
-  g.fillStyle = '#f1eff2';
+  g.fillStyle = '#0e1420';
   g.fillRect(0, H - footH, W, footH);
-  g.fillStyle = '#17151a';
+  g.fillStyle = '#c3c6c3';
   g.fillRect(0, H - footH, W, 3);
+  g.fillStyle = '#ece6d6';
   await document.fonts.load('600 40px "IBM Plex Mono"').catch(() => undefined);
   g.font = `600 ${Math.round(footH * 0.36)}px "IBM Plex Mono", monospace`;
   g.textBaseline = 'alphabetic';

@@ -36,6 +36,9 @@ export interface Pose {
 export const OBSTRUCTED_BELOW = -0.35;
 export const HOVER_LIFT = 1.22;
 
+/** How far above her painting the wires run (the card clips them). */
+export const WIRE_TOP = -700;
+
 export function pose(halo: Halo, cam: CameraArt, index: number, angle: number, lifted = false): Pose {
   const a = ((cam.base + angle) * Math.PI) / 180;
   const depth = Math.sin(a);
@@ -84,7 +87,11 @@ export function advance(angle: number, dt: number, turnSeconds: number): number 
  */
 export function wire(halo: Halo, p: Pose, camHeight: number): [number, number, number, number] {
   const top = p.y - camHeight * p.scale * 0.36;
-  return [p.x, top, halo.cx + (p.x - halo.cx) * 1.32, -40];
+  // Splayed out a little: through (cx + 1.32 (x - cx), -40), carried on up to WIRE_TOP so it
+  // still reaches the card's top edge when her painting sits lower in a tall card.
+  const x40 = halo.cx + (p.x - halo.cx) * 1.32;
+  const t = (top - WIRE_TOP) / (top + 40);
+  return [p.x, top, p.x + (x40 - p.x) * t, WIRE_TOP];
 }
 
 /**

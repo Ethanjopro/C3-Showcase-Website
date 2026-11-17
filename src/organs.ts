@@ -3,8 +3,8 @@
 // in CSS (channels.css: .o-pump, .o-blades, .o-bellows, .o-optic), and stop
 // under reduced motion.
 
-const LINE = '#EEEAEE';
-const RED = '#E0233F';
+const LINE = '#ECE6D6';
+const RED = '#D24A50';
 
 const f = (n: number) => String(Math.round(n * 10) / 10);
 
@@ -66,7 +66,7 @@ ${ribs()}
 <rect x="398" y="1000" width="54" height="32" rx="4"/><path d="M452 1008V1024M406 1016H420M413 1009V1023M430 1016H444"/>
 </g>
 <g fill="none" stroke="${RED}" stroke-width="3" stroke-linecap="round"><path d="M430 642C452 560 512 440 556 350"/><path d="M452 770C452 732 440 714 432 700"/><path d="M428 792H437"/></g>
-<g transform="translate(452 792)"><g class="o-pump"><circle r="22" fill="rgba(224,35,63,.22)" stroke="${RED}" stroke-width="3"/><g class="o-blades"><path d="${BLADES}" stroke="${RED}" stroke-width="2.6"/></g><circle r="4" fill="${RED}"/></g></g>
+<g transform="translate(452 792)"><g class="o-pump"><circle r="22" fill="rgba(210,74,80,.22)" stroke="${RED}" stroke-width="3"/><g class="o-blades"><path d="${BLADES}" stroke="${RED}" stroke-width="2.6"/></g><circle r="4" fill="${RED}"/></g></g>
 <g fill="none" stroke="${LINE}" stroke-width="1.2" opacity=".8">${LABELS.map((l) => `<path d="${l.lead}"/>`).join('')}</g>
 <g class="o-labels" fill="${LINE}">${LABELS.map((l) => `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}">${l.text}</text>`).join('')}</g>`;
 }

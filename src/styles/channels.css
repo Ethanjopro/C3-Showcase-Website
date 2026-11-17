@@ -132,11 +132,11 @@
 }
 
 .ch .body {
-  color: #d7d2d9;
+  color: #d9d4c6;
 }
 
 .ch .body--dim {
-  color: #b9b3bd;
+  color: #b3b9b4;
 }
 
 .ch .lk {
@@ -255,7 +255,7 @@ a.rsvp:hover {
   width: 112px;
   aspect-ratio: 112 / 181;
   overflow: hidden;
-  background: #dcdbde;
+  background: var(--her-grey);
 }
 
 .copy__card img {
@@ -263,17 +263,6 @@ a.rsvp:hover {
   inset: 0;
   width: 100%;
   height: auto;
-}
-
-.copy__title {
-  position: absolute;
-  left: 12%;
-  top: 8%;
-  width: 76%;
-  height: 13%;
-  background-color: #24171f;
-  -webkit-mask: url('../art/title.svg') center / contain no-repeat;
-  mask: url('../art/title.svg') center / contain no-repeat;
 }
 
 .copy__marks {
@@ -332,7 +321,7 @@ a.rsvp:hover {
   position: relative;
   display: block;
   aspect-ratio: 9 / 16;
-  border: 1px solid #5a5460;
+  border: 1px solid #3a4558;
   border-radius: 10px;
   overflow: hidden;
   background: var(--dark-2);
@@ -365,7 +354,7 @@ a.rsvp:hover {
   width: 6px;
   height: 6px;
   margin: 0;
-  background: #5a5460;
+  background: #3a4558;
 }
 
 .tile__dot--on {
@@ -383,7 +372,7 @@ a.rsvp:hover {
   position: relative;
   height: clamp(320px, 90cqw, 500px);
   overflow: hidden;
-  background: #050506;
+  background: #03060c;
   box-shadow: 0 0 0 1px var(--drule);
 }
 
@@ -409,7 +398,7 @@ a.rsvp:hover {
   padding: 14px 16px;
   border: 1px solid var(--drule);
   background: var(--dark-2);
-  color: #d7d2d9;
+  color: #d9d4c6;
   font-family: var(--mono);
   font-size: 14px;
   line-height: 1.6;

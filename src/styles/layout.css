@@ -92,7 +92,7 @@
 .card {
   flex: 1 1 auto;
   min-height: 300px;
-  box-shadow: inset 0 -1px 0 var(--ink);
+  box-shadow: inset 0 -1px 0 var(--silver-dim);
 }
 
 .dateloc.card__plate {
@@ -316,12 +316,12 @@
   .bar__rsvp {
     padding: 0 12px;
     background: var(--ink);
-    color: var(--dtext);
+    color: var(--on-ink);
     text-decoration: none;
   }
 
   .bar__rsvp:hover {
-    background: var(--plum);
+    background: var(--silver);
   }
 
   body {
@@ -360,7 +360,7 @@
     inset: 0;
     z-index: 32;
     pointer-events: none;
-    box-shadow: inset 0 0 0 1px var(--ink);
+    box-shadow: inset 0 0 0 1px var(--silver-dim);
   }
 
   .dateloc.card__plate,
@@ -451,8 +451,8 @@
     width: 12px;
     opacity: 0.55;
     background:
-      repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 50px) left top / 12px 100% no-repeat,
-      repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 10px) left top / 6px 100% no-repeat;
+      repeating-linear-gradient(to bottom, var(--silver-dim) 0 1px, transparent 1px 50px) left top / 12px 100% no-repeat,
+      repeating-linear-gradient(to bottom, var(--silver-dim) 0 1px, transparent 1px 10px) left top / 6px 100% no-repeat;
   }
 
   .frame__ruler--l {
@@ -487,7 +487,7 @@
     width: 8px;
     height: 52px;
     border-radius: 1px;
-    background: var(--ink);
+    background: var(--silver);
   }
 
   .frame__hinge::before,

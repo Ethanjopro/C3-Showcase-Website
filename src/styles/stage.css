@@ -1,8 +1,8 @@
 /* Her painting and our halo. The stage is drawn in her painting's own pixels
    (853 x 1280) and scaled to fit its card by main.ts (--s). Layers, back to front:
    her, back wires, back of the ring, cameras behind her, her head and wings again
-   (masked), front of the ring, front wires, cameras in front, her lettering,
-   the X-ray. */
+   (masked), front of the ring, front wires, cameras in front, her title and frame
+   again, the X-ray. */
 
 .card {
   position: relative;
@@ -29,7 +29,7 @@
   left: 0;
   top: 0;
   transform-origin: 0 0;
-  transform: scale(var(--s, 0.4572));
+  transform: translate3d(0, var(--sy, 0px), 0) scale(var(--s, 0.4572));
   visibility: hidden;
 }
 
@@ -62,7 +62,7 @@ html[data-booted] .stage {
 }
 
 .wires line {
-  stroke: var(--plum);
+  stroke: var(--silver);
   stroke-width: 1.6;
   opacity: 0;
 }
@@ -92,12 +92,12 @@ html[data-booted] .stage {
 }
 
 .ring__body {
-  stroke: var(--plum);
+  stroke: #8e9390;
   stroke-width: 10;
 }
 
 .ring__glint {
-  stroke: #d9cfd3;
+  stroke: #eef0ec;
   stroke-width: 2.6;
 }
 
@@ -111,12 +111,11 @@ html[data-booted] .stage {
   mask: url('../art/occluder.webp') 0 0 / 100% 100% no-repeat;
 }
 
-.stage__title {
+/* Her title and the top of her frame, cut out of her painting and laid back over the
+   wires, so the wires run behind them */
+.stage__front {
   z-index: 20;
   pointer-events: none;
-  background-color: #24171f;
-  -webkit-mask: url('../art/title.svg') center / contain no-repeat;
-  mask: url('../art/title.svg') center / contain no-repeat;
 }
 
 /* A camera on the halo. main.ts moves it every frame. */
@@ -144,8 +143,8 @@ html[data-booted] .stage {
   transform: translate(-50%, -50%);
   padding: 0.1em 0.35em;
   border-radius: 2px;
-  background: var(--plum);
-  color: #f4eff2;
+  background: #0e131f;
+  color: var(--ink);
   font-family: var(--mono);
   font-size: 20px;
   font-weight: 600;
@@ -177,7 +176,7 @@ html[data-booted] .stage {
   z-index: 25;
   overflow: hidden;
   pointer-events: none;
-  background: #070608;
+  background: #03060c;
   opacity: 0;
   transition: opacity 200ms linear;
 }
@@ -217,7 +216,7 @@ html[data-booted] .stage {
 /* A dark halo so labels stay readable where they cross her light lines */
 .o-labels text {
   paint-order: stroke;
-  stroke: #070608;
+  stroke: #03060c;
   stroke-width: 0.32em;
   stroke-linejoin: round;
 }
@@ -265,7 +264,7 @@ html[data-booted] .stage {
 }
 
 .lens__plate {
-  fill: var(--ink);
+  fill: var(--dark);
 }
 
 .lens__dot {
@@ -290,8 +289,8 @@ html[data-booted] .stage {
   pointer-events: none;
   opacity: 0.7;
   background:
-    repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 50px) left top / 14px 100% no-repeat,
-    repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 10px) left top / 7px 100% no-repeat;
+    repeating-linear-gradient(to bottom, var(--silver-dim) 0 1px, transparent 1px 50px) left top / 14px 100% no-repeat,
+    repeating-linear-gradient(to bottom, var(--silver-dim) 0 1px, transparent 1px 10px) left top / 7px 100% no-repeat;
 }
 
 .card__band-label {
@@ -319,14 +318,18 @@ html[data-booted] .stage {
   display: none;
   gap: 20px;
   padding: 7px 12px 4px;
-  background: rgba(241, 239, 242, 0.94);
-  box-shadow: 0 0 0 1px var(--ink);
+  background: rgba(6, 10, 18, 0.9);
+  box-shadow: 0 0 0 1px var(--silver-dim);
   pointer-events: none;
 }
 
 .card__plate .cap {
   color: var(--mute);
   font-size: 11px;
+}
+
+.card__plate > :first-child {
+  flex: none;
 }
 
 .card__plate .big {
