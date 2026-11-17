@@ -1,6 +1,5 @@
-/* The back of the middle panel: a channel's title card, white on black. Titles
-   are sized at build time to fill their column (src/fit.ts), as --k of the
-   column width. */
+/* The back of the middle panel: a channel's title card. Titles are sized at build
+   time to fill their column (src/fit.ts), as --k of the column width. */
 
 .tc {
   position: absolute;
@@ -17,23 +16,15 @@
 }
 
 .tc__top {
-  position: relative;
   flex: none;
-}
-
-.tc__air {
-  color: var(--dtext) !important;
-}
-
-.tc__phone,
-.tc__feed {
-  display: none;
+  padding: 16px 18px 0;
 }
 
 .tc__scroll {
   position: relative;
   flex: 1;
   min-height: 0;
+  padding: 14px 18px 44px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -46,11 +37,26 @@
 .tc__foot {
   flex: none;
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  border-top: 1px solid var(--drule);
+  gap: 8px;
+  padding: 10px 18px 16px;
 }
 
+.tc__foot .btn {
+  flex: 1;
+  padding: 0 8px;
+}
+
+.tc__next-k {
+  /* "Next:" is read out, but there's no room to show it on a phone */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* A burst of static between channels */
 .tc__flash {
   position: absolute;
   inset: 0;
@@ -81,11 +87,9 @@
 }
 
 .case[data-channel='info'] .ch[data-ch='info'],
-.case[data-channel='rsvp'] .ch[data-ch='rsvp'],
-.case[data-channel='projects'] .ch[data-ch='projects'],
-.case[data-channel='inside'] .ch[data-ch='inside'],
-.case[data-channel='source'] .ch[data-ch='source'],
-.case[data-channel='credits'] .ch[data-ch='credits'] {
+.case[data-channel='attend'] .ch[data-ch='attend'],
+.case[data-channel='work'] .ch[data-ch='work'],
+.case[data-channel='poster'] .ch[data-ch='poster'] {
   display: block;
 }
 
@@ -120,372 +124,96 @@
 }
 
 .ch__body {
-  margin-top: 26px;
+  margin-top: 24px;
 }
 
 .ch__body > * + * {
-  margin-top: 14px;
+  margin-top: 18px;
 }
 
 .ch__kicker {
-  margin-top: 22px !important;
-}
-
-.ch .body {
-  color: #d9d4c6;
+  margin-top: 26px !important;
 }
 
 .ch .body--dim {
-  color: #b3b9b4;
-}
-
-.ch .lk {
-  color: var(--dtext);
+  color: var(--dmute);
 }
 
 .dateloc--ch {
-  gap: 20px;
+  --big: clamp(44px, 12cqw, 64px);
 }
 
-.dateloc--ch .cap {
-  color: var(--dmute);
+/* The narrowest phones: when above where, so the place isn't squeezed into a sliver */
+@container (max-width: 320px) {
+  .dateloc--ch {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
 }
 
-.dateloc--ch .big {
-  font-size: clamp(44px, 11.8cqw, 64px);
-  margin-top: 2px;
+/* The work: what kinds of thing are on show, as a list you can read from across a room */
+.kinds {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--drule);
 }
 
-/* RSVP */
-.rsvp {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 58px;
-  padding: 0 18px;
-  background: var(--dtext);
-  color: var(--dark);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.rsvp__word {
-  font-family: var(--mono);
-  font-size: 20px;
-  letter-spacing: 0.1em;
-}
-
-.rsvp > span:last-child {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.rsvp .dot {
-  margin: 0 0 0 8px;
-}
-
-a.rsvp:hover {
-  background: #fff;
-}
-
-.rsvp--soon {
-  background: transparent;
-  color: var(--dtext);
-  box-shadow: inset 0 0 0 1px var(--dtext);
-}
-
-.copy {
-  display: flex;
-  gap: 18px;
-  align-items: flex-start;
-}
-
-.copy__form {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.copy__label {
-  color: var(--dmute);
-}
-
-.copy__input {
-  margin-top: 6px;
-  height: 48px;
-  padding: 0 12px;
-  border: 1px solid var(--dtext);
-  border-radius: 0;
-  background: transparent;
-  color: var(--dtext);
-  font-family: var(--mono);
-  font-size: 18px;
-  letter-spacing: 0.04em;
-}
-
-.copy__input::placeholder {
-  color: var(--dmute);
-}
-
-.copy__save {
-  margin-top: 12px;
-  color: var(--dtext);
-}
-
-/* "Saved", said where the button is. Space kept so nothing jumps. */
-.copy__status {
-  min-height: 1.35em;
-  margin-top: 8px;
-  color: var(--dtext);
-  font-size: 16px;
-  line-height: 1.35;
-}
-
-.btn--light:hover {
-  background: var(--dtext);
-  color: var(--dark);
-  border-color: var(--dtext);
-}
-
-.copy__card {
-  position: relative;
-  flex: none;
-  width: 112px;
-  aspect-ratio: 112 / 181;
-  overflow: hidden;
-  background: var(--her-grey);
-}
-
-.copy__card img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: auto;
-}
-
-.copy__marks {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.copy__marks rect {
-  fill: var(--red);
-}
-
-.copy__foot {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 3px 7px 4px;
-  background: var(--inner);
-  border-top: 1px solid var(--ink);
-  color: var(--ink);
-  font-family: var(--mono);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.copy__name {
-  font-size: 10px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.copy__no {
-  font-size: 7px;
-  letter-spacing: 0.04em;
-}
-
-/* Projects */
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.tile {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.tile__screen {
-  position: relative;
-  display: block;
-  aspect-ratio: 9 / 16;
-  border: 1px solid #3a4558;
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--dark-2);
-}
-
-.tile__screen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-color: var(--dtext);
-  opacity: 0.1;
-  -webkit-mask: url('../art/static.webp') center / 180px 320px;
-  mask: url('../art/static.webp') center / 180px 320px;
-}
-
-.tile__no {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-family: var(--mono);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.tile__dot {
-  position: absolute;
-  right: 7px;
-  top: 7px;
-  width: 6px;
-  height: 6px;
-  margin: 0;
-  background: #3a4558;
-}
-
-.tile__dot--on {
-  background: var(--red);
-}
-
-.tile__label {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--dmute);
-}
-
-/* Inside: her X-ray, full figure */
-.xray__box {
-  position: relative;
-  height: clamp(320px, 90cqw, 500px);
-  overflow: hidden;
-  background: #03060c;
-  box-shadow: 0 0 0 1px var(--drule);
-}
-
-.xray__svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.xray .hud {
-  inset: 12px;
-}
-
-.xray__cap {
-  margin-top: 8px;
-  color: var(--dmute) !important;
-}
-
-/* Source */
-.code {
-  margin: 0;
-  padding: 14px 16px;
-  border: 1px solid var(--drule);
-  background: var(--dark-2);
-  color: #d9d4c6;
-  font-family: var(--mono);
-  font-size: 14px;
-  line-height: 1.6;
-  overflow-x: auto;
-}
-
-/* Credits */
-.credit {
+.kinds li {
+  padding: 10px 0 8px;
+  border-top: 1px solid var(--drule);
   font-family: var(--serif);
   font-stretch: 62.5%;
   font-weight: 800;
-  font-size: clamp(26px, 7cqw, 36px);
+  font-size: clamp(34px, 10cqw, 52px);
   line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.projects li {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  border-top: 1px solid var(--drule);
+}
+
+.projects__title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.projects__by {
+  font-size: 16px;
+  color: var(--dmute);
+}
+
+/* The poster: the printed thing itself, and who made what */
+.poster {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.poster__img {
+  width: 100%;
+  height: auto;
+  box-shadow: 0 0 0 1px var(--drule);
+}
+
+.poster__txt > * + * {
+  margin-top: 14px;
+}
+
+.poster__txt .btn {
+  width: 100%;
+}
+
+.credit {
   margin-top: 4px !important;
-}
-
-.credit--big {
-  font-size: clamp(44px, 13cqw, 68px);
-}
-
-/* Her parts move, gently, unless motion is reduced */
-.o-pump {
-  animation: pump 0.833s ease-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.o-blades {
-  animation: spin 0.9s linear infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.o-bellows {
-  animation: breathe 5.7s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: 50% 0;
-}
-
-.o-optic {
-  animation: optic 9s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.o-optic--b {
-  animation-delay: -0.9s;
-  animation-direction: reverse;
-}
-
-@keyframes pump {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  10% {
-    transform: scale(1.14);
-  }
-  24% {
-    transform: scale(1.02);
-  }
-  30% {
-    transform: scale(1.06);
-  }
-  45% {
-    transform: scale(1);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes breathe {
-  50% {
-    transform: scaleY(1.05);
-  }
-}
-
-@keyframes optic {
-  0%,
-  100% {
-    transform: rotate(-20deg);
-  }
-  50% {
-    transform: rotate(20deg);
-  }
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  font-size: clamp(24px, 7cqw, 34px);
+  line-height: 1;
 }

@@ -1,9 +1,10 @@
-/* Inside the doors (desktop): the feeds on the left, the subject on the right.
-   Plus the phone's channel keys under her card. */
+/* Inside the doors (desktop): the channels on the left, the event on the right.
+   Plus the phone's sheet under her card: the countdown and the channel keys. */
 
 .wing__in {
   position: absolute;
   inset: 0;
+  flex-direction: column;
   overflow: hidden;
   container-type: size;
   background-color: var(--inner);
@@ -15,7 +16,7 @@
 }
 
 .wing__head {
-  position: relative;
+  flex: none;
   padding: 30px 24px 0;
 }
 
@@ -28,44 +29,24 @@
 }
 
 .wing__sub {
-  margin-top: 4px;
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 1.35;
   color: var(--mute);
 }
 
-.wing__live {
-  position: absolute;
-  right: 24px;
-  top: 40px;
-  display: flex;
-  align-items: center;
-}
-
-.wing__foot {
-  position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 22px;
-  color: var(--mute);
-  line-height: 1.6;
-}
-
-/* Feeds */
-.feeds {
-  display: flex;
-  flex-direction: column;
-}
-
+/* The channels: one row per camera, with what that camera sees */
 .feeds__list {
-  flex: 1;
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  margin: 20px 12px 86px;
+  margin: 22px 12px 24px;
   border-bottom: 1px solid var(--rule);
 }
 
 .feeds__list li {
-  flex: 1;
+  flex: 0 1 148px;
   display: flex;
   min-height: 0;
 }
@@ -73,10 +54,10 @@
 .feed {
   flex: 1;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
   min-height: 0;
-  padding: 0 10px;
+  padding: 0 12px;
   border-top: 1px solid var(--rule);
   text-decoration: none;
   transition: background-color 140ms linear;
@@ -94,45 +75,9 @@
 
 .feed .shot {
   flex: none;
-  width: 37cqw;
-  max-height: calc(100% - 20px);
+  width: 36cqw;
+  max-height: calc(100% - 24px);
   aspect-ratio: 112 / 76;
-  box-shadow: 0 0 0 1px var(--silver-dim);
-}
-
-.feed[data-live] .shot,
-.feed[aria-current='page'] .shot {
-  box-shadow: 0 0 0 2px var(--red);
-}
-
-.shot__cam {
-  position: absolute;
-  left: 4px;
-  bottom: 4px;
-  padding: 1px 4px;
-  background: rgba(6, 10, 18, 0.84);
-  color: var(--dtext);
-  font-family: var(--mono);
-  font-size: 9px;
-  font-weight: 600;
-}
-
-.shot__dot {
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  margin: 0;
-  background: var(--ink);
-  box-shadow: 0 0 0 1.5px var(--inner);
-}
-
-.feed[data-live] .shot__dot,
-.feed[aria-current='page'] .shot__dot {
-  background: var(--red);
-}
-
-.shot[data-obstructed] .shot__dot {
-  background: var(--ext-mute);
 }
 
 .feed__txt {
@@ -141,471 +86,227 @@
   min-width: 0;
 }
 
-.feed__state {
-  font-size: 11px;
-  opacity: 0.75;
+.feed__num {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
 }
 
 .feed__name {
-  margin-top: 3px;
+  margin-top: 2px;
   font-family: var(--serif);
   font-stretch: 62.5%;
   font-weight: 800;
-  font-size: clamp(22px, 10cqw, 30px);
+  font-size: clamp(24px, 10.5cqw, 32px);
   line-height: 0.95;
   text-transform: uppercase;
 }
 
 .feed__desc {
-  margin-top: 2px;
+  margin-top: 4px;
   font-size: 16px;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
 }
 
-/* Subject */
-.subject__hub,
-.subject__ch {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.subject__ch {
-  display: none;
-  padding: 30px 24px 24px;
-  gap: 14px;
-}
-
-.case[data-view='channel'] .subject__hub {
-  display: none;
-}
-
-.case[data-view='channel'] .subject__ch {
-  display: flex;
-}
-
-.subject__hub > :not(.wing__head) {
+/* The event: the date in the head, then where, what to do about it, and what it is */
+.event > :not(.wing__head) {
   margin-inline: 24px;
 }
 
-.subject__rec {
-  margin-top: 14px;
-}
-
-.subject__aug {
-  margin-top: 20px;
-}
-
-.subject__augv {
-  font-size: 26px;
-}
-
-.subject__stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 18px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.subject__stats--2 {
-  grid-template-columns: 1fr 1fr;
-  margin-top: 0;
-  padding-bottom: 0;
-  border: 0;
-}
-
-.subject__stats .cap,
-.subject__ch .cap,
-.dateloc .cap {
-  color: var(--mute);
-}
-
-.subject__ch > .row-between .cap {
-  color: var(--ink);
-}
-
-.stat {
-  margin-top: 2px;
-  font-size: 17px;
-}
-
-.subject__stats--2 .stat {
-  font-size: 19px;
-}
-
-.subject__ekg {
+.event__count {
   margin-top: 16px;
 }
 
-.dateloc {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.subject__dl {
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 16px;
+.event__where {
   margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
 }
 
-.subject__dl .big {
-  font-size: clamp(30px, 14cqw, 42px);
-  margin-top: 2px;
-}
-
-/* The full list of rooms lives on the Info channel; the panel keeps the place and its area */
-.subject__dl .dl__note:not(.dl__note--time, .dl__note--area) {
-  display: none;
-}
-
-.subject__ch .subject__dl {
-  margin-top: 4px;
-}
-
-.subject__ch .subject__dl .big {
-  font-size: clamp(30px, 14cqw, 42px);
-}
-
-.label {
-  margin-top: 20px;
-  padding: 13px 14px 12px;
-  background: var(--inner-2);
-  box-shadow: inset 0 0 0 1px var(--rule);
-}
-
-.label .cap {
+.event__where .cap {
   color: var(--mute);
 }
 
-.label__title {
-  margin-top: 5px;
-  font-weight: 600;
-  line-height: 1.3;
+.event__place {
+  margin-top: 4px;
+  font-family: var(--serif);
+  font-stretch: 62.5%;
+  font-weight: 800;
+  font-size: clamp(28px, 13cqw, 38px);
+  line-height: 0.95;
 }
 
-.label__meta {
-  margin-top: 2px;
+.event__venue {
+  margin-top: 6px;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.event__acts {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.event__about {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.event__hint {
+  margin-top: 12px;
   font-size: 16px;
   line-height: 1.4;
   color: var(--mute);
 }
 
-.radar {
-  margin-top: 16px;
-  padding: 12px;
-  box-shadow: inset 0 0 0 1px var(--silver-dim);
+.event__foot {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+  margin-bottom: 24px;
 }
 
-.radar__row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.radar__row svg {
-  flex: none;
-}
-
-.radar .cap {
-  color: var(--mute);
-  font-size: 11px;
-}
-
-.radar__orbit {
-  fill: none;
-  stroke: var(--silver-dim);
-  stroke-width: 1;
-  stroke-dasharray: 2 3;
-}
-
-.radar__head {
-  fill: var(--silver);
-}
-
-.radar__you {
-  stroke: var(--ink);
-  stroke-width: 1.2;
-}
-
-.radar__cam {
-  fill: var(--ink);
-  stroke: none;
-  stroke-width: 1.2;
-}
-
-.radar__cam[data-live] {
-  fill: var(--red);
-}
-
-.radar__cam[data-obstructed] {
-  fill: none;
-  stroke: var(--ext-mute);
-}
-
-.radar__front {
-  margin-top: 3px;
-  font-size: 14px;
-}
-
-.radar__name {
-  font-size: 12px;
-  font-weight: 500;
+.event__close {
   color: var(--mute);
 }
 
-.radar__hint {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--rule);
-  font-size: 16px;
+.case[data-view='channel'] .event__hint {
+  display: none;
+}
+
+.event__time {
+  margin-top: 2px;
+  font-size: 19px;
   font-weight: 600;
   line-height: 1.3;
+  white-space: nowrap;
 }
 
-.subject__close {
-  margin: auto 24px 24px !important;
-  color: var(--ink);
-}
-
-.subject__tc {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--mute);
-}
-
-.live {
-  display: block;
-  flex: 1 1 auto;
-  min-height: 120px;
-  max-height: 330px;
-  box-shadow: 0 0 0 2px var(--red);
-}
-
-.live .shot {
-  width: 100%;
-  height: 100%;
-}
-
-.live__tag {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  padding: 1px 5px;
-  background: rgba(6, 10, 18, 0.86);
-  color: var(--dtext);
-  font-size: 11px;
-}
-
-.subject__ch .btn--solid {
-  flex: none;
-}
-
-.subject__turning {
-  margin-top: auto;
-}
-
-/* Narrow doors (small laptops): tighter feeds, the essentials only */
+/* Narrow doors (small laptops): tighter, the essentials only */
 @container (max-width: 279px) {
-  /* Too narrow for date and place side by side: stack them */
-  .subject__dl {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
+  .wing__head {
+    padding: 24px 18px 0;
   }
-  .feed__desc,
-  .wing__foot,
-  .subject .tba,
-  .subject__tc {
-    display: none;
-  }
-  .feed__state {
-    font-size: 10.5px;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
+  .event > :not(.wing__head) {
+    margin-inline: 18px;
   }
   .feeds__list {
-    margin-bottom: 20px;
-  }
-}
-
-@container (max-width: 259px) {
-  .subject__augv {
-    font-size: 20px;
-  }
-  .subject__aug .row-between {
-    flex-direction: column;
-    gap: 2px;
-  }
-  .wing__live {
-    position: static;
-    margin-top: 6px;
-  }
-  .feeds__list {
-    margin-top: 12px;
+    margin-inline: 8px;
   }
   .feed {
     gap: 10px;
     padding: 0 8px;
   }
-  .feed .shot {
-    width: 36cqw;
-  }
-  .subject__ch > .row-between {
-    flex-direction: column;
-    gap: 2px;
-  }
-  .subject__ch .btn {
+  .btn {
     padding: 0 8px;
     letter-spacing: 0.04em;
   }
 }
 
-/* Small desktop heights: drop the least important pieces first */
-@container (max-height: 800px) {
-  .subject__label {
+/* Short windows: drop the least important lines first */
+@container (max-height: 760px) {
+  .event__about {
     display: none;
   }
 }
 
-@container (max-height: 700px) {
-  .subject__ekg:not(.subject__ekg--ch) {
+@container (max-height: 640px) {
+  .event__hint {
     display: none;
   }
-  .subject__ch .subject__dl {
-    display: none;
+  .event__where {
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+  .event__acts {
+    margin-top: 14px;
   }
 }
 
-/* The pump line: a heartbeat scrolling left, drawn twice so it loops */
-.ekg {
-  position: relative;
-  height: 84px;
-  flex: none;
-  overflow: hidden;
-  background: var(--dark);
-}
-
-.subject__ekg--ch {
-  height: 70px;
-}
-
-.ekg .cap {
-  position: absolute;
-  top: 8px;
-  color: var(--dtext) !important;
-}
-
-.ekg__l {
-  left: 10px;
-}
-
-.ekg__r {
-  right: 10px;
-  color: var(--dmute) !important;
-}
-
-.ekg svg {
-  position: absolute;
-  left: 0;
-  bottom: 4px;
-  width: 200%;
-  height: calc(100% - 28px);
-  animation: ekg 2.8s linear infinite;
-}
-
-.ekg__line {
-  fill: none;
-  stroke: var(--red-bright);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-}
-
-@keyframes ekg {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-/* Phone: the sheet under her card */
+/* Phone: the sheet under her card. When and where first, never laid over her. */
 .sheet {
   display: none;
 }
 
+.sheet__when {
+  --big: 34px;
+  margin-bottom: 10px;
+}
+
+.sheet__when .dl__note {
+  margin-top: 4px;
+}
+
 .sheet__hint {
-  margin-top: 10px;
+  /* two lines kept, so her card doesn't resize when the hint changes mid-gesture */
+  min-height: calc(2 * 1.35em);
+  margin-top: 6px;
   font-size: 16px;
   line-height: 1.35;
+  color: var(--mute);
 }
 
 .keys ol {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px 8px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .key {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 9px;
-  height: 46px;
-  padding-right: 10px;
+  gap: 10px;
+  min-height: 58px;
+  height: 100%;
+  padding-right: 8px;
   box-shadow: inset 0 0 0 1px var(--silver-dim);
   text-decoration: none;
   transition: background-color 140ms linear;
 }
 
-.key .chip {
-  display: none;
-}
-
 .key .shot {
   flex: none;
-  width: 44px;
-  height: 44px;
-  margin-left: 1px;
+  align-self: stretch;
+  width: 56px;
+  min-height: 56px;
+  margin: 1px 0 1px 1px;
 }
 
 .key__txt {
-  display: flex;
-  flex-direction: column;
   min-width: 0;
+  padding: 6px 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
+/* The camera's number, on the corner of what it sees */
 .key__num {
+  position: absolute;
+  left: 1px;
+  bottom: 1px;
+  padding: 1px 4px;
+  background: var(--ink);
+  color: var(--on-ink);
   font-family: var(--mono);
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  opacity: 0.72;
-}
-
-.key__name {
-  font-size: 15px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
-.key__dot {
-  margin: 0 0 0 auto;
-  width: 8px;
-  height: 8px;
-  background: var(--ink);
-}
-
-.key[data-live] .key__dot {
+.key[data-live] .key__num {
   background: var(--red);
-  box-shadow: 0 0 0 2px var(--inner);
-}
-
-.key[data-obstructed] .key__dot {
-  background: var(--ext-mute);
+  color: var(--ink);
 }
 
 .key:hover,

@@ -11,15 +11,13 @@ Everything waiting on Ethan or the artist, in one place.
 
 | # | Question or action | Needed by | Until then |
 |---|---|---|---|
-| 2 | **About blurb:** one or two lines about the showcase (`src/content/site.json`, `about`) | Any time | "The Creative Computing class puts its work on show: games, apps, music and machines, one booth each." |
-| 3 | Done: 12.3.26 (Thursday, December 3, 2026), with a Google Calendar link (time and rooms are in: 5–6:30 PM, Grand Atrium plus the Jordan Gallery and Dean's Gallery). **Location** (`date`, `location`; also `calendarUrl` and `mapUrl` if you want those links). Put them in `site.json` and every "TBA" label and the "coming soon" line disappear by themselves. | Launch | "0.0.0" labelled "TBA", "coming soon" on Info, no calendar or map links |
-| 4 | **RSVP link** (`rsvpUrl`) | Launch | "RSVP · Opens soon", not a link |
-| 5 | **Follow link:** which platform, and the URL | Launch | Not shown |
-| 20 | **"Read the code on GitHub"** on the Source channel: the repo is private, so the link is hidden (`sourceUrl` is empty). Make the repo public and fill `sourceUrl`, or leave it hidden. | Any time | Hidden |
-| 21 | **Cables:** in the mockups the cameras' cables hung down across her; the build hangs each camera from a wire going up out of frame (a stage rig), so nothing crosses her face. OK, or back to hanging down? | Any time | Wires go up |
-| 22 | **Projects:** the channel shows eight numbered booth screens ("Booth 01" …) and a teaser line. Real titles and links when the class has them (`projects` in `site.json`). | After the show | Teaser |
-| 26 | ~~**Her painting, recoloured.**~~ Superseded 2026-11-17: her final poster ships in her own palette and the site was re-themed to match. Was: **Her painting, recoloured.** It now ships graded into the site's palette (plum lines, lavender greys, paper-white dress) by `art-src/grade.json`; her file is untouched. Happy with it, and is she? `"strength": 0` in that file, then `npm run art`, puts her colours back exactly. | Any time | Graded |
-| 27 | **The pump readout** (the red heartbeat line and "72 bpm") and the augmentation percentage: two testers found them a little generic. Keep, tone down, or replace with something of hers? | Any time | Kept |
+| 30 | **Her name for the poster credit** (`artist` in `site.json`). | Launch | The credit line is left off |
+| 4 | **RSVP link** (`rsvpUrl`), if there will be one. Set it and an RSVP button appears on Attend and in the top bar. | Launch | "Save the date": calendar links and share |
+| 32 | **Check the address** the calendar and map links use: Owen Arts Center, 6101 Bishop Blvd, Dallas, TX 75205 (`address`, `mapUrl`). It's SMU's listed address for the building the Grand Atrium is in. | Launch | That address |
+| 33 | **The about line** (`about`): "…a semester of work on show: games, apps, music and interactive art. Come and play with it." And the four kinds listed on Work (`work.kinds`). Right for this class? | Launch | As written |
+| 22 | **The class's projects** (`work.projects`: a list of `{ title, by, url }`). They show on Work once there are some. | Before the show | The four kinds of work only |
+| 5 | **Follow link:** which platform, and the URL (`followUrl`). | Any time | Not shown |
+| 34 | **The X-ray** stayed (it was her idea) as a hover or press-and-hold on her poster, with no channel of its own. If it's not wanted either, say so and it comes out. | Any time | Kept |
 
 ## Open: ask her (on hold: Ethan will ask when he's ready)
 
@@ -27,17 +25,20 @@ Sessions add to this list but don't wait on it; until she answers, the "Until th
 
 | # | Question | Needed by | Until then |
 |---|---|---|---|
-| 8 | What name or handle goes in her credit line, and does the piece have a title? (`artist`, `piece` in `site.json`) | Any time | "0.0.0", "Poster art" |
-| 23 | **Her halo.** Ours (a ring of six cameras cut from her draft) stands in until she draws hers. Best as layers: the ring's back and front halves, and each camera on its own. | When she finishes it | Ours |
-| 24 | **The inside.** The X-ray is her painting inverted, with placeholder machine parts drawn over it (optics, core chip, bellows, rib plates, a red pump, spine bus, cell). Her own drawing of what's inside would replace the parts. | Any time | Placeholder parts |
 | 25 | **A larger export** of her painting (it's 853 × 1280, a little soft on big screens and phones with sharp displays), and if she can, a mask of her head, hair and wings (the halo passes behind them; ours is cut by hand). | Any time | 853 × 1280, hand-cut mask |
-| 30 | **Her name for the credits** (`artist` in `site.json`): Credits still says "Drawn by · TBA". | Launch | TBA |
 | 31 | **The cooler-blue version** of her painting she sent (426 × 640): an alternative colourway, or just a preview? A full-size export can swap in for `art-src/her.webp`. | Any time | The warm version |
+| 28 | **The ring at her hands.** Is that her halo (taken off, or a second one)? If so, the site could play on it. | Any time | Left as painted |
 | 10 | For character motion later: separate layers for her head, hair, wings, hands and dress. | Later | No character motion |
-| 28 | **The ring at her hands.** Her painting already has a small dark ring held at her hands. Is that her halo (taken off, or a second one)? If so, the site could play on it: say, our camera halo settling into her hands when the case closes. | Any time | Left as painted |
-| 29 | **A stranger X-ray.** Testers liked the X-ray but wanted it weirder. Her own drawing of what's inside her (OWNER #24) is the best way there. | Any time | Placeholder parts |
 
 ## Decided
+
+- **2026-11-17 (built): the quality pass.** Ethan asked for the site to be about the event, for the stand-ins to be replaced with our own drawings, and for it to read more easily.
+  - Four channels, all about the event: Info (when and where), Attend (save the date), Work (what you'll see), Poster (her poster and the credits). Inside, Source, the make-your-own-copy toy and the fake booths are gone, and so is every made-up readout (augmentation, the pump trace, timecodes, "Specimen 01", the radar). They're in git history (before PR #17) if wanted back.
+  - The desktop's right door is the event: date, time, place, a countdown to the doors opening, save the date, open in maps.
+  - The halo is ours and drawn in code (`src/rig.ts`): a silver ring, a wire per camera and four cameras as small 3D models that keep their lenses on her. No longer waiting on her halo layers (was #23).
+  - The X-ray's inside is our finished drawing (`src/organs.ts`): optics, core, spine and ribs, bellows, the red pump, and the mount under her dress, over a ghost of her outline. No longer waiting on her drawing (was #24, #29).
+  - Saving the date works without an RSVP link: Google Calendar, a calendar file (`c3-showcase.ics`), and "send it to a friend".
+  - Link previews and search results carry the date and place.
 
 - **2026-11-17 (built): her final poster and title.** Her final painting replaces the grey one (same composition, so the halo, masks and camera paths still fit). Her title is cut out and laid over the wires; the doors carry her C3 mark and her SHOWCASE split SHOW | CASE at the seam. The whole site moved to her palette: night blue, her frame's silver, cream type, her red. Date and place follow her poster: 12.03.26, 5:00–6:30 PM, Grand Atrium, Meadows. Her poster with the details is a download on RSVP and Credits. The X-ray is now her edges glowing on black (inverting a dark painting gave a white film). Not used: the smaller, cooler-blue version of the painting (kept in `reference/final/`), and the poem lines on her poster (they stay hers, in the download).
 

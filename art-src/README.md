@@ -11,10 +11,8 @@ own pixels).
 | `poster.webp` | Her final poster with the event details on it. | `public/c3-showcase-poster.webp`, the "Download her poster" link |
 | `grade.json` | An optional recolour of her painting (a gradient map). Off (`strength: 0`): her final palette ships as painted and the site follows it. | (applied to `her.webp`) |
 | `occluder.png` | Alpha mask of her head, hair and wings (the top half only). Our halo's back half passes behind it. Cut by hand from her painting; her own mask layer would replace it. | `occluder.webp` |
-| `cameras/camera-NN-line.png` | The six camera bodies' line art, cut from her draft's halo. NN is the channel: 01 Info, 02 RSVP, 03 Projects, 04 Inside, 05 Source, 06 Credits. | `camera-NN.webp`: a navy line over a body in her frame's silver |
-| `cameras/camera-NN-fill.png` | The solid shape of each camera body (closed and filled from the line art). | (the body under the line) |
 | `lettering/title.webp` | Her final title on transparent (1200 × 600): the C3 mark and her SHOWCASE wordmark. | `mark.webp` (the doors' C3), `word-l.webp` / `word-r.webp` (SHOW and CASE, one per door) |
 | `textures/grain.png`, `static.png` | Paper grain and TV static (ours, not hers). | `.webp` |
 
-When she draws her own halo, the ring is still drawn in code (`src/markup.ts`, `ellipse()`); give
-her ring the same ellipse in `scene.json` (`halo.cx/cy/rx/ry`) or swap the SVG ring for her layers.
+The halo (ring, wires and cameras) and the drawing inside her X-ray are ours, drawn in code
+(`src/rig.ts`, `src/organs.ts`); where the ring sits on her painting is `halo` in `scene.json`.

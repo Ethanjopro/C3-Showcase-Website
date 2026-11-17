@@ -40,15 +40,15 @@ state
 ss phone-open
 tap .key[data-key="1"]
 wait 1300
-ss phone-rsvp
+ss phone-attend
 press Escape
 open desktop ?still=20
 click .seal
 wait 1700
-hover .feed[data-feed="3"]
+hover .feed[data-feed="2"]
 ss desktop-hover
-goto ?still=20#inside
-ss desktop-inside
+goto ?still=20#poster
+ss desktop-poster
 open desktop reduced
 errors
 quit
@@ -71,7 +71,7 @@ Then **look at the PNGs** (Read them).
 | `errors` | Console and page errors so far. |
 
 Useful URLs: `?still=<degrees>` pins the halo at an angle with nothing moving
-(repeatable screenshots); `#info` … `#credits` open a channel directly (the case
+(repeatable screenshots); `#info`, `#attend`, `#work`, `#poster` open a channel directly (the case
 opens itself); `#halo` is the hub. The case remembers it was opened for the tab's
 session (`sessionStorage c3.open`).
 
@@ -83,16 +83,16 @@ on `[data-card]`, wait 300 ms, then check `.xr[data-on]`. A mouse over the card 
 
 ```bash
 npm run shots                 # every state at 390 and 1440, plus -reduced variants
-npm run shots -- --no-build inside rsvp
+npm run shots -- --no-build info attend
 ```
 
 Output: `.shots/<state>@<width>.png` for sealed, open, scan (390), hover (1440),
-info, rsvp, projects, inside, source, credits.
+info, attend, work, poster.
 
 ## Test
 
 ```bash
-npm run check          # tsc + vitest (halo math, markup, title fitting, copy, contrast)
+npm run check          # tsc + vitest (halo math, the drawn rig, the event's dates and calendar file, markup, title fitting, contrast)
 npm run test:e2e       # builds, then Playwright at both sizes: keyboard path, reduced motion, axe, layout shift, reference/ not shipped
 ```
 

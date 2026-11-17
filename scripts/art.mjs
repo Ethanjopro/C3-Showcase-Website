@@ -5,7 +5,6 @@
 //   (derived)            her title and frame, cut out          -> src/art/front.webp
 //   (derived)            an X-ray film of her painting         -> src/art/her-xray.webp
 //   occluder.png         alpha: her head, hair and wings       -> src/art/occluder.webp
-//   cameras/camera-NN-line.png + -fill.png                     -> src/art/camera-NN.webp
 //   lettering/title.webp her C3 mark and SHOWCASE wordmark     -> src/art/mark.webp, word-l.webp, word-r.webp
 //   poster.webp          her poster with the event details     -> public/c3-showcase-poster.webp
 //   textures/*.png       paper grain, static noise             -> src/art/*.webp
@@ -19,10 +18,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'art-src');
 const OUT = path.join(ROOT, 'src/art');
 await mkdir(OUT, { recursive: true });
-
-// Camera colours, from her poster: a navy line over a silver body (her frame's silver)
-const LINE = { r: 0x0e, g: 0x13, b: 0x1f };
-const BODY = { r: 0xc9, g: 0xcc, b: 0xc9 };
 
 // Her painting, never resized (it is the star; 853 x 1280 is what we have), recoloured
 // into the site's palette by grade.json: a gradient map on brightness that keeps a little of
@@ -110,26 +105,6 @@ const BODY = { r: 0xc9, g: 0xcc, b: 0xc9 };
 
 // Occluder: only its alpha matters (CSS mask), so store it as a lossless alpha WebP.
 await sharp(path.join(SRC, 'occluder.png')).webp({ lossless: true, effort: 6 }).toFile(path.join(OUT, 'occluder.webp'));
-
-// Cameras: a pale body under her plum line, one image per camera.
-async function tinted(file, rgb) {
-  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  for (let i = 0; i < info.width * info.height; i++) {
-    data[i * 4] = rgb.r;
-    data[i * 4 + 1] = rgb.g;
-    data[i * 4 + 2] = rgb.b;
-  }
-  return sharp(data, { raw: info }).png().toBuffer();
-}
-for (const f of (await readdir(path.join(SRC, 'cameras'))).filter((n) => n.endsWith('-line.png'))) {
-  const id = f.replace('-line.png', '');
-  const line = await tinted(path.join(SRC, 'cameras', f), LINE);
-  const body = await tinted(path.join(SRC, 'cameras', `${id}-fill.png`), BODY);
-  await sharp(body)
-    .composite([{ input: line }])
-    .webp({ quality: 90, alphaQuality: 100, effort: 6 })
-    .toFile(path.join(OUT, `${id}.webp`));
-}
 
 // Her title: the C3 mark, and her SHOWCASE wordmark split between SHOW and CASE for the two
 // doors. Columns are in her title.webp (1200 x 600); the trim drops the empty edges.

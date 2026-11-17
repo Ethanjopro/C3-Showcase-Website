@@ -1,19 +1,21 @@
 # C3 Showcase: the brief
 
-Written 2026-10-22 for a fresh start, updated 2026-11-10 when the final direction ("the case") was built. The first version (branch `archive/v1`) worked, but it read as ten separate effects layered on a rough placeholder. This page and her art are the guides; anything not fixed here is yours to decide.
+Written 2026-10-22 for a fresh start, updated 2026-11-10 when the final direction ("the case") was built and 2026-11-17 after her final poster and a quality pass that put the event first. The first version (branch `archive/v1`) worked, but it read as ten separate effects layered on a rough placeholder. This page and her art are the guides; anything not fixed here is yours to decide.
 
 ## The job
 
 - Promote the C3 Showcase, the Creative Computing class showcase.
-- Most visitors scan the QR code on her printed poster: on a phone, standing, with a few seconds of attention. The first screen must say what, when and where. RSVP and follow are one tap away.
+- Most visitors scan the QR code on her printed poster: on a phone, standing, with a few seconds of attention. The first screen must say what, when and where. Saving the date is one tap away.
+- Everything on the site is about the event or is her poster come alive. No made-up readouts, no sections about the site itself.
 - The site should feel like her poster came alive. Her art is the star; the site frames it.
 - The live site is `https://ethanjopro.github.io/C3-Showcase-Website/`, deployed from `main` by the existing GitHub Actions workflow. The QR code encodes that URL, so never rename the repo.
 
 ## Where the look comes from
 
 - **Her final poster** (2026-11-17), in `art-src/her.webp` (without the event text) and `art-src/poster.webp` (with it): a red-haired girl with small white wings, praying, a small ring at her hands, in a great ruffled cream dress, on a night-blue ground inside a silver frame, under her C3 SHOWCASE title. Same composition as her 2026-11-10 painting, so every position in `scene.json` still holds. Our camera halo turns above her head (her poster's own text quotes its code).
-- **Her notes** (her feedback on the first mockups): a mostly monochrome palette with red as the only splash; a mood between Alien Stage and Evangelion, techno-angelic horror, an angel augmented or replaced by technology; the halo's cameras (once microphones); an X-ray on hover showing her organs mechanized; a line on the poster bringing people to the site to "see what's inside".
-- **Her title** (`art-src/lettering/title.webp`: the C3 mark and SHOWCASE wordmark), and the camera bodies of her halo, from her drafts in `reference/drafts/`.
+- **Her notes** (her feedback on the first mockups): a mostly monochrome palette with red as the only splash; a mood between Alien Stage and Evangelion, techno-angelic horror, an angel augmented or replaced by technology; the halo's cameras (once microphones); an X-ray on hover showing her organs mechanized; a line bringing people to the site to "see what's inside".
+- **Her title** (`art-src/lettering/title.webp`: the C3 mark and SHOWCASE wordmark).
+- **Ours, drawn in code:** the halo (ring, wires and cameras, `src/rig.ts`) and the drawing inside her X-ray (`src/organs.ts`). Her final poster has no camera halo of its own, so these are no longer stand-ins.
 - **Her moodboard,** in `reference/moodboard/`, summarized in `reference/INSPIRATION.md` §1b. Ideas only: never trace, crop or ship a pin.
 - **The mockups** of the final direction: the "Final direction" page of the "C3 Showcase site mockups" canvas on claude.ai.
 
@@ -21,14 +23,15 @@ Written 2026-10-22 for a fresh start, updated 2026-11-10 when the final directio
 
 1. **The case.** She is on display in a black case.
    - It arrives sealed: two doors with her C3 split down the seam, "Show | Case", the date and location, and a red tape reading "See what's inside" (her poster line). One tap or click opens it.
-   - Inside, she turns out to wear a halo of six cameras, turning slowly above her head. Cameras behind her pass behind her hair and wings; each hangs on a wire from above, like a stage rig.
-   - The six cameras are the navigation: Info, RSVP, Projects, Inside (her X-ray), Source (the site, skin off) and Credits. The same six are a real list: the feeds on the left door (desktop) or the channel keys under her (phone).
+   - Inside, she turns out to wear a halo of cameras, one per channel, turning slowly above her head. Each is a small drawn 3D model that keeps its lens on her; the ones behind her pass behind her hair and wings; each hangs on a wire from above, like a stage rig.
+   - The cameras are the navigation, and every channel is about the event: Info (when and where), Attend (save the date: calendar links, share, and an RSVP button once there's a link), Work (what you'll see) and Poster (her poster to look at and download, and the credits). The same four are a real list: the channels on the left door (desktop) or the keys under her (phone).
    - Hovering a camera, feed or key, or focusing a feed or key, stops the turn and lifts that camera (cameras are for the pointer; the feeds and keys are the same links for the keyboard and screen readers). Choosing one swings its camera round to the front, where it holds while its channel is on air, and turns the middle panel over to that channel's title card, white on black. A quiet "Back to her halo" returns from anywhere; so do Escape and the browser's Back.
-   - Hover her (desktop) or hold her (phone) and an X-ray shows what she's made of.
-2. **Her drawing is the only hand-drawn thing on the site.** Everything around it is crisp and precise, like good print production.
-3. **Her poster's palette, one red.** Her night-blue ground for the page and panels, her frame's silver for every frame line, the ring and the cameras, her cream for type, a sage grey from her dress shadows for quiet text, and her red, lifted a little for screens (`#B8313A`), as the splash. Red marks what's live (the camera on air, its wire, the REC and ON AIR dots, her pump, the augmentation reading), plus three accents in the same spirit: the "See what's inside" tape, the short rule under each channel title, and the marks on a visitor's copy of the poster. Never for small text. This replaces v1's six colorways (and the Colors destination), per her notes. Her painting ships exactly as she painted it; the site took its colours from her, not the other way round (`art-src/grade.json` is off).
+   - Hover her (desktop) or hold her (phone) and an X-ray shows what she's made of: her idea, and the one piece of play on the site.
+   - On desktop the right door is the event itself, always in view: the date, the time, the place, a countdown to the doors opening, save the date and a map link. The countdown is the only live reading on the site, and it's real.
+2. **Her painting is the only hand-painted thing on the site.** Everything around it, our halo and X-ray drawing included, is crisp and precise, like good print production.
+3. **Her poster's palette, one red.** Her night-blue ground for the page and panels, her frame's silver for every frame line, the ring and the line of the cameras, her cream for type, a sage grey from her dress shadows for quiet text, and her red, lifted a little for screens (`#B8313A`), as the splash. Red marks what's live (the camera at the front, its wire and its little halo, the countdown's dot, her pump in the X-ray), plus two accents in the same spirit: the "See what's inside" tape and the short rule under each channel title. Never for small text. This replaces v1's six colorways (and the Colors destination), per her notes. Her painting ships exactly as she painted it; the site took its colours from her, not the other way round (`art-src/grade.json` is off).
 4. **Phone first** (390×844); the desktop view must look finished too.
-5. **"0.0.0"** stands in for the date, location and her name until the real details exist. That's her own placeholder from the poster.
+5. **"0.0.0"** was her placeholder for the date, place and her name. The date and place are real now; her name is still "0.0.0" in `site.json`, and the poster credit is left off until it's filled in.
 6. **Character motion later.** Subtle movement for her (breathing, hair, wings) is welcome once her layers arrive. Plan for it, but don't fake it.
 7. **Her files swap in without code.** Her art lives in `art-src/` (`npm run art` turns it into `src/art/`), and where things sit on her painting is data in `src/art/scene.json`. Words live in `src/content/site.json`.
 
@@ -47,7 +50,5 @@ Everything else, including how the channels are laid out, transitions, the proje
 ## Waiting on her
 
 `OWNER.md` tracks it. The main items:
-- her halo (the ring and six cameras as layers), which replaces ours
-- her drawing of the inside, which replaces the placeholder machine parts in the X-ray
+- the name for her credit
 - a larger export of her painting (853 × 1280 is soft on big screens), and a head, hair and wings mask
-- the name for her credit, and a title for the piece

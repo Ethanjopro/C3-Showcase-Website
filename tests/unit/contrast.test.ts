@@ -29,9 +29,7 @@ const PAIRS: [string, string][] = [
   ['mute', 'inner'],
   ['mute', 'inner-2'],
   ['dtext', 'dark'],
-  ['dtext', 'dark-2'],
   ['dmute', 'dark'],
-  ['dmute', 'dark-2'],
   ['ext-text', 'dark'],
   ['ext-mute', 'dark'],
   ['on-ink', 'ink'],
@@ -39,7 +37,6 @@ const PAIRS: [string, string][] = [
   ['dtext', 'red'],
   ['dark', 'dtext'],
   ['ink', 'dark'],
-  ['ink', 'dark-2'],
 ];
 
 describe('contrast', () => {
